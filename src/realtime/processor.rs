@@ -28,7 +28,7 @@ impl Processor {
 impl RealtimeContext for Processor {
     fn process(&mut self, data: &mut [f32], num_channels: usize) {
         self.process_commands();
-        Self::clear_output(data, num_channels);
+        Self::clear_output(data);
         self.sample_position += data.len() / num_channels;
         self.notify_position();
     }
@@ -44,12 +44,8 @@ impl Processor {
         }
     }
 
-    fn clear_output(data: &mut [f32], num_channels: usize) {
-        for frame in data.chunks_mut(num_channels) {
-            for sample in frame.iter_mut() {
-                *sample = 0.0;
-            }
-        }
+    fn clear_output(data: &mut [f32]) {
+        data.fill(0.0);
     }
 
     fn notify_position(&mut self) {
