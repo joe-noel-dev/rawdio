@@ -10,17 +10,31 @@ impl Default for Timestamp {
 }
 
 impl Timestamp {
-    fn with_seconds(seconds: f64) -> Self {
+    pub fn with_seconds(seconds: f64) -> Self {
         Self { seconds }
     }
 
+    pub fn get_seconds(&self) -> f64 {
+        self.seconds
+    }
+
     pub fn incremented(&self, num_samples: usize, sample_rate: usize) -> Self {
-        Self::with_seconds(self.seconds + num_samples as f64 / sample_rate as f64)
+        Self {
+            seconds: self.seconds + num_samples as f64 / sample_rate as f64,
+        }
     }
 }
 
-impl Timestamp {
-    pub fn get_seconds(&self) -> f64 {
-        self.seconds
+#[cfg(test)]
+mod tests {
+    use approx::assert_relative_eq;
+
+    use super::*;
+    #[test]
+    fn it_increments() {
+        let sample_rate = 44100;
+        let before = Timestamp::default();
+        let after = before.incremented(sample_rate, sample_rate);
+        assert_relative_eq!(after.get_seconds() - before.get_seconds(), 1.0);
     }
 }
