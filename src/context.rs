@@ -13,7 +13,7 @@ pub struct Context {
     timestamp: Timestamp,
     command_tx: Sender<Command>,
     notification_rx: Receiver<Notification>,
-    realtime_processor: Option<Box<dyn RealtimeContext + Send>>,
+    realtime_processor: Option<Processor>,
 }
 
 impl Context {
@@ -25,11 +25,7 @@ impl Context {
             timestamp: Timestamp::default(),
             command_tx,
             notification_rx,
-            realtime_processor: Some(Box::new(Processor::new(
-                sample_rate,
-                command_rx,
-                notification_tx,
-            ))),
+            realtime_processor: Some(Processor::new(sample_rate, command_rx, notification_tx)),
         }
     }
 
@@ -49,7 +45,7 @@ impl Context {
         let mut other = None;
         std::mem::swap(&mut self.realtime_processor, &mut other);
         assert!(other.is_some());
-        other.unwrap()
+        Box::new(other.unwrap())
     }
 
     pub fn process_notifications(&mut self) {
