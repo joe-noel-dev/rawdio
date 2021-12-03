@@ -1,6 +1,7 @@
 use crate::{
+    commands::{command::Command, id::Id, notification::Notification},
     graph::node::Node,
-    realtime::{command::Command, id::Id, notification::Notification, processor::Processor},
+    realtime::processor::Processor,
     realtime_context::RealtimeContext,
     sources::oscillator::Oscillator,
     timestamp::Timestamp,

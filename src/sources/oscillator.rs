@@ -1,4 +1,4 @@
-use crate::{graph::node::Node, parameter::Parameter, realtime::id::Id};
+use crate::{commands::id::Id, graph::node::Node, parameter::Parameter};
 
 #[derive(Clone)]
 pub enum OscillatorType {

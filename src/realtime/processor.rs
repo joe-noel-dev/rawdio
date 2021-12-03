@@ -1,7 +1,9 @@
-use crate::{realtime_context::RealtimeContext, timestamp::Timestamp};
+use crate::{
+    commands::{command::Command, notification::Notification},
+    realtime_context::RealtimeContext,
+    timestamp::Timestamp,
+};
 use lockfree::channel::spsc::{Receiver, Sender};
-
-use super::{command::Command, notification::Notification};
 
 pub struct Processor {
     sample_rate: usize,

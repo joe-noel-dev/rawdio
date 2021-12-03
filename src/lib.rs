@@ -1,3 +1,4 @@
+pub mod commands;
 pub mod context;
 pub mod graph;
 pub mod parameter;
