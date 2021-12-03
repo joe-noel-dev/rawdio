@@ -1,9 +1,6 @@
 use std::{thread, time};
 
-use rust_audio_engine::{
-    context::Context,
-    oscillator::{Oscillator, OscillatorType},
-};
+use rust_audio_engine::{context::Context, sources::oscillator::OscillatorType};
 
 use crate::audio_callback::AudioCallback;
 
@@ -16,7 +13,8 @@ fn main() {
 
     println!("Current time = {}", context.current_time().get_seconds());
 
-    let oscillator = Oscillator::default()
+    let oscillator = context
+        .add_oscillator()
         .with_type(OscillatorType::Sine)
         .with_frequency(440.0);
 
@@ -25,6 +23,8 @@ fn main() {
     thread::sleep(time::Duration::from_secs(3));
     context.process_notifications();
     context.stop();
+
+    context.remove_node(&oscillator);
 
     println!("Current time = {}", context.current_time().get_seconds());
 }

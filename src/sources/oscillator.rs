@@ -1,4 +1,4 @@
-use crate::{node::Node, parameter::Parameter};
+use crate::{graph::node::Node, parameter::Parameter, realtime::id::Id};
 
 #[derive(Clone)]
 pub enum OscillatorType {
@@ -7,22 +7,26 @@ pub enum OscillatorType {
 
 #[derive(Clone)]
 pub struct Oscillator {
+    id: Id,
     oscillator_type: OscillatorType,
     frequency: Parameter,
 }
 
-impl Default for Oscillator {
-    fn default() -> Self {
+impl Node for Oscillator {
+    fn get_id(&self) -> Id {
+        self.id
+    }
+}
+
+impl Oscillator {
+    pub fn new(id: Id) -> Self {
         Self {
+            id,
             oscillator_type: OscillatorType::Sine,
             frequency: Parameter::Double(440.0),
         }
     }
-}
 
-impl Node for Oscillator {}
-
-impl Oscillator {
     pub fn with_type(&self, osillator_type: OscillatorType) -> Self {
         let mut other = self.clone();
         other.oscillator_type = osillator_type;

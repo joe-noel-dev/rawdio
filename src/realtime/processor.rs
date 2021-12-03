@@ -40,6 +40,8 @@ impl Processor {
             match command {
                 Command::Start => println!("Received start"),
                 Command::Stop => println!("Received stop"),
+                Command::AddOscillator(id) => println!("Create oscillator with ID: {:?}", id),
+                Command::RemoveNode(id) => println!("Remove node with ID: {:?}", id),
             }
         }
     }
