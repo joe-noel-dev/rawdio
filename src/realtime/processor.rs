@@ -1,7 +1,7 @@
 use crate::{
+    audio_process::AudioProcess,
     commands::{command::Command, id::Id, notification::Notification},
     graph::dsp::Dsp,
-    realtime_context::RealtimeContext,
     sources::realtime_oscillator::RealtimeOscillator,
     timestamp::Timestamp,
     utility::{audio_buffer::AudioBuffer, pool::Pool},
@@ -35,7 +35,7 @@ impl Processor {
     }
 }
 
-impl RealtimeContext for Processor {
+impl AudioProcess for Processor {
     fn process(&mut self, data: &mut dyn AudioBuffer) {
         data.clear();
 

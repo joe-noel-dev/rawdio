@@ -9,7 +9,7 @@ mod audio_callback;
 
 fn main() {
     let mut context = Context::new(44100);
-    let _audio_callack = AudioCallback::new(context.get_realtime_context());
+    let _audio_callack = AudioCallback::new(context.get_audio_process());
 
     let oscillator = context
         .add_oscillator()

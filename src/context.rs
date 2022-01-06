@@ -1,8 +1,8 @@
 use crate::{
+    audio_process::AudioProcess,
     commands::{command::Command, id::Id, notification::Notification},
-    graph::{dsp::Dsp, node::Node},
+    graph::node::Node,
     realtime::processor::Processor,
-    realtime_context::RealtimeContext,
     sources::{oscillator::Oscillator, realtime_oscillator::RealtimeOscillator},
     timestamp::Timestamp,
 };
@@ -43,7 +43,7 @@ impl Context {
         self.timestamp
     }
 
-    pub fn get_realtime_context(&mut self) -> Box<dyn RealtimeContext + Send> {
+    pub fn get_audio_process(&mut self) -> Box<dyn AudioProcess + Send> {
         let mut other = None;
         std::mem::swap(&mut self.realtime_processor, &mut other);
         assert!(other.is_some());
@@ -74,7 +74,5 @@ impl Context {
 
     pub fn connect_to_output(&mut self, _source_node: &dyn Node) {}
 
-    fn dispose_oscillator(&self, osc: RealtimeOscillator) {
-        println!("Disposing oscillator with ID: {:?}", osc.get_id());
-    }
+    fn dispose_oscillator(&self, _osc: RealtimeOscillator) {}
 }

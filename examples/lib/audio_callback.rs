@@ -2,9 +2,7 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Host, Stream,
 };
-use rust_audio_engine::{
-    realtime_context::RealtimeContext, utility::audio_buffer::BorrowedAudioBuffer,
-};
+use rust_audio_engine::{audio_process::AudioProcess, utility::audio_buffer::BorrowedAudioBuffer};
 
 const SAMPLE_RATE: u32 = 44100;
 
@@ -26,7 +24,7 @@ fn print_output_devices(host: &Host) {
 }
 
 impl AudioCallback {
-    pub fn new(mut realtime_context: Box<dyn RealtimeContext + Send>) -> Self {
+    pub fn new(mut audio_process: Box<dyn AudioProcess + Send>) -> Self {
         let host = cpal::default_host();
         println!("Using audio host: {}\n", host.id().name());
 
@@ -54,7 +52,7 @@ impl AudioCallback {
                         usize::from(config.channels()),
                         config.sample_rate().0,
                     );
-                    realtime_context.process(&mut audio_buffer);
+                    audio_process.process(&mut audio_buffer);
                 },
                 move |err| eprintln!("Stream error: {:?}", err),
             )
