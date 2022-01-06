@@ -1,4 +1,4 @@
-use crate::sources::realtime_oscillator::RealtimeOscillator;
+use crate::osc::realtime_oscillator::RealtimeOscillator;
 
 use super::id::Id;
 

@@ -2,8 +2,8 @@ use crate::{
     audio_process::AudioProcess,
     commands::{command::Command, id::Id, notification::Notification},
     graph::node::Node,
+    osc::{oscillator::Oscillator, realtime_oscillator::RealtimeOscillator},
     realtime::processor::Processor,
-    sources::{oscillator::Oscillator, realtime_oscillator::RealtimeOscillator},
     timestamp::Timestamp,
 };
 

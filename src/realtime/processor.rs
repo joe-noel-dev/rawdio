@@ -2,7 +2,7 @@ use crate::{
     audio_process::AudioProcess,
     commands::{command::Command, id::Id, notification::Notification},
     graph::dsp::Dsp,
-    sources::realtime_oscillator::RealtimeOscillator,
+    osc::realtime_oscillator::RealtimeOscillator,
     timestamp::Timestamp,
     utility::{audio_buffer::AudioBuffer, pool::Pool},
 };

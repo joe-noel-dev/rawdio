@@ -1,4 +1,4 @@
-use crate::{sources::realtime_oscillator::RealtimeOscillator, timestamp};
+use crate::{osc::realtime_oscillator::RealtimeOscillator, timestamp};
 
 pub enum Notification {
     Position(timestamp::Timestamp),
