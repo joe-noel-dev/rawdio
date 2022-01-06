@@ -1,4 +1,4 @@
-use crate::{graph::dsp::Dsp, sources::realtime_oscillator::RealtimeOscillator};
+use crate::sources::realtime_oscillator::RealtimeOscillator;
 
 use super::id::Id;
 
