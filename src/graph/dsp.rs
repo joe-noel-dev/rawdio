@@ -1,7 +1,17 @@
 use crate::{commands::id::Id, utility::audio_buffer::AudioBuffer};
 
-pub trait Dsp {
-    fn get_id(&self) -> Id;
+type ProcessFn = Box<dyn FnMut(&mut dyn AudioBuffer) + Send + Sync>;
+pub struct Dsp {
+    id: Id,
+    pub process: ProcessFn,
+}
 
-    fn process(&mut self, output: &mut dyn AudioBuffer);
+impl Dsp {
+    pub fn new(id: Id, process: ProcessFn) -> Self {
+        Self { id, process }
+    }
+
+    pub fn get_id(&self) -> Id {
+        self.id
+    }
 }

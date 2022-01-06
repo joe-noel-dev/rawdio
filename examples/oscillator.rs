@@ -1,9 +1,6 @@
 use std::{thread, time};
 
-use rust_audio_engine::{
-    context::Context,
-    osc::oscillator::{Oscillator, OscillatorType},
-};
+use rust_audio_engine::{context::Context, osc::oscillator::Oscillator};
 
 use crate::audio_callback::AudioCallback;
 
@@ -14,12 +11,7 @@ fn main() {
     let mut context = Context::new(44100);
     let _audio_callack = AudioCallback::new(context.get_audio_process());
 
-    let mut oscillator = Oscillator::new(
-        context.get_command_queue(),
-        context.get_sample_rate() as f32,
-    )
-    .with_type(OscillatorType::Sine)
-    .with_frequency(440.0);
+    let mut oscillator = Oscillator::new(context.get_command_queue(), 440.0);
 
     context.connect_to_output(&oscillator);
     context.start();

@@ -1,11 +1,13 @@
-use crate::osc::realtime_oscillator::RealtimeOscillator;
+use crate::graph::dsp::Dsp;
 
-use super::id::Id;
+use super::{id::Id, parameter_command::ParameterCommand};
 
 pub enum Command {
     Start,
     Stop,
 
-    AddOscillator(RealtimeOscillator),
-    RemoveOscillator(Id),
+    AddDsp(Dsp),
+    RemoveDsp(Id),
+
+    ParameterCommand(ParameterCommand),
 }

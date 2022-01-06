@@ -2,23 +2,16 @@ use lockfree::channel::mpsc::Sender;
 
 use crate::{
     commands::{command::Command, id::Id},
-    graph::node::Node,
-    parameter::Parameter,
+    graph::{dsp::Dsp, node::Node},
+    parameter::{self, AudioParameter, ParameterValue, RealtimeAudioParameter},
+    utility::audio_buffer::{AudioBuffer, SampleLocation},
 };
-
-use super::realtime_oscillator::RealtimeOscillator;
-
-#[derive(Clone)]
-pub enum OscillatorType {
-    Sine,
-}
 
 #[derive(Clone)]
 pub struct Oscillator {
     command_queue: Sender<Command>,
     id: Id,
-    oscillator_type: OscillatorType,
-    frequency: Parameter,
+    pub frequency: AudioParameter,
 }
 
 impl Node for Oscillator {
@@ -28,34 +21,45 @@ impl Node for Oscillator {
 }
 
 impl Oscillator {
-    pub fn new(command_queue: Sender<Command>, sample_rate: f32) -> Self {
+    pub fn new(command_queue: Sender<Command>, frequency: f32) -> Self {
         let id = Id::generate();
 
-        let realtime_osc = RealtimeOscillator::new(id, sample_rate);
+        let (frequency, realtime_frequency) =
+            parameter::create(ParameterValue::Float(frequency), command_queue.clone());
 
-        let _ = command_queue.send(Command::AddOscillator(realtime_osc));
+        let dsp = Self::create_dsp(id, realtime_frequency);
+        let _ = command_queue.send(Command::AddDsp(dsp));
 
         Self {
             command_queue,
             id,
-            oscillator_type: OscillatorType::Sine,
-            frequency: Parameter::Double(440.0),
+            frequency,
         }
     }
 
     pub fn remove(&mut self) {
-        let _ = self.command_queue.send(Command::RemoveOscillator(self.id));
+        let _ = self.command_queue.send(Command::RemoveDsp(self.id));
     }
 
-    pub fn with_type(&self, osillator_type: OscillatorType) -> Self {
-        let mut other = self.clone();
-        other.oscillator_type = osillator_type;
-        other
-    }
+    pub fn create_dsp(id: Id, frequency: RealtimeAudioParameter) -> Dsp {
+        let mut phase = 0.0f32;
 
-    pub fn with_frequency(&self, frequency: f64) -> Self {
-        let mut other = self.clone();
-        other.frequency = Parameter::Double(frequency);
-        other
+        Dsp::new(
+            id,
+            Box::new(move |output: &mut dyn AudioBuffer| {
+                let sample_rate = output.sample_rate() as f32;
+                for frame in 0..output.num_frames() {
+                    phase += 1.0;
+
+                    let value = 0.5
+                        * (std::f32::consts::TAU * frequency.float_value() * phase / sample_rate)
+                            .sin();
+                    for channel in 0..output.num_channels() {
+                        let location = SampleLocation { channel, frame };
+                        output.set_sample(&location, value);
+                    }
+                }
+            }),
+        )
     }
 }

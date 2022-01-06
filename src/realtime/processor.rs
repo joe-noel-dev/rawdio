@@ -1,8 +1,10 @@
 use crate::{
     audio_process::AudioProcess,
-    commands::{command::Command, id::Id, notification::Notification},
+    commands::{
+        command::Command, id::Id, notification::Notification, parameter_command::ParameterCommand,
+    },
     graph::dsp::Dsp,
-    osc::realtime_oscillator::RealtimeOscillator,
+    parameter::ParameterValue,
     timestamp::Timestamp,
     utility::{audio_buffer::AudioBuffer, pool::Pool},
 };
@@ -14,7 +16,7 @@ pub struct Processor {
     command_rx: Receiver<Command>,
     notification_tx: Sender<Notification>,
     sample_position: usize,
-    oscillators: Pool<Id, RealtimeOscillator>,
+    dsps: Pool<Id, Dsp>,
 }
 
 impl Processor {
@@ -30,7 +32,7 @@ impl Processor {
             notification_tx,
             sample_position: 0,
 
-            oscillators: Pool::new(64),
+            dsps: Pool::new(64),
         }
     }
 }
@@ -45,8 +47,8 @@ impl AudioProcess for Processor {
             return;
         }
 
-        if let Some(osc) = self.oscillators.get_mut(&Id::with_value(0)) {
-            osc.process(data);
+        if let Some(dsp) = self.dsps.get_mut(&Id::with_value(0)) {
+            (dsp.process)(data);
         }
 
         self.update_position(data.num_frames());
@@ -60,8 +62,11 @@ impl Processor {
             match command {
                 Command::Start => self.started = true,
                 Command::Stop => self.started = false,
-                Command::AddOscillator(osc) => self.add_oscillator(osc),
-                Command::RemoveOscillator(id) => self.remove_oscillator(id),
+                Command::AddDsp(dsp) => self.add_dsp(dsp),
+                Command::RemoveDsp(id) => self.remove_dsp(id),
+                Command::ParameterCommand(parameter_command) => {
+                    self.handle_parameter_command(parameter_command)
+                }
             }
         }
     }
@@ -80,13 +85,24 @@ impl Processor {
         self.send_notficiation(Notification::Position(timestamp));
     }
 
-    fn add_oscillator(&mut self, osc: RealtimeOscillator) {
-        self.oscillators.add(osc.get_id(), Box::new(osc));
+    fn add_dsp(&mut self, dsp: Dsp) {
+        self.dsps.add(dsp.get_id(), Box::new(dsp));
     }
 
-    fn remove_oscillator(&mut self, id: Id) {
-        if let Some(osc) = self.oscillators.remove(&id) {
-            self.send_notficiation(Notification::DisposeOscillator(*osc));
+    fn remove_dsp(&mut self, id: Id) {
+        if let Some(dsp) = self.dsps.remove(&id) {
+            self.send_notficiation(Notification::DisposeDsp(*dsp));
         }
     }
+
+    fn handle_parameter_command(&mut self, parameter_command: ParameterCommand) {
+        match parameter_command {
+            ParameterCommand::Add(_) => todo!(),
+            ParameterCommand::SetValueImmediate((id, value)) => {
+                self.set_parameter_value_immediate(id, value)
+            }
+        }
+    }
+
+    fn set_parameter_value_immediate(&mut self, id: Id, value: ParameterValue) {}
 }

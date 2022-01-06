@@ -1,6 +1,6 @@
-use crate::{osc::realtime_oscillator::RealtimeOscillator, timestamp};
+use crate::{graph::dsp::Dsp, timestamp};
 
 pub enum Notification {
     Position(timestamp::Timestamp),
-    DisposeOscillator(RealtimeOscillator),
+    DisposeDsp(Dsp),
 }
