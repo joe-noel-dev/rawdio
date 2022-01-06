@@ -6,7 +6,7 @@ use crate::{
     timestamp::Timestamp,
     utility::{audio_buffer::AudioBuffer, pool::Pool},
 };
-use lockfree::channel::spsc::{Receiver, Sender};
+use lockfree::channel::{mpsc::Receiver, spsc::Sender};
 
 pub struct Processor {
     started: bool,

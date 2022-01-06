@@ -1,13 +1,16 @@
 use crate::{
     audio_process::AudioProcess,
-    commands::{command::Command, id::Id, notification::Notification},
+    commands::{command::Command, notification::Notification},
     graph::node::Node,
-    osc::{oscillator::Oscillator, realtime_oscillator::RealtimeOscillator},
+    osc::realtime_oscillator::RealtimeOscillator,
     realtime::processor::Processor,
     timestamp::Timestamp,
 };
 
-use lockfree::channel::spsc::{self, Receiver, Sender};
+use lockfree::channel::{
+    mpsc::{self, Sender},
+    spsc::{self, Receiver},
+};
 
 pub struct Context {
     sample_rate: usize,
@@ -19,7 +22,7 @@ pub struct Context {
 
 impl Context {
     pub fn new(sample_rate: usize) -> Self {
-        let (command_tx, command_rx) = spsc::create();
+        let (command_tx, command_rx) = mpsc::create();
         let (notification_tx, notification_rx) = spsc::create();
 
         Self {
@@ -50,6 +53,10 @@ impl Context {
         Box::new(other.unwrap())
     }
 
+    pub fn get_sample_rate(&self) -> usize {
+        self.sample_rate
+    }
+
     pub fn process_notifications(&mut self) {
         while let Ok(notification) = self.notification_rx.recv() {
             match notification {
@@ -59,17 +66,8 @@ impl Context {
         }
     }
 
-    pub fn add_oscillator(&mut self) -> Oscillator {
-        let id = Id::generate();
-        let osc = RealtimeOscillator::new(id, self.sample_rate as f32);
-        let _ = self.command_tx.send(Command::AddOscillator(osc));
-        Oscillator::new(id)
-    }
-
-    pub fn remove_oscillator(&mut self, node: &dyn Node) {
-        let _ = self
-            .command_tx
-            .send(Command::RemoveOscillator(node.get_id()));
+    pub fn get_command_queue(&self) -> Sender<Command> {
+        self.command_tx.clone()
     }
 
     pub fn connect_to_output(&mut self, _source_node: &dyn Node) {}

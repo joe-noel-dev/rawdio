@@ -1,4 +1,12 @@
-use crate::{commands::id::Id, graph::node::Node, parameter::Parameter};
+use lockfree::channel::mpsc::Sender;
+
+use crate::{
+    commands::{command::Command, id::Id},
+    graph::node::Node,
+    parameter::Parameter,
+};
+
+use super::realtime_oscillator::RealtimeOscillator;
 
 #[derive(Clone)]
 pub enum OscillatorType {
@@ -7,6 +15,7 @@ pub enum OscillatorType {
 
 #[derive(Clone)]
 pub struct Oscillator {
+    command_queue: Sender<Command>,
     id: Id,
     oscillator_type: OscillatorType,
     frequency: Parameter,
@@ -19,12 +28,23 @@ impl Node for Oscillator {
 }
 
 impl Oscillator {
-    pub fn new(id: Id) -> Self {
+    pub fn new(command_queue: Sender<Command>, sample_rate: f32) -> Self {
+        let id = Id::generate();
+
+        let realtime_osc = RealtimeOscillator::new(id, sample_rate);
+
+        let _ = command_queue.send(Command::AddOscillator(realtime_osc));
+
         Self {
+            command_queue,
             id,
             oscillator_type: OscillatorType::Sine,
             frequency: Parameter::Double(440.0),
         }
+    }
+
+    pub fn remove(&mut self) {
+        let _ = self.command_queue.send(Command::RemoveOscillator(self.id));
     }
 
     pub fn with_type(&self, osillator_type: OscillatorType) -> Self {
