@@ -9,6 +9,7 @@ use crate::{
 use lockfree::channel::spsc::{Receiver, Sender};
 
 pub struct Processor {
+    started: bool,
     sample_rate: usize,
     command_rx: Receiver<Command>,
     notification_tx: Sender<Notification>,
@@ -23,6 +24,7 @@ impl Processor {
         notification_tx: Sender<Notification>,
     ) -> Self {
         Self {
+            started: false,
             sample_rate,
             command_rx,
             notification_tx,
@@ -39,6 +41,10 @@ impl RealtimeContext for Processor {
 
         self.process_commands();
 
+        if !self.started {
+            return;
+        }
+
         if let Some(osc) = self.oscillators.get_mut(&Id::with_value(0)) {
             osc.process(data);
         }
@@ -52,12 +58,16 @@ impl Processor {
     fn process_commands(&mut self) {
         while let Ok(command) = self.command_rx.recv() {
             match command {
-                Command::Start => println!("Received start"),
-                Command::Stop => println!("Received stop"),
-                Command::AddOscillator(osc) => self.oscillators.add(osc.get_id(), Box::new(osc)),
-                Command::RemoveOscillator(id) => println!("Remove node with ID: {:?}", id),
+                Command::Start => self.started = true,
+                Command::Stop => self.started = false,
+                Command::AddOscillator(osc) => self.add_oscillator(osc),
+                Command::RemoveOscillator(id) => self.remove_oscillator(id),
             }
         }
+    }
+
+    fn send_notficiation(&mut self, notification: Notification) {
+        let _ = self.notification_tx.send(notification);
     }
 
     fn update_position(&mut self, num_samples: usize) {
@@ -67,6 +77,16 @@ impl Processor {
     fn notify_position(&mut self) {
         let timestamp =
             Timestamp::with_seconds(self.sample_position as f64 / self.sample_rate as f64);
-        let _ = self.notification_tx.send(Notification::Position(timestamp));
+        self.send_notficiation(Notification::Position(timestamp));
+    }
+
+    fn add_oscillator(&mut self, osc: RealtimeOscillator) {
+        self.oscillators.add(osc.get_id(), Box::new(osc));
+    }
+
+    fn remove_oscillator(&mut self, id: Id) {
+        if let Some(osc) = self.oscillators.remove(&id) {
+            self.send_notficiation(Notification::DisposeOscillator(*osc));
+        }
     }
 }

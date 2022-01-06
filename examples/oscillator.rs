@@ -11,8 +11,6 @@ fn main() {
     let mut context = Context::new(44100);
     let _audio_callack = AudioCallback::new(context.get_realtime_context());
 
-    println!("Current time = {}", context.current_time().get_seconds());
-
     let oscillator = context
         .add_oscillator()
         .with_type(OscillatorType::Sine)
@@ -21,10 +19,8 @@ fn main() {
     context.connect_to_output(&oscillator);
     context.start();
     thread::sleep(time::Duration::from_secs(3));
+    context.remove_oscillator(&oscillator);
+    thread::sleep(time::Duration::from_secs(1));
     context.process_notifications();
     context.stop();
-
-    context.remove_oscillator(&oscillator);
-
-    println!("Current time = {}", context.current_time().get_seconds());
 }

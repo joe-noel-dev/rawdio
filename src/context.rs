@@ -1,6 +1,6 @@
 use crate::{
     commands::{command::Command, id::Id, notification::Notification},
-    graph::node::Node,
+    graph::{dsp::Dsp, node::Node},
     realtime::processor::Processor,
     realtime_context::RealtimeContext,
     sources::{oscillator::Oscillator, realtime_oscillator::RealtimeOscillator},
@@ -54,6 +54,7 @@ impl Context {
         while let Ok(notification) = self.notification_rx.recv() {
             match notification {
                 Notification::Position(timestamp) => self.timestamp = timestamp,
+                Notification::DisposeOscillator(oscillator) => self.dispose_oscillator(oscillator),
             }
         }
     }
@@ -72,4 +73,8 @@ impl Context {
     }
 
     pub fn connect_to_output(&mut self, _source_node: &dyn Node) {}
+
+    fn dispose_oscillator(&self, osc: RealtimeOscillator) {
+        println!("Disposing oscillator with ID: {:?}", osc.get_id());
+    }
 }
