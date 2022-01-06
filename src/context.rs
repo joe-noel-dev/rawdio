@@ -3,13 +3,14 @@ use crate::{
     graph::node::Node,
     realtime::processor::Processor,
     realtime_context::RealtimeContext,
-    sources::oscillator::Oscillator,
+    sources::{oscillator::Oscillator, realtime_oscillator::RealtimeOscillator},
     timestamp::Timestamp,
 };
 
 use lockfree::channel::spsc::{self, Receiver, Sender};
 
 pub struct Context {
+    sample_rate: usize,
     timestamp: Timestamp,
     command_tx: Sender<Command>,
     notification_rx: Receiver<Notification>,
@@ -22,6 +23,7 @@ impl Context {
         let (notification_tx, notification_rx) = spsc::create();
 
         Self {
+            sample_rate,
             timestamp: Timestamp::default(),
             command_tx,
             notification_rx,
@@ -58,12 +60,15 @@ impl Context {
 
     pub fn add_oscillator(&mut self) -> Oscillator {
         let id = Id::generate();
-        let _ = self.command_tx.send(Command::AddOscillator(id));
+        let osc = RealtimeOscillator::new(id, self.sample_rate as f32);
+        let _ = self.command_tx.send(Command::AddOscillator(osc));
         Oscillator::new(id)
     }
 
-    pub fn remove_node(&mut self, node: &dyn Node) {
-        let _ = self.command_tx.send(Command::RemoveNode(node.get_id()));
+    pub fn remove_oscillator(&mut self, node: &dyn Node) {
+        let _ = self
+            .command_tx
+            .send(Command::RemoveOscillator(node.get_id()));
     }
 
     pub fn connect_to_output(&mut self, _source_node: &dyn Node) {}

@@ -2,7 +2,9 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Host, Stream,
 };
-use rust_audio_engine::realtime_context::RealtimeContext;
+use rust_audio_engine::{
+    realtime_context::RealtimeContext, utility::audio_buffer::BorrowedAudioBuffer,
+};
 
 const SAMPLE_RATE: u32 = 44100;
 
@@ -47,7 +49,12 @@ impl AudioCallback {
             .build_output_stream(
                 &config.config(),
                 move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                    realtime_context.process(data, config.channels().into());
+                    let mut audio_buffer = BorrowedAudioBuffer::new(
+                        data,
+                        usize::from(config.channels()),
+                        config.sample_rate().0,
+                    );
+                    realtime_context.process(&mut audio_buffer);
                 },
                 move |err| eprintln!("Stream error: {:?}", err),
             )

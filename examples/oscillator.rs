@@ -24,7 +24,7 @@ fn main() {
     context.process_notifications();
     context.stop();
 
-    context.remove_node(&oscillator);
+    context.remove_oscillator(&oscillator);
 
     println!("Current time = {}", context.current_time().get_seconds());
 }

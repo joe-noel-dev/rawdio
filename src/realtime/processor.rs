@@ -1,7 +1,10 @@
 use crate::{
-    commands::{command::Command, notification::Notification},
+    commands::{command::Command, id::Id, notification::Notification},
+    graph::dsp::Dsp,
     realtime_context::RealtimeContext,
+    sources::realtime_oscillator::RealtimeOscillator,
     timestamp::Timestamp,
+    utility::{audio_buffer::AudioBuffer, pool::Pool},
 };
 use lockfree::channel::spsc::{Receiver, Sender};
 
@@ -10,6 +13,7 @@ pub struct Processor {
     command_rx: Receiver<Command>,
     notification_tx: Sender<Notification>,
     sample_position: usize,
+    oscillators: Pool<Id, RealtimeOscillator>,
 }
 
 impl Processor {
@@ -23,15 +27,23 @@ impl Processor {
             command_rx,
             notification_tx,
             sample_position: 0,
+
+            oscillators: Pool::new(64),
         }
     }
 }
 
 impl RealtimeContext for Processor {
-    fn process(&mut self, data: &mut [f32], num_channels: usize) {
+    fn process(&mut self, data: &mut dyn AudioBuffer) {
+        data.clear();
+
         self.process_commands();
-        Self::clear_output(data);
-        self.sample_position += data.len() / num_channels;
+
+        if let Some(osc) = self.oscillators.get_mut(&Id::with_value(0)) {
+            osc.process(data);
+        }
+
+        self.update_position(data.num_frames());
         self.notify_position();
     }
 }
@@ -42,14 +54,14 @@ impl Processor {
             match command {
                 Command::Start => println!("Received start"),
                 Command::Stop => println!("Received stop"),
-                Command::AddOscillator(id) => println!("Create oscillator with ID: {:?}", id),
-                Command::RemoveNode(id) => println!("Remove node with ID: {:?}", id),
+                Command::AddOscillator(osc) => self.oscillators.add(osc.get_id(), Box::new(osc)),
+                Command::RemoveOscillator(id) => println!("Remove node with ID: {:?}", id),
             }
         }
     }
 
-    fn clear_output(data: &mut [f32]) {
-        data.fill(0.0);
+    fn update_position(&mut self, num_samples: usize) {
+        self.sample_position += num_samples;
     }
 
     fn notify_position(&mut self) {

@@ -1,3 +1,5 @@
+use crate::utility::audio_buffer::AudioBuffer;
+
 pub trait RealtimeContext {
-    fn process(&mut self, data: &mut [f32], num_channels: usize);
+    fn process(&mut self, data: &mut dyn AudioBuffer);
 }
