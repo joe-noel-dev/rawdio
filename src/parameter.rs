@@ -2,7 +2,7 @@ use std::sync::{atomic::Ordering, Arc};
 
 use lockfree::channel::mpsc::Sender;
 
-use crate::commands::{command::Command, id::Id, parameter_command::ParameterCommand};
+use crate::commands::{command::Command, id::Id};
 use atomic_float::AtomicF32;
 
 pub type ParameterValue = Arc<AtomicF32>;
@@ -25,9 +25,7 @@ impl AudioParameter {
         let param_value = ParameterValue::new(AtomicF32::new(initial_value));
         let realtime_audio_param = RealtimeAudioParameter::new(id, param_value.clone());
 
-        let _ = command_queue.send(Command::ParameterCommand(ParameterCommand::Add(
-            realtime_audio_param,
-        )));
+        let _ = command_queue.send(Command::AddParameter(Box::new(realtime_audio_param)));
 
         Self {
             id,
@@ -41,9 +39,9 @@ impl AudioParameter {
     }
 
     pub fn set_value_immediate(&mut self, value: f32) {
-        let _ = self.command_queue.send(Command::ParameterCommand(
-            ParameterCommand::SetValueImmediate((self.id, value)),
-        ));
+        let _ = self
+            .command_queue
+            .send(Command::SetValueImmediate((self.id, value)));
     }
 }
 

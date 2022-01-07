@@ -29,7 +29,7 @@ impl Oscillator {
         let frequency = AudioParameter::new(frequency, command_queue.clone());
 
         let dsp = Self::create_dsp(id, frequency.get_value());
-        let _ = command_queue.send(Command::AddDsp(dsp));
+        let _ = command_queue.send(Command::AddDsp(Box::new(dsp)));
 
         Self {
             command_queue,

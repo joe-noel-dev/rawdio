@@ -1,8 +1,6 @@
 use crate::{
     audio_process::AudioProcess,
-    commands::{
-        command::Command, id::Id, notification::Notification, parameter_command::ParameterCommand,
-    },
+    commands::{command::Command, id::Id, notification::Notification},
     graph::dsp::Dsp,
     parameter::RealtimeAudioParameter,
     timestamp::Timestamp,
@@ -66,8 +64,9 @@ impl Processor {
                 Command::Stop => self.started = false,
                 Command::AddDsp(dsp) => self.add_dsp(dsp),
                 Command::RemoveDsp(id) => self.remove_dsp(id),
-                Command::ParameterCommand(parameter_command) => {
-                    self.handle_parameter_command(parameter_command)
+                Command::AddParameter(audio_parameter) => self.add_parameter(audio_parameter),
+                Command::SetValueImmediate((id, value)) => {
+                    self.set_parameter_value_immediate(id, value)
                 }
             }
         }
@@ -87,28 +86,19 @@ impl Processor {
         self.send_notficiation(Notification::Position(timestamp));
     }
 
-    fn add_dsp(&mut self, dsp: Dsp) {
-        self.dsps.add(dsp.get_id(), Box::new(dsp));
+    fn add_dsp(&mut self, dsp: Box<Dsp>) {
+        self.dsps.add(dsp.get_id(), dsp);
     }
 
     fn remove_dsp(&mut self, id: Id) {
         if let Some(dsp) = self.dsps.remove(&id) {
-            self.send_notficiation(Notification::DisposeDsp(*dsp));
+            self.send_notficiation(Notification::DisposeDsp(dsp));
         }
     }
 
-    fn handle_parameter_command(&mut self, parameter_command: ParameterCommand) {
-        match parameter_command {
-            ParameterCommand::Add(parameter) => self.add_parameter(parameter),
-            ParameterCommand::SetValueImmediate((id, value)) => {
-                self.set_parameter_value_immediate(id, value)
-            }
-        }
-    }
-
-    fn add_parameter(&mut self, audio_parameter: RealtimeAudioParameter) {
+    fn add_parameter(&mut self, audio_parameter: Box<RealtimeAudioParameter>) {
         self.parameters
-            .add(audio_parameter.get_id(), Box::new(audio_parameter));
+            .add(audio_parameter.get_id(), audio_parameter);
     }
 
     fn set_parameter_value_immediate(&mut self, id: Id, value: f32) {

@@ -1,13 +1,16 @@
 use crate::graph::dsp::Dsp;
 
-use super::{id::Id, parameter_command::ParameterCommand};
+use super::id::Id;
+use crate::parameter::RealtimeAudioParameter;
 
 pub enum Command {
     Start,
     Stop,
 
-    AddDsp(Dsp),
+    AddDsp(Box<Dsp>),
     RemoveDsp(Id),
 
-    ParameterCommand(ParameterCommand),
+    AddParameter(Box<RealtimeAudioParameter>),
+
+    SetValueImmediate((Id, f32)),
 }

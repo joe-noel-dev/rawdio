@@ -60,7 +60,7 @@ impl Context {
         while let Ok(notification) = self.notification_rx.recv() {
             match notification {
                 Notification::Position(timestamp) => self.timestamp = timestamp,
-                Notification::DisposeDsp(dsp) => self.dispose_dsp(dsp),
+                Notification::DisposeDsp(dsp) => self.dispose_dsp(*dsp),
             }
         }
     }
