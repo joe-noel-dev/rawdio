@@ -13,6 +13,7 @@ pub struct Oscillator {
     command_queue: Sender<Command>,
     id: Id,
     pub frequency: AudioParameter,
+    pub gain: AudioParameter,
 }
 
 impl Node for Oscillator {
@@ -26,33 +27,38 @@ impl Oscillator {
         let id = Id::generate();
 
         let frequency = AudioParameter::new(frequency, command_queue.clone());
+        let gain = AudioParameter::new(1.0, command_queue.clone());
 
-        let dsp = Self::create_dsp(id, frequency.get_value());
+        let dsp = Self::create_dsp(id, frequency.get_value(), gain.get_value());
         let _ = command_queue.send(Command::AddDsp(Box::new(dsp)));
 
         Self {
             command_queue,
             id,
             frequency,
+            gain,
         }
     }
 
-    fn create_dsp(id: Id, frequency: ParameterValue) -> Dsp {
-        Dsp::new(id, Box::new(Self::process_oscillator(frequency)))
+    fn create_dsp(id: Id, frequency: ParameterValue, gain: ParameterValue) -> Dsp {
+        Dsp::new(id, Box::new(Self::process_oscillator(frequency, gain)))
     }
 
-    fn process_oscillator(frequency: ParameterValue) -> impl FnMut(&mut dyn AudioBuffer) {
+    fn process_oscillator(
+        frequency: ParameterValue,
+        gain: ParameterValue,
+    ) -> impl FnMut(&mut dyn AudioBuffer) {
         let mut phase = 0.0f32;
 
         move |output: &mut dyn AudioBuffer| {
             let sample_rate = output.sample_rate() as f32;
+            let frequency = frequency.load(Ordering::Acquire);
+            let gain = gain.load(Ordering::Acquire);
+
             for frame in 0..output.num_frames() {
                 phase += 1.0;
 
-                let value = 0.5
-                    * (std::f32::consts::TAU * frequency.load(Ordering::Acquire) * phase
-                        / sample_rate)
-                        .sin();
+                let value = gain * (std::f32::consts::TAU * frequency * phase / sample_rate).sin();
                 for channel in 0..output.num_channels() {
                     let location = SampleLocation { channel, frame };
                     output.set_sample(&location, value);
