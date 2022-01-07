@@ -1,7 +1,7 @@
 use crate::{
     audio_process::AudioProcess,
     commands::{command::Command, notification::Notification},
-    graph::{dsp::Dsp, node::Node},
+    graph::node::Node,
     realtime::processor::Processor,
     timestamp::Timestamp,
 };
@@ -60,7 +60,6 @@ impl Context {
         while let Ok(notification) = self.notification_rx.recv() {
             match notification {
                 Notification::Position(timestamp) => self.timestamp = timestamp,
-                Notification::DisposeDsp(dsp) => self.dispose_dsp(*dsp),
             }
         }
     }
@@ -70,6 +69,4 @@ impl Context {
     }
 
     pub fn connect_to_output(&mut self, _source_node: &dyn Node) {}
-
-    fn dispose_dsp(&self, _dsp: Dsp) {}
 }

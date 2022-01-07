@@ -11,6 +11,7 @@ pub enum Command {
     RemoveDsp(Id),
 
     AddParameter(Box<RealtimeAudioParameter>),
+    RemoveParameter(Id),
 
     SetValueImmediate((Id, f32)),
 }

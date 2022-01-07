@@ -6,13 +6,19 @@ use crate::{
     timestamp::Timestamp,
     utility::{audio_buffer::AudioBuffer, pool::Pool},
 };
-use lockfree::channel::{mpsc::Receiver, spsc::Sender};
+use lockfree::channel::{
+    mpsc::Receiver,
+    spsc::{self, Sender},
+};
+
+use super::garbage_collector::{run_garbage_collector, GarbageCollectionCommand};
 
 pub struct Processor {
     started: bool,
     sample_rate: usize,
     command_rx: Receiver<Command>,
     notification_tx: Sender<Notification>,
+    garbase_collection_tx: Sender<GarbageCollectionCommand>,
     sample_position: usize,
     dsps: Pool<Id, Dsp>,
     parameters: Pool<Id, RealtimeAudioParameter>,
@@ -24,11 +30,16 @@ impl Processor {
         command_rx: Receiver<Command>,
         notification_tx: Sender<Notification>,
     ) -> Self {
+        let (garbase_collection_tx, garbage_collection_rx) = spsc::create();
+
+        run_garbage_collector(garbage_collection_rx);
+
         Self {
             started: false,
             sample_rate,
             command_rx,
             notification_tx,
+            garbase_collection_tx,
             sample_position: 0,
 
             dsps: Pool::new(64),
@@ -65,6 +76,7 @@ impl Processor {
                 Command::AddDsp(dsp) => self.add_dsp(dsp),
                 Command::RemoveDsp(id) => self.remove_dsp(id),
                 Command::AddParameter(audio_parameter) => self.add_parameter(audio_parameter),
+                Command::RemoveParameter(id) => self.remove_parameter(id),
                 Command::SetValueImmediate((id, value)) => {
                     self.set_parameter_value_immediate(id, value)
                 }
@@ -92,13 +104,23 @@ impl Processor {
 
     fn remove_dsp(&mut self, id: Id) {
         if let Some(dsp) = self.dsps.remove(&id) {
-            self.send_notficiation(Notification::DisposeDsp(dsp));
+            let _ = self
+                .garbase_collection_tx
+                .send(GarbageCollectionCommand::DisposeDsp(dsp));
         }
     }
 
     fn add_parameter(&mut self, audio_parameter: Box<RealtimeAudioParameter>) {
         self.parameters
             .add(audio_parameter.get_id(), audio_parameter);
+    }
+
+    fn remove_parameter(&mut self, id: Id) {
+        if let Some(parameter) = self.parameters.remove(&id) {
+            let _ = self
+                .garbase_collection_tx
+                .send(GarbageCollectionCommand::DisposeParameter(parameter));
+        }
     }
 
     fn set_parameter_value_immediate(&mut self, id: Id, value: f32) {

@@ -1,6 +1,5 @@
-use crate::{graph::dsp::Dsp, timestamp};
+use crate::timestamp;
 
 pub enum Notification {
     Position(timestamp::Timestamp),
-    DisposeDsp(Box<Dsp>),
 }

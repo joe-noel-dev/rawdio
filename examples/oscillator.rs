@@ -11,17 +11,19 @@ fn main() {
     let mut context = Context::new(44100);
     let _audio_callack = AudioCallback::new(context.get_audio_process());
 
-    let mut oscillator = Oscillator::new(context.get_command_queue(), 440.0);
+    {
+        let mut oscillator = Oscillator::new(context.get_command_queue(), 440.0);
 
-    context.connect_to_output(&oscillator);
-    context.start();
-    thread::sleep(time::Duration::from_secs(3));
+        context.connect_to_output(&oscillator);
+        context.start();
+        thread::sleep(time::Duration::from_secs(3));
 
-    oscillator.frequency.set_value_immediate(220.0);
-    thread::sleep(time::Duration::from_secs(3));
+        oscillator.frequency.set_value_immediate(220.0);
+        thread::sleep(time::Duration::from_secs(3));
 
-    oscillator.remove();
+        context.process_notifications();
+        context.stop();
+    }
 
-    context.process_notifications();
-    context.stop();
+    thread::sleep(time::Duration::from_secs(1));
 }

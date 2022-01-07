@@ -7,7 +7,6 @@ use atomic_float::AtomicF32;
 
 pub type ParameterValue = Arc<AtomicF32>;
 
-#[derive(Clone)]
 pub struct AudioParameter {
     id: Id,
     value: ParameterValue,
@@ -42,6 +41,12 @@ impl AudioParameter {
         let _ = self
             .command_queue
             .send(Command::SetValueImmediate((self.id, value)));
+    }
+}
+
+impl Drop for AudioParameter {
+    fn drop(&mut self) {
+        let _ = self.command_queue.send(Command::RemoveParameter(self.id));
     }
 }
 

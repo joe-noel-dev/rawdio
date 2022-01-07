@@ -9,7 +9,6 @@ use crate::{
     utility::audio_buffer::{AudioBuffer, SampleLocation},
 };
 
-#[derive(Clone)]
 pub struct Oscillator {
     command_queue: Sender<Command>,
     id: Id,
@@ -38,10 +37,6 @@ impl Oscillator {
         }
     }
 
-    pub fn remove(&mut self) {
-        let _ = self.command_queue.send(Command::RemoveDsp(self.id));
-    }
-
     fn create_dsp(id: Id, frequency: ParameterValue) -> Dsp {
         Dsp::new(id, Box::new(Self::process_oscillator(frequency)))
     }
@@ -64,5 +59,11 @@ impl Oscillator {
                 }
             }
         }
+    }
+}
+
+impl Drop for Oscillator {
+    fn drop(&mut self) {
+        let _ = self.command_queue.send(Command::RemoveDsp(self.id));
     }
 }
