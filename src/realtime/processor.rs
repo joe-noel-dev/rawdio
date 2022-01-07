@@ -4,7 +4,7 @@ use crate::{
         command::Command, id::Id, notification::Notification, parameter_command::ParameterCommand,
     },
     graph::dsp::Dsp,
-    parameter::ParameterValue,
+    parameter::RealtimeAudioParameter,
     timestamp::Timestamp,
     utility::{audio_buffer::AudioBuffer, pool::Pool},
 };
@@ -17,6 +17,7 @@ pub struct Processor {
     notification_tx: Sender<Notification>,
     sample_position: usize,
     dsps: Pool<Id, Dsp>,
+    parameters: Pool<Id, RealtimeAudioParameter>,
 }
 
 impl Processor {
@@ -33,6 +34,7 @@ impl Processor {
             sample_position: 0,
 
             dsps: Pool::new(64),
+            parameters: Pool::new(8192),
         }
     }
 }
@@ -97,12 +99,21 @@ impl Processor {
 
     fn handle_parameter_command(&mut self, parameter_command: ParameterCommand) {
         match parameter_command {
-            ParameterCommand::Add(_) => todo!(),
+            ParameterCommand::Add(parameter) => self.add_parameter(parameter),
             ParameterCommand::SetValueImmediate((id, value)) => {
                 self.set_parameter_value_immediate(id, value)
             }
         }
     }
 
-    fn set_parameter_value_immediate(&mut self, id: Id, value: ParameterValue) {}
+    fn add_parameter(&mut self, audio_parameter: RealtimeAudioParameter) {
+        self.parameters
+            .add(audio_parameter.get_id(), Box::new(audio_parameter));
+    }
+
+    fn set_parameter_value_immediate(&mut self, id: Id, value: f32) {
+        if let Some(parameter) = self.parameters.get_mut(&id) {
+            parameter.set_value(value);
+        }
+    }
 }

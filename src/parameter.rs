@@ -1,12 +1,11 @@
+use std::sync::{atomic::Ordering, Arc};
+
 use lockfree::channel::mpsc::Sender;
 
 use crate::commands::{command::Command, id::Id, parameter_command::ParameterCommand};
+use atomic_float::AtomicF32;
 
-#[derive(Clone, Copy)]
-pub enum ParameterValue {
-    Float(f32),
-    Int(i32),
-}
+pub type ParameterValue = Arc<AtomicF32>;
 
 #[derive(Clone)]
 pub struct AudioParameter {
@@ -15,29 +14,37 @@ pub struct AudioParameter {
     command_queue: Sender<Command>,
 }
 
-pub fn create(
-    initial_value: ParameterValue,
-    command_queue: Sender<Command>,
-) -> (AudioParameter, RealtimeAudioParameter) {
-    let id = Id::generate();
-    let audio_param = AudioParameter::new(id, initial_value, command_queue);
-    let realtime_audio_param = RealtimeAudioParameter::new(id, initial_value);
-    (audio_param, realtime_audio_param)
-}
-
-impl AudioParameter {
-    pub fn new(id: Id, initial_value: ParameterValue, command_queue: Sender<Command>) -> Self {
-        Self {
-            id,
-            value: initial_value,
-            command_queue,
-        }
-    }
-}
-
 pub struct RealtimeAudioParameter {
     id: Id,
     value: ParameterValue,
+}
+
+impl AudioParameter {
+    pub fn new(initial_value: f32, command_queue: Sender<Command>) -> Self {
+        let id = Id::generate();
+        let param_value = ParameterValue::new(AtomicF32::new(initial_value));
+        let realtime_audio_param = RealtimeAudioParameter::new(id, param_value.clone());
+
+        let _ = command_queue.send(Command::ParameterCommand(ParameterCommand::Add(
+            realtime_audio_param,
+        )));
+
+        Self {
+            id,
+            value: param_value,
+            command_queue,
+        }
+    }
+
+    pub fn get_value(&self) -> ParameterValue {
+        self.value.clone()
+    }
+
+    pub fn set_value_immediate(&mut self, value: f32) {
+        let _ = self.command_queue.send(Command::ParameterCommand(
+            ParameterCommand::SetValueImmediate((self.id, value)),
+        ));
+    }
 }
 
 impl RealtimeAudioParameter {
@@ -52,13 +59,11 @@ impl RealtimeAudioParameter {
         self.id
     }
 
-    pub fn process_command(&mut self, command: ParameterCommand) {}
+    pub fn get_value(&self) -> f32 {
+        self.value.load(Ordering::Acquire)
+    }
 
-    pub fn float_value(&self) -> f32 {
-        if let ParameterValue::Float(value) = self.value {
-            return value;
-        }
-
-        panic!("Invalid parameter type");
+    pub fn set_value(&mut self, value: f32) {
+        self.value.store(value, Ordering::Release)
     }
 }

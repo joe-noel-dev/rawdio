@@ -1,6 +1,7 @@
 use crate::{commands::id::Id, utility::audio_buffer::AudioBuffer};
 
 type ProcessFn = Box<dyn FnMut(&mut dyn AudioBuffer) + Send + Sync>;
+
 pub struct Dsp {
     id: Id,
     pub process: ProcessFn,
