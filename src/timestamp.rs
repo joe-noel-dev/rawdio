@@ -18,9 +18,9 @@ impl Timestamp {
         self.seconds
     }
 
-    pub fn incremented_by_samples(&self, num_samples: usize, sample_rate: usize) -> Self {
+    pub fn incremented_by_samples(&self, num_samples: usize, sample_rate: f64) -> Self {
         Self {
-            seconds: self.seconds + num_samples as f64 / sample_rate as f64,
+            seconds: self.seconds + num_samples as f64 / sample_rate,
         }
     }
 
@@ -38,9 +38,9 @@ mod tests {
     use super::*;
     #[test]
     fn it_increments() {
-        let sample_rate = 44100;
+        let sample_rate = 44100.0;
         let before = Timestamp::default();
-        let after = before.incremented_by_samples(sample_rate, sample_rate);
+        let after = before.incremented_by_samples(sample_rate as usize, sample_rate);
         assert_relative_eq!(after.get_seconds() - before.get_seconds(), 1.0);
     }
 }

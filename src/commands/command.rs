@@ -1,7 +1,12 @@
-use crate::{graph::dsp::Dsp, timestamp::Timestamp};
+use crate::{graph::dsp::Dsp, parameter::ParameterChange};
 
 use super::id::Id;
-use crate::parameter::RealtimeAudioParameter;
+
+pub struct ParameterChangeRequest {
+    pub dsp_id: Id,
+    pub parameter_id: Id,
+    pub change: ParameterChange,
+}
 
 pub enum Command {
     Start,
@@ -10,9 +15,5 @@ pub enum Command {
     AddDsp(Box<Dsp>),
     RemoveDsp(Id),
 
-    AddParameter(Box<RealtimeAudioParameter>),
-    RemoveParameter(Id),
-
-    SetValueImmediate((Id, f64)),
-    LinearRampToValue((Id, f64, Timestamp)),
+    ParameterValueChange(ParameterChangeRequest),
 }

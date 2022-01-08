@@ -1,8 +1,11 @@
 use crate::{
     audio_process::AudioProcess,
-    commands::{command::Command, id::Id, notification::Notification},
+    commands::{
+        command::{Command, ParameterChangeRequest},
+        id::Id,
+        notification::Notification,
+    },
     graph::dsp::Dsp,
-    parameter::RealtimeAudioParameter,
     timestamp::Timestamp,
     utility::{audio_buffer::AudioBuffer, pool::Pool},
 };
@@ -21,7 +24,6 @@ pub struct Processor {
     garbase_collection_tx: Sender<GarbageCollectionCommand>,
     sample_position: usize,
     dsps: Pool<Id, Dsp>,
-    parameters: Pool<Id, RealtimeAudioParameter>,
 }
 
 impl Processor {
@@ -43,7 +45,6 @@ impl Processor {
             sample_position: 0,
 
             dsps: Pool::new(64),
-            parameters: Pool::new(8192),
         }
     }
 }
@@ -59,12 +60,9 @@ impl AudioProcess for Processor {
         }
 
         let current_time = self.current_time();
-        for (_, parameter) in self.parameters.all_mut() {
-            parameter.jump_to_time(&current_time);
-        }
 
         for (_, dsp) in self.dsps.all_mut() {
-            (dsp.process)(data, &current_time);
+            dsp.process_audio(data, &current_time);
         }
 
         self.update_position(data.num_frames());
@@ -80,13 +78,9 @@ impl Processor {
                 Command::Stop => self.started = false,
                 Command::AddDsp(dsp) => self.add_dsp(dsp),
                 Command::RemoveDsp(id) => self.remove_dsp(id),
-                Command::AddParameter(audio_parameter) => self.add_parameter(audio_parameter),
-                Command::RemoveParameter(id) => self.remove_parameter(id),
-                Command::SetValueImmediate((id, value)) => {
-                    self.set_parameter_value_immediate(id, value)
-                }
-                Command::LinearRampToValue((id, value, time)) => {
-                    self.linear_ramp_to_value(id, value, time)
+
+                Command::ParameterValueChange(change_request) => {
+                    self.request_parameter_change(change_request)
                 }
             }
         }
@@ -120,29 +114,9 @@ impl Processor {
         }
     }
 
-    fn add_parameter(&mut self, mut audio_parameter: Box<RealtimeAudioParameter>) {
-        audio_parameter.jump_to_time(&self.current_time());
-        self.parameters
-            .add(audio_parameter.get_id(), audio_parameter);
-    }
-
-    fn remove_parameter(&mut self, id: Id) {
-        if let Some(parameter) = self.parameters.remove(&id) {
-            let _ = self
-                .garbase_collection_tx
-                .send(GarbageCollectionCommand::DisposeParameter(parameter));
-        }
-    }
-
-    fn set_parameter_value_immediate(&mut self, id: Id, value: f64) {
-        if let Some(parameter) = self.parameters.get_mut(&id) {
-            parameter.set_value(value);
-        }
-    }
-
-    fn linear_ramp_to_value(&mut self, id: Id, value: f64, time: Timestamp) {
-        if let Some(parameter) = self.parameters.get_mut(&id) {
-            parameter.add_parameter_change(value, time);
+    fn request_parameter_change(&mut self, change_request: ParameterChangeRequest) {
+        if let Some(dsp) = self.dsps.get_mut(&change_request.dsp_id) {
+            dsp.request_parameter_change(change_request);
         }
     }
 }
