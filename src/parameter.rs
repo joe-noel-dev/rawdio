@@ -193,6 +193,35 @@ mod tests {
     use super::*;
 
     #[test]
+    fn immediate_change() {
+        let value = ParameterValue::new(AtomicF64::new(6.0));
+        let parameter_id = Id::generate();
+        let mut realtime_parameter = RealtimeAudioParameter::new(parameter_id, value);
+        realtime_parameter.add_parameter_change(ParameterChange {
+            value: 7.0,
+            end_time: Timestamp::from_seconds(1.0),
+            method: ValueChangeMethod::Immediate,
+        });
+
+        let mut current_time = Timestamp::default();
+        while current_time <= Timestamp::from_seconds(2.0) {
+            let expected_value = if current_time.get_seconds() < 1.0 {
+                6.0
+            } else {
+                7.0
+            };
+
+            assert_relative_eq!(
+                realtime_parameter.get_value_at_time(&current_time),
+                expected_value,
+                epsilon = 1e-6
+            );
+
+            current_time = current_time.incremented_by_samples(1, 44100.0);
+        }
+    }
+
+    #[test]
     fn linear_ramp() {
         let value = ParameterValue::new(AtomicF64::new(5.0));
         let parameter_id = Id::generate();
