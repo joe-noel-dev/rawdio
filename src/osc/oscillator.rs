@@ -6,6 +6,7 @@ use crate::{
     commands::{command::Command, id::Id},
     graph::{dsp::Dsp, node::Node},
     parameter::{AudioParameter, ParameterValue},
+    timestamp::Timestamp,
     utility::audio_buffer::{AudioBuffer, SampleLocation},
 };
 
@@ -23,7 +24,7 @@ impl Node for Oscillator {
 }
 
 impl Oscillator {
-    pub fn new(command_queue: Sender<Command>, frequency: f32) -> Self {
+    pub fn new(command_queue: Sender<Command>, frequency: f64) -> Self {
         let id = Id::generate();
 
         let frequency = AudioParameter::new(frequency, command_queue.clone());
@@ -47,21 +48,21 @@ impl Oscillator {
     fn process_oscillator(
         frequency: ParameterValue,
         gain: ParameterValue,
-    ) -> impl FnMut(&mut dyn AudioBuffer) {
-        let mut phase = 0.0f32;
+    ) -> impl FnMut(&mut dyn AudioBuffer, &Timestamp) {
+        let mut phase = 0.0;
 
-        move |output: &mut dyn AudioBuffer| {
-            let sample_rate = output.sample_rate() as f32;
+        move |output: &mut dyn AudioBuffer, _time: &Timestamp| {
+            let sample_rate = output.sample_rate() as f64;
             let frequency = frequency.load(Ordering::Acquire);
             let gain = gain.load(Ordering::Acquire);
 
             for frame in 0..output.num_frames() {
                 phase += 1.0;
 
-                let value = gain * (std::f32::consts::TAU * frequency * phase / sample_rate).sin();
+                let value = gain * (std::f64::consts::TAU * frequency * phase / sample_rate).sin();
                 for channel in 0..output.num_channels() {
                     let location = SampleLocation { channel, frame };
-                    output.set_sample(&location, value);
+                    output.set_sample(&location, value as f32);
                 }
             }
         }

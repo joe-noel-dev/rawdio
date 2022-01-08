@@ -58,8 +58,13 @@ impl AudioProcess for Processor {
             return;
         }
 
-        if let Some(dsp) = self.dsps.get_mut(&Id::with_value(0)) {
-            (dsp.process)(data);
+        let current_time = self.current_time();
+        for (_, parameter) in self.parameters.all_mut() {
+            parameter.jump_to_time(&current_time);
+        }
+
+        for (_, dsp) in self.dsps.all_mut() {
+            (dsp.process)(data, &current_time);
         }
 
         self.update_position(data.num_frames());
@@ -80,6 +85,9 @@ impl Processor {
                 Command::SetValueImmediate((id, value)) => {
                     self.set_parameter_value_immediate(id, value)
                 }
+                Command::LinearRampToValue((id, value, time)) => {
+                    self.linear_ramp_to_value(id, value, time)
+                }
             }
         }
     }
@@ -92,10 +100,12 @@ impl Processor {
         self.sample_position += num_samples;
     }
 
+    fn current_time(&self) -> Timestamp {
+        Timestamp::from_seconds(self.sample_position as f64 / self.sample_rate as f64)
+    }
+
     fn notify_position(&mut self) {
-        let timestamp =
-            Timestamp::with_seconds(self.sample_position as f64 / self.sample_rate as f64);
-        self.send_notficiation(Notification::Position(timestamp));
+        self.send_notficiation(Notification::Position(self.current_time()));
     }
 
     fn add_dsp(&mut self, dsp: Box<Dsp>) {
@@ -110,7 +120,8 @@ impl Processor {
         }
     }
 
-    fn add_parameter(&mut self, audio_parameter: Box<RealtimeAudioParameter>) {
+    fn add_parameter(&mut self, mut audio_parameter: Box<RealtimeAudioParameter>) {
+        audio_parameter.jump_to_time(&self.current_time());
         self.parameters
             .add(audio_parameter.get_id(), audio_parameter);
     }
@@ -123,9 +134,15 @@ impl Processor {
         }
     }
 
-    fn set_parameter_value_immediate(&mut self, id: Id, value: f32) {
+    fn set_parameter_value_immediate(&mut self, id: Id, value: f64) {
         if let Some(parameter) = self.parameters.get_mut(&id) {
             parameter.set_value(value);
+        }
+    }
+
+    fn linear_ramp_to_value(&mut self, id: Id, value: f64, time: Timestamp) {
+        if let Some(parameter) = self.parameters.get_mut(&id) {
+            parameter.add_parameter_change(value, time);
         }
     }
 }

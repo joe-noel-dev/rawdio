@@ -29,4 +29,12 @@ where
     pub fn remove(&mut self, id: &KeyType) -> Option<Box<ValueType>> {
         self.items.remove(id)
     }
+
+    pub fn all(&self) -> impl Iterator<Item = (&KeyType, &Box<ValueType>)> {
+        self.items.iter()
+    }
+
+    pub fn all_mut(&mut self) -> impl Iterator<Item = (&KeyType, &mut Box<ValueType>)> {
+        self.items.iter_mut()
+    }
 }

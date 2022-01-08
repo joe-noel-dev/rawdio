@@ -1,4 +1,4 @@
-use crate::graph::dsp::Dsp;
+use crate::{graph::dsp::Dsp, timestamp::Timestamp};
 
 use super::id::Id;
 use crate::parameter::RealtimeAudioParameter;
@@ -13,5 +13,6 @@ pub enum Command {
     AddParameter(Box<RealtimeAudioParameter>),
     RemoveParameter(Id),
 
-    SetValueImmediate((Id, f32)),
+    SetValueImmediate((Id, f64)),
+    LinearRampToValue((Id, f64, Timestamp)),
 }

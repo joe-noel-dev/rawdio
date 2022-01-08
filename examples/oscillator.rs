@@ -18,8 +18,12 @@ fn main() {
         context.start();
         thread::sleep(time::Duration::from_secs(3));
 
-        oscillator.frequency.set_value_immediate(220.0);
-        thread::sleep(time::Duration::from_secs(3));
+        context.process_notifications();
+
+        oscillator
+            .frequency
+            .linear_ramp_to_value(220.0, context.current_time().incremented_by_seconds(3.0));
+        thread::sleep(time::Duration::from_secs(4));
 
         context.process_notifications();
         context.stop();
