@@ -13,20 +13,20 @@ use crate::{
     utility::audio_buffer::{AudioBuffer, SampleLocation},
 };
 
-pub struct Oscillator {
+pub struct OscillatorNode {
     command_queue: Sender<Command>,
     id: Id,
     pub frequency: AudioParameter,
     pub gain: AudioParameter,
 }
 
-impl Node for Oscillator {
+impl Node for OscillatorNode {
     fn get_id(&self) -> Id {
         self.id
     }
 }
 
-impl Oscillator {
+impl OscillatorNode {
     pub fn new(command_queue: Sender<Command>, frequency: f64) -> Self {
         let id = Id::generate();
 
@@ -88,7 +88,7 @@ impl Oscillator {
     }
 }
 
-impl Drop for Oscillator {
+impl Drop for OscillatorNode {
     fn drop(&mut self) {
         let _ = self.command_queue.send(Command::RemoveDsp(self.id));
     }
