@@ -266,4 +266,26 @@ mod tests {
 
         assert!(!graph.is_connected_to(&source_id, &destination_id));
     }
+
+    #[test]
+    fn replaces_connections() {
+        let source_id = Id::generate();
+        let destination_id = Id::generate();
+        let other_id = Id::generate();
+
+        let mut graph = DspGraph::default();
+
+        graph.add_connection(Connection {
+            source_id,
+            destination_id,
+        });
+
+        graph.add_connection(Connection {
+            source_id,
+            destination_id: other_id,
+        });
+
+        assert!(!graph.is_connected_to(&source_id, &destination_id));
+        assert!(graph.is_connected_to(&source_id, &other_id));
+    }
 }
