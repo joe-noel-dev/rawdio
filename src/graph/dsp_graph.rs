@@ -25,6 +25,8 @@ pub struct DspGraph {
 
 impl DspGraph {
     pub fn process(&mut self, output_buffer: &mut dyn AudioBuffer, start_time: &Timestamp) {
+        output_buffer.clear();
+
         let output_connection = match self.output_connection.clone() {
             Some(connection) => connection,
             None => return,
@@ -88,11 +90,18 @@ impl DspGraph {
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
     ) {
-        if let Some(dsp) = self.dsps.borrow().get(dsp_id) {
-            for connection in dsp.all_connections().flatten() {
-                self.process_connection(&connection.from_id, output_buffer, start_time);
-            }
-        }
+        // FIXME: Allocation to get around the borrow checker
+
+        let ids: Vec<Id> = self
+            .dsps
+            .borrow()
+            .all()
+            .filter(|(_, dsp)| dsp.is_connected_to(dsp_id))
+            .map(|(id, _)| *id)
+            .collect();
+
+        ids.iter()
+            .for_each(|id| self.process_connection(id, output_buffer, start_time));
     }
 
     fn process_connection(
@@ -193,5 +202,42 @@ mod tests {
         graph.process(&mut audio_buffer, &Timestamp::default());
 
         assert_eq!(frame_count.load(Ordering::Acquire), num_frames);
+    }
+
+    #[test]
+    fn renders_chain() {
+        let frame_count_1 = Arc::new(AtomicUsize::new(0));
+        let frame_count_2 = Arc::new(AtomicUsize::new(0));
+
+        let dsp_1 = make_dsp(frame_count_1.clone());
+        let dsp_2 = make_dsp(frame_count_2.clone());
+
+        let dsp_id_1 = dsp_1.get_id();
+        let dsp_id_2 = dsp_2.get_id();
+
+        let mut graph = DspGraph::default();
+
+        graph.add_dsp(dsp_1);
+        graph.add_dsp(dsp_2);
+
+        let num_frames = 128;
+
+        graph.connect_to_output(OutputConnection {
+            from_id: dsp_id_2,
+            output_index: 0,
+        });
+
+        graph.add_connection(Connection {
+            from_id: dsp_id_1,
+            output_index: 0,
+            to_id: dsp_id_2,
+            input_index: 0,
+        });
+
+        let mut audio_buffer = OwnedAudioBuffer::new(num_frames, 2, 44100);
+        graph.process(&mut audio_buffer, &Timestamp::default());
+
+        assert_eq!(frame_count_1.load(Ordering::Acquire), num_frames);
+        assert_eq!(frame_count_2.load(Ordering::Acquire), num_frames);
     }
 }
