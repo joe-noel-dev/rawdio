@@ -1,4 +1,7 @@
-use crate::{graph::dsp::Dsp, parameter::ParameterChange};
+use crate::{
+    graph::{connection::Connection, dsp::Dsp},
+    parameter::ParameterChange,
+};
 
 use super::id::Id;
 
@@ -16,4 +19,7 @@ pub enum Command {
     RemoveDsp(Id),
 
     ParameterValueChange(ParameterChangeRequest),
+
+    AddConnection(Connection),
+    RemoveConnection(Connection),
 }

@@ -1,22 +1,32 @@
 use crate::commands::{command::Command, id::Id};
-
-use super::dsp::{Dsp, DspParameterMap, DspProcessor};
 use lockfree::channel::mpsc::Sender;
+
+use super::connection::Connection;
 
 pub trait Node {
     fn get_id(&self) -> Id;
-}
 
-pub fn add_dsp(
-    id: Id,
-    processor: Box<dyn DspProcessor + Send + Sync>,
-    parameters: DspParameterMap,
-    command_queue: Sender<Command>,
-) {
-    let dsp = Dsp::new(id, processor, parameters);
-    let _ = command_queue.send(Command::AddDsp(Box::new(dsp)));
-}
+    fn get_command_queue(&self) -> Sender<Command>;
 
-pub fn remove_dsp(id: Id, command_queue: Sender<Command>) {
-    let _ = command_queue.send(Command::RemoveDsp(id));
+    fn connect_to(&self, id: Id) {
+        let _ = self
+            .get_command_queue()
+            .send(Command::AddConnection(Connection {
+                from_id: self.get_id(),
+                output_index: 0,
+                to_id: id,
+                input_index: 0,
+            }));
+    }
+
+    fn disconnect_from(&self, id: Id) {
+        let _ = self
+            .get_command_queue()
+            .send(Command::AddConnection(Connection {
+                from_id: self.get_id(),
+                output_index: 0,
+                to_id: id,
+                input_index: 0,
+            }));
+    }
 }

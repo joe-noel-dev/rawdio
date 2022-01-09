@@ -6,7 +6,7 @@ use crate::{
         id::Id,
         notification::Notification,
     },
-    graph::dsp::Dsp,
+    graph::{connection::Connection, dsp::Dsp},
     timestamp::Timestamp,
     utility::pool::Pool,
 };
@@ -90,12 +90,16 @@ impl Processor {
             match command {
                 Command::Start => self.started = true,
                 Command::Stop => self.started = false,
+
                 Command::AddDsp(dsp) => self.add_dsp(dsp),
                 Command::RemoveDsp(id) => self.remove_dsp(id),
 
                 Command::ParameterValueChange(change_request) => {
                     self.request_parameter_change(change_request)
                 }
+
+                Command::AddConnection(connection) => self.add_connection(connection),
+                Command::RemoveConnection(connection) => self.remove_connection(connection),
             }
         }
     }
@@ -131,6 +135,18 @@ impl Processor {
     fn request_parameter_change(&mut self, change_request: ParameterChangeRequest) {
         if let Some(dsp) = self.dsps.get_mut(&change_request.dsp_id) {
             dsp.request_parameter_change(change_request);
+        }
+    }
+
+    fn add_connection(&mut self, connection: Connection) {
+        if let Some(dsp) = self.dsps.get_mut(&connection.from_id) {
+            dsp.add_connection(connection);
+        }
+    }
+
+    fn remove_connection(&mut self, connection: Connection) {
+        if let Some(dsp) = self.dsps.get_mut(&connection.from_id) {
+            dsp.remove_connection(connection);
         }
     }
 }

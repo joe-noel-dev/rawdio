@@ -7,7 +7,7 @@ use crate::{
     commands::{command::Command, id::Id},
     graph::{
         dsp::{Dsp, DspParameterMap, DspProcessor},
-        node::{self, Node},
+        node::Node,
     },
     parameter::AudioParameter,
     timestamp::Timestamp,
@@ -24,6 +24,10 @@ impl Node for OscillatorNode {
     fn get_id(&self) -> Id {
         self.id
     }
+
+    fn get_command_queue(&self) -> Sender<Command> {
+        self.command_queue.clone()
+    }
 }
 
 impl OscillatorNode {
@@ -38,12 +42,14 @@ impl OscillatorNode {
         let (gain, realtime_gain) = AudioParameter::new(id, 1.0, 0.0, 2.0, command_queue.clone());
         parameters.insert(realtime_gain.get_id(), realtime_gain);
 
-        node::add_dsp(
+        let dsp = Dsp::new(
             id,
             Box::new(OscillatorDspProcess::new(frequency.get_id(), gain.get_id())),
             parameters,
-            command_queue.clone(),
+            1,
         );
+
+        Dsp::add_to_audio_process(dsp, &command_queue);
 
         Self {
             command_queue,
@@ -56,7 +62,7 @@ impl OscillatorNode {
 
 impl Drop for OscillatorNode {
     fn drop(&mut self) {
-        node::remove_dsp(self.id, self.command_queue.clone());
+        Dsp::remove_from_audio_process(self.id, &self.command_queue);
     }
 }
 
