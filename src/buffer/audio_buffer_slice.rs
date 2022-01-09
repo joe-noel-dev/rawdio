@@ -33,7 +33,7 @@ impl<'a> AudioBuffer for AudioBufferSlice<'a> {
     }
 
     fn num_frames(&self) -> usize {
-        self.buffer.num_frames() - self.offset
+        self.num_frames
     }
 
     fn sample_rate(&self) -> u32 {

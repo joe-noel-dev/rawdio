@@ -17,6 +17,9 @@ use lockfree::channel::{
 
 use super::garbage_collector::{run_garbage_collector, GarbageCollectionCommand};
 
+const MAXIMUM_NUMBER_OF_FRAMES: usize = 1024;
+const MAXIMUM_NUMBER_OF_CHANNELS: usize = 2;
+
 pub struct Processor {
     started: bool,
     sample_rate: usize,
@@ -52,6 +55,8 @@ impl Processor {
 
 impl AudioProcess for Processor {
     fn process(&mut self, data: &mut dyn AudioBuffer) {
+        assert!(data.num_frames() <= self.get_maximum_number_of_frames());
+
         data.clear();
 
         self.process_commands();
@@ -68,6 +73,14 @@ impl AudioProcess for Processor {
 
         self.update_position(data.num_frames());
         self.notify_position();
+    }
+
+    fn get_maximum_number_of_frames(&self) -> usize {
+        MAXIMUM_NUMBER_OF_FRAMES
+    }
+
+    fn get_maximum_number_of_channel(&self) -> usize {
+        MAXIMUM_NUMBER_OF_CHANNELS
     }
 }
 
