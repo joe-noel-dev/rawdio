@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use crate::{
+    buffer::audio_buffer::AudioBuffer,
     commands::{command::ParameterChangeRequest, id::Id},
     parameter::RealtimeAudioParameter,
     timestamp::Timestamp,
-    utility::audio_buffer::AudioBuffer,
 };
 
 pub type DspParameterMap = HashMap<Id, RealtimeAudioParameter>;

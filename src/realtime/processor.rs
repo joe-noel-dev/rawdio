@@ -1,5 +1,6 @@
 use crate::{
     audio_process::AudioProcess,
+    buffer::audio_buffer::AudioBuffer,
     commands::{
         command::{Command, ParameterChangeRequest},
         id::Id,
@@ -7,7 +8,7 @@ use crate::{
     },
     graph::dsp::Dsp,
     timestamp::Timestamp,
-    utility::{audio_buffer::AudioBuffer, pool::Pool},
+    utility::pool::Pool,
 };
 use lockfree::channel::{
     mpsc::Receiver,

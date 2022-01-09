@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use lockfree::channel::mpsc::Sender;
 
 use crate::{
+    buffer::{audio_buffer::AudioBuffer, sample_location::SampleLocation},
     commands::{command::Command, id::Id},
     graph::{
         dsp::{Dsp, DspParameterMap, DspProcessor},
@@ -10,7 +11,6 @@ use crate::{
     },
     parameter::AudioParameter,
     timestamp::Timestamp,
-    utility::audio_buffer::{AudioBuffer, SampleLocation},
 };
 
 pub struct OscillatorNode {

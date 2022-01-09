@@ -2,7 +2,9 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Host, Stream,
 };
-use rust_audio_engine::{audio_process::AudioProcess, utility::audio_buffer::BorrowedAudioBuffer};
+use rust_audio_engine::{
+    audio_process::AudioProcess, buffer::borrowed_audio_buffer::BorrowedAudioBuffer,
+};
 
 const SAMPLE_RATE: u32 = 44100;
 

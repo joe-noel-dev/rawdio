@@ -1,4 +1,5 @@
 pub mod audio_process;
+pub mod buffer;
 pub mod commands;
 pub mod context;
 pub mod graph;
