@@ -1,7 +1,10 @@
 use std::{thread, time};
 
 use rust_audio_engine::{
-    context::Context, graph::node::Node, nodes::oscillator::OscillatorNode, timestamp::Timestamp,
+    context::Context,
+    graph::node::Node,
+    nodes::{gain::GainNode, oscillator::OscillatorNode},
+    timestamp::Timestamp,
 };
 
 use crate::audio_callback::AudioCallback;
@@ -14,20 +17,19 @@ fn main() {
     let _audio_callack = AudioCallback::new(context.get_audio_process());
 
     {
-        let mut oscillator = OscillatorNode::new(context.get_command_queue(), 432.0);
+        let oscillator = OscillatorNode::new(context.get_command_queue(), 440.0);
+        let mut gain = GainNode::new(context.get_command_queue());
 
-        oscillator.connect_to_output();
+        oscillator.connect_to(gain.get_id());
+        gain.connect_to_output();
 
-        oscillator
-            .gain
+        gain.gain
             .set_value_at_time(0.5, Timestamp::from_seconds(0.0));
 
-        oscillator
-            .gain
-            .linear_ramp_to_value(0.6, Timestamp::from_seconds(2.0));
+        gain.gain
+            .linear_ramp_to_value(0.9, Timestamp::from_seconds(2.0));
 
-        oscillator
-            .gain
+        gain.gain
             .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
 
         context.start();

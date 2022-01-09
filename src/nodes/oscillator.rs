@@ -30,16 +30,27 @@ impl Node for OscillatorNode {
     }
 }
 
+const MIN_GAIN: f64 = -2.0;
+const MAX_GAIN: f64 = 2.0;
+const MIN_FREQUENCY: f64 = 20.0;
+const MAX_FREQUENCY: f64 = 20000.0;
+
 impl OscillatorNode {
     pub fn new(command_queue: Sender<Command>, frequency: f64) -> Self {
         let id = Id::generate();
 
         let mut parameters = HashMap::new();
-        let (frequency, realtime_frequency) =
-            AudioParameter::new(id, frequency, 20.0, 20000.0, command_queue.clone());
+        let (frequency, realtime_frequency) = AudioParameter::new(
+            id,
+            frequency,
+            MIN_FREQUENCY,
+            MAX_FREQUENCY,
+            command_queue.clone(),
+        );
         parameters.insert(realtime_frequency.get_id(), realtime_frequency);
 
-        let (gain, realtime_gain) = AudioParameter::new(id, 1.0, 0.0, 2.0, command_queue.clone());
+        let (gain, realtime_gain) =
+            AudioParameter::new(id, MIN_GAIN, MAX_GAIN, 2.0, command_queue.clone());
         parameters.insert(realtime_gain.get_id(), realtime_gain);
 
         let dsp = Dsp::new(
