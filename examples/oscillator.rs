@@ -1,6 +1,8 @@
 use std::{thread, time};
 
-use rust_audio_engine::{context::Context, osc::oscillator::OscillatorNode, timestamp::Timestamp};
+use rust_audio_engine::{
+    context::Context, nodes::oscillator::OscillatorNode, timestamp::Timestamp,
+};
 
 use crate::audio_callback::AudioCallback;
 
