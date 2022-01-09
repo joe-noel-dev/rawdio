@@ -17,6 +17,8 @@ pub struct AudioParameter {
     dsp_id: Id,
     parameter_id: Id,
     value: ParameterValue,
+    minimum_value: f64,
+    maximum_value: f64,
     command_queue: Sender<Command>,
 }
 
@@ -45,8 +47,13 @@ impl AudioParameter {
     pub fn new(
         dsp_id: Id,
         initial_value: f64,
+        minimum_value: f64,
+        maximum_value: f64,
         command_queue: Sender<Command>,
     ) -> (Self, RealtimeAudioParameter) {
+        assert!((minimum_value..maximum_value).contains(&initial_value));
+        assert!(minimum_value < maximum_value);
+
         let parameter_id = Id::generate();
         let param_value = ParameterValue::new(AtomicF64::new(initial_value));
         let realtime_audio_param = RealtimeAudioParameter::new(parameter_id, param_value.clone());
@@ -56,6 +63,8 @@ impl AudioParameter {
                 dsp_id,
                 parameter_id,
                 value: param_value,
+                minimum_value,
+                maximum_value,
                 command_queue,
             },
             realtime_audio_param,
@@ -70,7 +79,8 @@ impl AudioParameter {
         self.value.clone()
     }
 
-    pub fn set_value_immediate(&mut self, value: f64, at_time: Timestamp) {
+    pub fn set_value_immediate(&mut self, mut value: f64, at_time: Timestamp) {
+        value = value.clamp(self.minimum_value, self.maximum_value);
         let _ = self
             .command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {
@@ -84,7 +94,8 @@ impl AudioParameter {
             }));
     }
 
-    pub fn linear_ramp_to_value(&mut self, value: f64, end_time: Timestamp) {
+    pub fn linear_ramp_to_value(&mut self, mut value: f64, end_time: Timestamp) {
+        value = value.clamp(self.minimum_value, self.maximum_value);
         let _ = self
             .command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {

@@ -32,10 +32,10 @@ impl OscillatorNode {
 
         let mut parameters = HashMap::new();
         let (frequency, realtime_frequency) =
-            AudioParameter::new(id, frequency, command_queue.clone());
+            AudioParameter::new(id, frequency, 20.0, 20000.0, command_queue.clone());
         parameters.insert(realtime_frequency.get_id(), realtime_frequency);
 
-        let (gain, realtime_gain) = AudioParameter::new(id, 1.0, command_queue.clone());
+        let (gain, realtime_gain) = AudioParameter::new(id, 1.0, 0.0, 2.0, command_queue.clone());
         parameters.insert(realtime_gain.get_id(), realtime_gain);
 
         let processor = OscillatorDspProcess::new(frequency.get_id(), gain.get_id());
