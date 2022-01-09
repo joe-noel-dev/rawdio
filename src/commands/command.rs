@@ -1,5 +1,8 @@
 use crate::{
-    graph::{connection::Connection, dsp::Dsp},
+    graph::{
+        connection::{Connection, OutputConnection},
+        dsp::Dsp,
+    },
     parameter::ParameterChange,
 };
 
@@ -22,4 +25,5 @@ pub enum Command {
 
     AddConnection(Connection),
     RemoveConnection(Connection),
+    ConnectToOutput(OutputConnection),
 }

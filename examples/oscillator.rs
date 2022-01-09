@@ -1,7 +1,7 @@
 use std::{thread, time};
 
 use rust_audio_engine::{
-    context::Context, nodes::oscillator::OscillatorNode, timestamp::Timestamp,
+    context::Context, graph::node::Node, nodes::oscillator::OscillatorNode, timestamp::Timestamp,
 };
 
 use crate::audio_callback::AudioCallback;
@@ -15,6 +15,9 @@ fn main() {
 
     {
         let mut oscillator = OscillatorNode::new(context.get_command_queue(), 432.0);
+
+        oscillator.connect_to_output();
+
         oscillator
             .gain
             .set_value_at_time(0.5, Timestamp::from_seconds(0.0));

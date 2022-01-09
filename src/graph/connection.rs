@@ -7,3 +7,8 @@ pub struct Connection {
     pub to_id: Id,
     pub input_index: usize,
 }
+
+pub struct OutputConnection {
+    pub from_id: Id,
+    pub output_index: usize,
+}

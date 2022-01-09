@@ -6,7 +6,10 @@ use crate::{
         id::Id,
         notification::Notification,
     },
-    graph::{connection::Connection, dsp::Dsp},
+    graph::{
+        connection::{Connection, OutputConnection},
+        dsp::Dsp,
+    },
     timestamp::Timestamp,
     utility::pool::Pool,
 };
@@ -28,6 +31,7 @@ pub struct Processor {
     garbase_collection_tx: Sender<GarbageCollectionCommand>,
     sample_position: usize,
     dsps: Pool<Id, Dsp>,
+    output_connection: Option<OutputConnection>,
 }
 
 impl Processor {
@@ -47,8 +51,8 @@ impl Processor {
             notification_tx,
             garbase_collection_tx,
             sample_position: 0,
-
             dsps: Pool::new(64),
+            output_connection: None,
         }
     }
 }
@@ -100,6 +104,9 @@ impl Processor {
 
                 Command::AddConnection(connection) => self.add_connection(connection),
                 Command::RemoveConnection(connection) => self.remove_connection(connection),
+                Command::ConnectToOutput(output_connection) => {
+                    self.connect_to_output(output_connection)
+                }
             }
         }
     }
@@ -148,5 +155,9 @@ impl Processor {
         if let Some(dsp) = self.dsps.get_mut(&connection.from_id) {
             dsp.remove_connection(connection);
         }
+    }
+
+    fn connect_to_output(&mut self, output_connection: OutputConnection) {
+        self.output_connection = Some(output_connection);
     }
 }
