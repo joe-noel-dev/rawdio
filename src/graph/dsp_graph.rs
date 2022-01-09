@@ -18,7 +18,7 @@ use super::{
 };
 
 pub struct DspGraph {
-    dsps: RefCell<Pool<Id, Dsp>>,
+    dsps: Pool<Id, RefCell<Dsp>>,
     output_connection: Option<OutputConnection>,
     garbase_collection_tx: Sender<GarbageCollectionCommand>,
 }
@@ -35,12 +35,13 @@ impl DspGraph {
         self.process_connection(&output_connection.from_id, output_buffer, start_time);
     }
 
-    pub fn add_dsp(&mut self, dsp: Box<Dsp>) {
-        self.dsps.borrow_mut().add(dsp.get_id(), dsp);
+    pub fn add_dsp(&mut self, dsp: RefCell<Dsp>) {
+        let id = dsp.borrow().get_id();
+        self.dsps.add(id, dsp);
     }
 
     pub fn remove_dsp(&mut self, id: Id) {
-        if let Some(dsp) = self.dsps.borrow_mut().remove(&id) {
+        if let Some(dsp) = self.dsps.remove(&id) {
             let _ = self
                 .garbase_collection_tx
                 .send(GarbageCollectionCommand::DisposeDsp(dsp));
@@ -48,20 +49,20 @@ impl DspGraph {
     }
 
     pub fn request_parameter_change(&mut self, change_request: ParameterChangeRequest) {
-        if let Some(dsp) = self.dsps.borrow_mut().get_mut(&change_request.dsp_id) {
-            dsp.request_parameter_change(change_request);
+        if let Some(dsp) = self.dsps.get_mut(&change_request.dsp_id) {
+            dsp.borrow_mut().request_parameter_change(change_request);
         }
     }
 
     pub fn add_connection(&mut self, connection: Connection) {
-        if let Some(dsp) = self.dsps.borrow_mut().get_mut(&connection.from_id) {
-            dsp.add_connection(connection);
+        if let Some(dsp) = self.dsps.get_mut(&connection.from_id) {
+            dsp.borrow_mut().add_connection(connection);
         }
     }
 
     pub fn remove_connection(&mut self, connection: Connection) {
-        if let Some(dsp) = self.dsps.borrow_mut().get_mut(&connection.from_id) {
-            dsp.remove_connection(connection);
+        if let Some(dsp) = self.dsps.get_mut(&connection.from_id) {
+            dsp.borrow_mut().remove_connection(connection);
         }
     }
 
@@ -75,13 +76,12 @@ impl DspGraph {
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
     ) {
-        let mut dsps = self.dsps.borrow_mut();
-        let dsp = match dsps.get_mut(dsp_id) {
+        let dsp = match self.dsps.get(dsp_id) {
             Some(dsp) => dsp,
             None => return,
         };
 
-        dsp.process_audio(output_buffer, start_time);
+        dsp.borrow_mut().process_audio(output_buffer, start_time);
     }
 
     fn process_dependencies(
@@ -90,18 +90,10 @@ impl DspGraph {
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
     ) {
-        // FIXME: Allocation to get around the borrow checker
-
-        let ids: Vec<Id> = self
-            .dsps
-            .borrow()
+        self.dsps
             .all()
-            .filter(|(_, dsp)| dsp.is_connected_to(dsp_id))
-            .map(|(id, _)| *id)
-            .collect();
-
-        ids.iter()
-            .for_each(|id| self.process_connection(id, output_buffer, start_time));
+            .filter(|(_, dsp)| dsp.borrow().is_connected_to(dsp_id))
+            .for_each(|(id, _)| self.process_connection(id, output_buffer, start_time));
     }
 
     fn process_connection(
@@ -121,7 +113,7 @@ impl Default for DspGraph {
         run_garbage_collector(garbage_collection_rx);
 
         Self {
-            dsps: RefCell::new(Pool::new(64)),
+            dsps: Pool::new(64),
             output_connection: None,
             garbase_collection_tx,
         }
@@ -167,11 +159,11 @@ mod tests {
         }
     }
 
-    fn make_dsp(frame_count: Arc<AtomicUsize>) -> Box<Dsp> {
+    fn make_dsp(frame_count: Arc<AtomicUsize>) -> RefCell<Dsp> {
         let processor = Box::new(Processor::new(frame_count));
         let parameters = DspParameterMap::new();
         let number_of_outputs = 1;
-        Box::new(Dsp::new(
+        RefCell::new(Dsp::new(
             Id::generate(),
             processor,
             parameters,
@@ -183,7 +175,7 @@ mod tests {
     fn renders_when_connected_to_output() {
         let frame_count = Arc::new(AtomicUsize::new(0));
         let dsp = make_dsp(frame_count.clone());
-        let dsp_id = dsp.get_id();
+        let dsp_id = dsp.borrow().get_id();
         let mut graph = DspGraph::default();
         graph.add_dsp(dsp);
 
@@ -212,8 +204,8 @@ mod tests {
         let dsp_1 = make_dsp(frame_count_1.clone());
         let dsp_2 = make_dsp(frame_count_2.clone());
 
-        let dsp_id_1 = dsp_1.get_id();
-        let dsp_id_2 = dsp_2.get_id();
+        let dsp_id_1 = dsp_1.borrow().get_id();
+        let dsp_id_2 = dsp_2.borrow().get_id();
 
         let mut graph = DspGraph::default();
 

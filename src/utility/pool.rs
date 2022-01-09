@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 pub struct Pool<KeyType, ValueType> {
-    items: HashMap<KeyType, Box<ValueType>>,
+    items: HashMap<KeyType, ValueType>,
 }
 
 impl<KeyType, ValueType> Pool<KeyType, ValueType>
@@ -15,26 +15,26 @@ where
     }
 
     pub fn get(&self, id: &KeyType) -> Option<&ValueType> {
-        self.items.get(id).map(|value| value.as_ref())
+        self.items.get(id)
     }
 
     pub fn get_mut(&mut self, id: &KeyType) -> Option<&mut ValueType> {
-        self.items.get_mut(id).map(|value| value.as_mut())
+        self.items.get_mut(id)
     }
 
-    pub fn add(&mut self, id: KeyType, item: Box<ValueType>) {
+    pub fn add(&mut self, id: KeyType, item: ValueType) {
         self.items.insert(id, item);
     }
 
-    pub fn remove(&mut self, id: &KeyType) -> Option<Box<ValueType>> {
+    pub fn remove(&mut self, id: &KeyType) -> Option<ValueType> {
         self.items.remove(id)
     }
 
-    pub fn all(&self) -> impl Iterator<Item = (&KeyType, &Box<ValueType>)> {
+    pub fn all(&self) -> impl Iterator<Item = (&KeyType, &ValueType)> {
         self.items.iter()
     }
 
-    pub fn all_mut(&mut self) -> impl Iterator<Item = (&KeyType, &mut Box<ValueType>)> {
+    pub fn all_mut(&mut self) -> impl Iterator<Item = (&KeyType, &mut ValueType)> {
         self.items.iter_mut()
     }
 }

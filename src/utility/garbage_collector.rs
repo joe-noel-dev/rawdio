@@ -1,11 +1,11 @@
-use std::{thread, time};
+use std::{cell::RefCell, thread, time};
 
 use lockfree::channel::{spsc::Receiver, RecvErr};
 
 use crate::graph::dsp::Dsp;
 
 pub enum GarbageCollectionCommand {
-    DisposeDsp(Box<Dsp>),
+    DisposeDsp(RefCell<Dsp>),
 }
 
 pub fn run_garbage_collector(mut receive_channel: Receiver<GarbageCollectionCommand>) {
@@ -21,7 +21,7 @@ pub fn run_garbage_collector(mut receive_channel: Receiver<GarbageCollectionComm
 fn handle_garabage_collection_event(command: GarbageCollectionCommand) {
     match command {
         GarbageCollectionCommand::DisposeDsp(dsp) => {
-            println!("Destroying DSP with ID: {:?}", dsp.get_id())
+            println!("Destroying DSP with ID: {:?}", dsp.borrow().get_id())
         }
     }
 }

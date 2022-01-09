@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+
 use crate::{
     graph::{
         connection::{Connection, OutputConnection},
@@ -18,7 +20,7 @@ pub enum Command {
     Start,
     Stop,
 
-    AddDsp(Box<Dsp>),
+    AddDsp(RefCell<Dsp>),
     RemoveDsp(Id),
 
     ParameterValueChange(ParameterChangeRequest),
