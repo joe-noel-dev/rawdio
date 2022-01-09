@@ -17,7 +17,7 @@ fn main() {
         let mut oscillator = OscillatorNode::new(context.get_command_queue(), 432.0);
         oscillator
             .gain
-            .set_value_immediate(0.5, Timestamp::from_seconds(0.0));
+            .set_value_at_time(0.5, Timestamp::from_seconds(0.0));
 
         oscillator
             .gain

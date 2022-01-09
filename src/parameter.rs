@@ -79,7 +79,7 @@ impl AudioParameter {
         self.value.clone()
     }
 
-    pub fn set_value_immediate(&mut self, mut value: f64, at_time: Timestamp) {
+    pub fn set_value_at_time(&mut self, mut value: f64, at_time: Timestamp) {
         value = value.clamp(self.minimum_value, self.maximum_value);
         let _ = self
             .command_queue
@@ -149,40 +149,59 @@ impl RealtimeAudioParameter {
     }
 
     pub fn get_value_at_time(&self, time: &Timestamp) -> f64 {
-        let mut previous_value = self.last_value;
-        let mut start_time = self.last_change;
+        let (previous_change, next_change) = self.get_next_parameter_change_after(time);
+
+        if let Some(next_change) = next_change {
+            return Self::get_next_value(previous_change, next_change, time);
+        }
+
+        previous_change.value
+    }
+
+    fn get_next_parameter_change_after(
+        &self,
+        time: &Timestamp,
+    ) -> (ParameterChange, Option<ParameterChange>) {
+        let mut previous_change = ParameterChange {
+            value: self.last_value,
+            end_time: self.last_change,
+            method: ValueChangeMethod::Immediate,
+        };
 
         let mut next_change: Option<ParameterChange> = None;
 
         for change in self.parameter_changes.iter() {
             if change.end_time <= *time {
-                previous_value = change.value;
-                start_time = change.end_time;
+                previous_change = *change;
             } else {
                 next_change = Some(*change);
                 break;
             }
         }
 
-        if let Some(change) = next_change {
-            return match change.method {
-                ValueChangeMethod::Immediate => {
-                    if change.end_time <= *time {
-                        change.value
-                    } else {
-                        previous_value
-                    }
-                }
-                ValueChangeMethod::Linear => {
-                    let a = (change.value - previous_value)
-                        / (change.end_time.get_seconds() - start_time.get_seconds());
-                    let b = previous_value - a * start_time.get_seconds();
-                    a * time.get_seconds() + b
-                }
-            };
-        }
+        (previous_change, next_change)
+    }
 
-        previous_value
+    fn get_next_value(
+        previous_change: ParameterChange,
+        next_change: ParameterChange,
+        time: &Timestamp,
+    ) -> f64 {
+        match next_change.method {
+            ValueChangeMethod::Immediate => {
+                if next_change.end_time <= *time {
+                    next_change.value
+                } else {
+                    previous_change.value
+                }
+            }
+            ValueChangeMethod::Linear => {
+                let a = (next_change.value - previous_change.value)
+                    / (next_change.end_time.get_seconds() - previous_change.end_time.get_seconds());
+                let b = previous_change.value - a * previous_change.end_time.get_seconds();
+                a * time.get_seconds() + b
+            }
+        }
     }
 
     pub fn set_value(&mut self, value: f64) {
