@@ -8,20 +8,31 @@ use crate::{
 };
 
 pub type DspParameterMap = HashMap<Id, RealtimeAudioParameter>;
-pub type DspProcessFn =
-    Box<dyn FnMut(&mut dyn AudioBuffer, &Timestamp, &DspParameterMap) + Send + Sync>;
 
 pub struct Dsp {
     id: Id,
-    process: DspProcessFn,
+    processor: Box<dyn DspProcessor + Send + Sync>,
     parameters: DspParameterMap,
 }
 
+pub trait DspProcessor {
+    fn process_audio(
+        &mut self,
+        output_buffer: &mut dyn AudioBuffer,
+        start_time: &Timestamp,
+        parameters: &DspParameterMap,
+    );
+}
+
 impl Dsp {
-    pub fn new(id: Id, process: DspProcessFn, parameters: DspParameterMap) -> Self {
+    pub fn new(
+        id: Id,
+        processor: Box<dyn DspProcessor + Send + Sync>,
+        parameters: DspParameterMap,
+    ) -> Self {
         Self {
             id,
-            process,
+            processor,
             parameters,
         }
     }
@@ -35,7 +46,8 @@ impl Dsp {
             parameter.set_current_time(*start_time);
         }
 
-        (self.process)(output_buffer, start_time, &self.parameters);
+        self.processor
+            .process_audio(output_buffer, start_time, &self.parameters);
     }
 
     pub fn request_parameter_change(&mut self, parameter_change: ParameterChangeRequest) {

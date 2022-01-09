@@ -5,7 +5,7 @@ use lockfree::channel::mpsc::Sender;
 use crate::{
     commands::{command::Command, id::Id},
     graph::{
-        dsp::{Dsp, DspParameterMap, DspProcessFn},
+        dsp::{Dsp, DspParameterMap, DspProcessor},
         node::Node,
     },
     parameter::AudioParameter,
@@ -38,8 +38,9 @@ impl OscillatorNode {
         let (gain, realtime_gain) = AudioParameter::new(id, 1.0, command_queue.clone());
         parameters.insert(realtime_gain.get_id(), realtime_gain);
 
-        let audio_process = Self::process_oscillator(frequency.get_id(), gain.get_id());
-        let dsp = Dsp::new(id, audio_process, parameters);
+        let processor = OscillatorDspProcess::new(frequency.get_id(), gain.get_id());
+        let dsp = Dsp::new(id, Box::new(processor), parameters);
+
         let _ = command_queue.send(Command::AddDsp(Box::new(dsp)));
 
         Self {
@@ -49,47 +50,61 @@ impl OscillatorNode {
             gain,
         }
     }
-
-    fn process_oscillator(frequency_id: Id, gain_id: Id) -> DspProcessFn {
-        let mut phase = 0.0;
-
-        Box::new(
-            move |output: &mut dyn AudioBuffer,
-                  start_time: &Timestamp,
-                  parameters: &DspParameterMap| {
-                let sample_rate = output.sample_rate() as f64;
-
-                let frequency = match parameters.get(&frequency_id) {
-                    Some(param) => param,
-                    None => return,
-                };
-
-                let gain = match parameters.get(&gain_id) {
-                    Some(param) => param,
-                    None => return,
-                };
-
-                for frame in 0..output.num_frames() {
-                    phase += 1.0;
-
-                    let frame_time = start_time.incremented_by_samples(frame, sample_rate);
-                    let frequency = frequency.get_value_at_time(&frame_time);
-                    let gain = gain.get_value_at_time(&frame_time);
-
-                    let value =
-                        gain * (std::f64::consts::TAU * frequency * phase / sample_rate).sin();
-                    for channel in 0..output.num_channels() {
-                        let location = SampleLocation { channel, frame };
-                        output.set_sample(&location, value as f32);
-                    }
-                }
-            },
-        )
-    }
 }
 
 impl Drop for OscillatorNode {
     fn drop(&mut self) {
         let _ = self.command_queue.send(Command::RemoveDsp(self.id));
+    }
+}
+
+struct OscillatorDspProcess {
+    phase: f64,
+    frequency_id: Id,
+    gain_id: Id,
+}
+
+impl OscillatorDspProcess {
+    fn new(frequency_id: Id, gain_id: Id) -> Self {
+        Self {
+            phase: 0.0,
+            frequency_id,
+            gain_id,
+        }
+    }
+}
+
+impl DspProcessor for OscillatorDspProcess {
+    fn process_audio(
+        &mut self,
+        output_buffer: &mut dyn AudioBuffer,
+        start_time: &Timestamp,
+        parameters: &DspParameterMap,
+    ) {
+        let sample_rate = output_buffer.sample_rate() as f64;
+
+        let frequency = match parameters.get(&self.frequency_id) {
+            Some(param) => param,
+            None => return,
+        };
+
+        let gain = match parameters.get(&self.gain_id) {
+            Some(param) => param,
+            None => return,
+        };
+
+        for frame in 0..output_buffer.num_frames() {
+            self.phase += 1.0;
+
+            let frame_time = start_time.incremented_by_samples(frame, sample_rate);
+            let frequency = frequency.get_value_at_time(&frame_time);
+            let gain = gain.get_value_at_time(&frame_time);
+
+            let value = gain * (std::f64::consts::TAU * frequency * self.phase / sample_rate).sin();
+            for channel in 0..output_buffer.num_channels() {
+                let location = SampleLocation { channel, frame };
+                output_buffer.set_sample(&location, value as f32);
+            }
+        }
     }
 }
