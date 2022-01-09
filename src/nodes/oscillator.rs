@@ -57,7 +57,6 @@ impl OscillatorNode {
             id,
             Box::new(OscillatorDspProcess::new(frequency.get_id(), gain.get_id())),
             parameters,
-            1,
         );
 
         Dsp::add_to_audio_process(dsp, &command_queue);

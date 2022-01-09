@@ -32,12 +32,7 @@ impl GainNode {
             AudioParameter::new(id, 1.0, MIN_GAIN, MAX_GAIN, command_queue.clone());
         parameters.insert(realtime_gain.get_id(), realtime_gain);
 
-        let dsp = Dsp::new(
-            id,
-            Box::new(GainProcessor::new(gain.get_id())),
-            parameters,
-            1,
-        );
+        let dsp = Dsp::new(id, Box::new(GainProcessor::new(gain.get_id())), parameters);
 
         Dsp::add_to_audio_process(dsp, &command_queue);
         Self {

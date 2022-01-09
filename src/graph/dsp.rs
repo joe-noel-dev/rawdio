@@ -10,8 +10,6 @@ use crate::{
     timestamp::Timestamp,
 };
 
-use super::connection::Connection;
-
 use lockfree::channel::mpsc::Sender;
 
 pub type DspParameterMap = HashMap<Id, RealtimeAudioParameter>;
@@ -20,7 +18,6 @@ pub struct Dsp {
     id: Id,
     processor: Box<dyn DspProcessor + Send + Sync>,
     parameters: DspParameterMap,
-    connections: Vec<Option<Connection>>,
 }
 
 pub trait DspProcessor {
@@ -32,20 +29,16 @@ pub trait DspProcessor {
     );
 }
 
-const EMPTY_CONNECTION: Option<Connection> = None;
-
 impl Dsp {
     pub fn new(
         id: Id,
         processor: Box<dyn DspProcessor + Send + Sync>,
         parameters: DspParameterMap,
-        number_of_outputs: usize,
     ) -> Self {
         Self {
             id,
             processor,
             parameters,
-            connections: vec![EMPTY_CONNECTION; number_of_outputs],
         }
     }
 
@@ -75,107 +68,7 @@ impl Dsp {
             parameter.add_parameter_change(parameter_change.change)
         }
     }
-
-    pub fn add_connection(&mut self, connection: Connection) {
-        assert!(connection.output_index < self.connections.len());
-        assert!(connection.from_id == self.id);
-
-        let _ = std::mem::replace(
-            &mut self.connections[connection.output_index],
-            Some(connection),
-        );
-    }
-
-    pub fn remove_connection(&mut self, connection: Connection) {
-        assert!(connection.output_index < self.connections.len());
-        assert!(connection.from_id == self.id);
-
-        let existing_connection = &self.connections[connection.output_index];
-        if let Some(existing_connection) = existing_connection {
-            if *existing_connection == connection {
-                let _ = std::mem::replace(&mut self.connections[connection.output_index], None);
-            }
-        }
-    }
-
-    pub fn is_connected_to(&self, other_id: &Id) -> bool {
-        self.connections.iter().any(|connection| {
-            if let Some(connection) = connection {
-                connection.to_id == *other_id
-            } else {
-                false
-            }
-        })
-    }
-
-    pub fn all_connections(&self) -> impl Iterator<Item = &Option<Connection>> {
-        self.connections.iter()
-    }
 }
 
 #[cfg(test)]
-mod tests {
-
-    use super::*;
-
-    struct MockProcessor {}
-
-    impl DspProcessor for MockProcessor {
-        fn process_audio(
-            &mut self,
-            _output_buffer: &mut dyn AudioBuffer,
-            _start_time: &Timestamp,
-            _parameters: &DspParameterMap,
-        ) {
-        }
-    }
-
-    fn make_dsp() -> Dsp {
-        let id = Id::generate();
-        let processor = Box::new(MockProcessor {});
-        let parameters = DspParameterMap::new();
-        let number_of_outputs = 1;
-        Dsp::new(id, processor, parameters, number_of_outputs)
-    }
-
-    #[test]
-    fn add_connection() {
-        let mut dsp = make_dsp();
-
-        let to_id = Id::generate();
-        let other_id = Id::generate();
-
-        dsp.add_connection(Connection {
-            from_id: dsp.get_id(),
-            output_index: 0,
-            to_id,
-            input_index: 0,
-        });
-
-        assert!(dsp.is_connected_to(&to_id));
-        assert!(!dsp.is_connected_to(&other_id));
-    }
-
-    #[test]
-    fn remove_connection() {
-        let mut dsp = make_dsp();
-
-        let to_id = Id::generate();
-
-        dsp.add_connection(Connection {
-            from_id: dsp.get_id(),
-            output_index: 0,
-            to_id,
-            input_index: 0,
-        });
-
-        dsp.remove_connection(Connection {
-            from_id: dsp.get_id(),
-            output_index: 0,
-            to_id,
-            input_index: 0,
-        });
-
-        assert!(!dsp.is_connected_to(&to_id));
-    }
-}
+mod tests {}

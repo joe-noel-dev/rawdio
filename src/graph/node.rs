@@ -12,8 +12,7 @@ pub trait Node {
         let _ = self
             .get_command_queue()
             .send(Command::ConnectToOutput(OutputConnection {
-                from_id: self.get_id(),
-                output_index: 0,
+                source_id: self.get_id(),
             }));
     }
 
@@ -21,10 +20,8 @@ pub trait Node {
         let _ = self
             .get_command_queue()
             .send(Command::AddConnection(Connection {
-                from_id: self.get_id(),
-                output_index: 0,
-                to_id: id,
-                input_index: 0,
+                source_id: self.get_id(),
+                destination_id: id,
             }));
     }
 
@@ -32,10 +29,8 @@ pub trait Node {
         let _ = self
             .get_command_queue()
             .send(Command::AddConnection(Connection {
-                from_id: self.get_id(),
-                output_index: 0,
-                to_id: id,
-                input_index: 0,
+                source_id: self.get_id(),
+                destination_id: id,
             }));
     }
 }
