@@ -7,9 +7,9 @@ pub struct OwnedAudioBuffer {
 }
 
 impl OwnedAudioBuffer {
-    pub fn new(data: Vec<f32>, num_channels: usize, sample_rate: u32) -> Self {
+    pub fn new(num_frames: usize, num_channels: usize, sample_rate: u32) -> Self {
         Self {
-            data,
+            data: vec![0.0; num_frames * num_channels],
             num_channels,
             sample_rate,
         }

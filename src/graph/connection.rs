@@ -8,6 +8,7 @@ pub struct Connection {
     pub input_index: usize,
 }
 
+#[derive(Clone, PartialEq)]
 pub struct OutputConnection {
     pub from_id: Id,
     pub output_index: usize,
