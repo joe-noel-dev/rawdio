@@ -1,7 +1,6 @@
 use crate::{
     audio_process::AudioProcess,
     commands::{command::Command, notification::Notification},
-    graph::node::Node,
     realtime::processor::Processor,
     timestamp::Timestamp,
 };
@@ -67,6 +66,4 @@ impl Context {
     pub fn get_command_queue(&self) -> Sender<Command> {
         self.command_tx.clone()
     }
-
-    pub fn connect_to_output(&mut self, _source_node: &dyn Node) {}
 }

@@ -27,7 +27,6 @@ fn main() {
             .gain
             .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
 
-        context.connect_to_output(&oscillator);
         context.start();
 
         thread::sleep(time::Duration::from_secs(4));
