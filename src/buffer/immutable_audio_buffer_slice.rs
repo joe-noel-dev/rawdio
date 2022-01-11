@@ -15,10 +15,7 @@ impl<'a> ImmutableAudioBufferSlice<'a> {
     }
 
     fn translate_location(&self, sample_location: &SampleLocation) -> SampleLocation {
-        SampleLocation {
-            channel: sample_location.channel,
-            frame: sample_location.frame + self.offset,
-        }
+        SampleLocation::new(sample_location.channel, sample_location.frame + self.offset)
     }
 }
 

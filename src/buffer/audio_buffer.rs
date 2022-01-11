@@ -22,15 +22,15 @@ pub trait AudioBuffer {
     ) {
         for frame in 0..num_frames {
             for channel in 0..num_channels {
-                let source = SampleLocation {
-                    channel: channel + source_location.channel,
-                    frame: frame + source_location.frame,
-                };
+                let source = SampleLocation::new(
+                    channel + source_location.channel,
+                    frame + source_location.frame,
+                );
 
-                let dest = SampleLocation {
-                    channel: channel + destination_location.channel,
-                    frame: frame + destination_location.frame,
-                };
+                let dest = SampleLocation::new(
+                    channel + destination_location.channel,
+                    frame + destination_location.frame,
+                );
 
                 self.set_sample(&dest, source_buffer.get_sample(&source));
             }

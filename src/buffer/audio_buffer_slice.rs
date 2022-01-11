@@ -20,10 +20,7 @@ impl<'a> AudioBufferSlice<'a> {
     }
 
     fn translate_location(&self, sample_location: &SampleLocation) -> SampleLocation {
-        SampleLocation {
-            channel: sample_location.channel,
-            frame: sample_location.frame + self.offset,
-        }
+        SampleLocation::new(sample_location.channel, sample_location.frame + self.offset)
     }
 }
 
@@ -43,7 +40,7 @@ impl<'a> AudioBuffer for AudioBufferSlice<'a> {
     fn clear(&mut self) {
         for frame in 0..self.num_frames {
             for channel in 0..self.num_channels() {
-                self.set_sample(&SampleLocation { channel, frame }, 0.0);
+                self.set_sample(&SampleLocation::new(channel, frame), 0.0);
             }
         }
     }

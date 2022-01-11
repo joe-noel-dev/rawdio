@@ -82,7 +82,7 @@ impl DspProcessor for GainProcessor {
             let gain = gain.get_value_at_time(&frame_time);
 
             for channel in 0..output_buffer.num_channels() {
-                let location = SampleLocation { channel, frame };
+                let location = SampleLocation::new(channel, frame);
                 let value = output_buffer.get_sample(&location);
                 output_buffer.set_sample(&location, value * (gain as f32));
             }

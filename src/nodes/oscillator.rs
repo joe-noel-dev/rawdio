@@ -121,7 +121,7 @@ impl DspProcessor for OscillatorDspProcess {
             let value = gain * (std::f64::consts::TAU * frequency * self.phase / sample_rate).sin();
 
             for channel in 0..output_buffer.num_channels() {
-                let location = SampleLocation { channel, frame };
+                let location = SampleLocation::new(channel, frame);
                 output_buffer.set_sample(&location, value as f32);
             }
         }
