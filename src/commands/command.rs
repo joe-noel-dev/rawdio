@@ -1,10 +1,7 @@
 use std::cell::RefCell;
 
 use crate::{
-    graph::{
-        connection::{Connection, OutputConnection},
-        dsp::Dsp,
-    },
+    graph::{connection::Connection, dsp::Dsp, endpoint::Endpoint},
     parameter::ParameterChange,
 };
 
@@ -27,5 +24,5 @@ pub enum Command {
 
     AddConnection(Connection),
     RemoveConnection(Connection),
-    ConnectToOutput(OutputConnection),
+    ConnectToOutput(Endpoint),
 }

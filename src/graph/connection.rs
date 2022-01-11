@@ -1,12 +1,22 @@
 use crate::commands::id::Id;
 
-#[derive(Clone, PartialEq)]
-pub struct Connection {
-    pub source_id: Id,
-    pub destination_id: Id,
-}
+use super::endpoint::Endpoint;
 
 #[derive(Clone, PartialEq)]
-pub struct OutputConnection {
-    pub source_id: Id,
+pub struct Connection {
+    pub source: Endpoint,
+    pub destination: Endpoint,
+}
+
+impl Connection {
+
+
+    pub fn new(source_id: Id, destination_id: Id) -> Self {
+        Self {
+            source: Endpoint::new(source_id),
+            destination: Endpoint::new(destination_id),
+        }
+    }
+
+    
 }

@@ -12,15 +12,12 @@ use crate::{
 
 use lockfree::channel::{spsc, spsc::Sender};
 
-use super::{
-    connection::{Connection, OutputConnection},
-    dsp::Dsp,
-};
+use super::{connection::Connection, dsp::Dsp, endpoint::Endpoint};
 
 pub struct DspGraph {
     dsps: Pool<Id, RefCell<Dsp>>,
     connections: Vec<Connection>,
-    output_connection: Option<OutputConnection>,
+    output_endpoint: Option<Endpoint>,
     garbase_collection_tx: Sender<GarbageCollectionCommand>,
 }
 
@@ -28,12 +25,12 @@ impl DspGraph {
     pub fn process(&mut self, output_buffer: &mut dyn AudioBuffer, start_time: &Timestamp) {
         output_buffer.clear();
 
-        let output_connection = match self.output_connection.clone() {
-            Some(connection) => connection,
+        let output_endpoint = match self.output_endpoint.clone() {
+            Some(output_endpoint) => output_endpoint,
             None => return,
         };
 
-        self.process_connection(&output_connection.source_id, output_buffer, start_time);
+        self.process_connection(&output_endpoint, output_buffer, start_time);
     }
 
     pub fn add_dsp(&mut self, dsp: RefCell<Dsp>) {
@@ -57,8 +54,7 @@ impl DspGraph {
 
     pub fn add_connection(&mut self, connection: Connection) {
         self.connections.retain(|other| {
-            other.source_id != connection.source_id
-                && other.destination_id != connection.destination_id
+            other.source != connection.source && other.destination != connection.destination
         });
 
         self.connections.push(connection);
@@ -68,8 +64,8 @@ impl DspGraph {
         self.connections.retain(|other| connection != *other);
     }
 
-    pub fn connect_to_output(&mut self, output_connection: OutputConnection) {
-        self.output_connection = Some(output_connection);
+    pub fn connect_to_output(&mut self, output_endpoint: Endpoint) {
+        self.output_endpoint = Some(output_endpoint);
     }
 
     fn process_dsp(
@@ -86,32 +82,37 @@ impl DspGraph {
         dsp.borrow_mut().process_audio(output_buffer, start_time);
     }
 
-    pub fn is_connected_to(&self, source_id: &Id, destination_id: &Id) -> bool {
-        self.connections.iter().any(|connection| {
-            connection.source_id == *source_id && connection.destination_id == *destination_id
-        })
+    pub fn is_connected_to(&self, source: &Endpoint, destination: &Endpoint) -> bool {
+        let connection = Connection {
+            source: source.clone(),
+            destination: destination.clone(),
+        };
+        self.connections.iter().any(|conn| *conn == connection)
     }
 
     fn process_dependencies(
         &self,
-        destination_id: &Id,
+        destination_endpoint: &Endpoint,
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
     ) {
         self.dsps
             .all()
-            .filter(|(id, _)| self.is_connected_to(id, destination_id))
-            .for_each(|(id, _)| self.process_connection(id, output_buffer, start_time));
+            .map(|(id, _)| Endpoint::new(*id))
+            .filter(|source_endpoint| self.is_connected_to(source_endpoint, destination_endpoint))
+            .for_each(|source_endpoint| {
+                self.process_connection(&source_endpoint, output_buffer, start_time)
+            });
     }
 
     fn process_connection(
         &self,
-        dsp_id: &Id,
+        source_endpoint: &Endpoint,
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
     ) {
-        self.process_dependencies(dsp_id, output_buffer, start_time);
-        self.process_dsp(dsp_id, output_buffer, start_time);
+        self.process_dependencies(source_endpoint, output_buffer, start_time);
+        self.process_dsp(&source_endpoint.node_id, output_buffer, start_time);
     }
 }
 
@@ -122,7 +123,7 @@ impl Default for DspGraph {
 
         Self {
             dsps: Pool::new(64),
-            output_connection: None,
+            output_endpoint: None,
             garbase_collection_tx,
             connections: Vec::with_capacity(128),
         }
@@ -189,7 +190,7 @@ mod tests {
 
         assert_eq!(frame_count.load(Ordering::Acquire), 0);
 
-        graph.connect_to_output(OutputConnection { source_id: dsp_id });
+        graph.connect_to_output(Endpoint::new(dsp_id));
 
         graph.process(&mut audio_buffer, &Timestamp::default());
 
@@ -214,14 +215,9 @@ mod tests {
 
         let num_frames = 128;
 
-        graph.connect_to_output(OutputConnection {
-            source_id: dsp_id_2,
-        });
+        graph.connect_to_output(Endpoint::new(dsp_id_2));
 
-        graph.add_connection(Connection {
-            source_id: dsp_id_1,
-            destination_id: dsp_id_2,
-        });
+        graph.add_connection(Connection::new(dsp_id_1, dsp_id_2));
 
         let mut audio_buffer = OwnedAudioBuffer::new(num_frames, 2, 44100);
         graph.process(&mut audio_buffer, &Timestamp::default());
@@ -238,13 +234,10 @@ mod tests {
 
         let mut graph = DspGraph::default();
 
-        graph.add_connection(Connection {
-            source_id,
-            destination_id,
-        });
+        graph.add_connection(Connection::new(source_id, destination_id));
 
-        assert!(graph.is_connected_to(&source_id, &destination_id));
-        assert!(!graph.is_connected_to(&source_id, &other_id));
+        assert!(graph.is_connected_to(&Endpoint::new(source_id), &Endpoint::new(destination_id)));
+        assert!(!graph.is_connected_to(&Endpoint::new(source_id), &Endpoint::new(other_id)));
     }
 
     #[test]
@@ -254,17 +247,11 @@ mod tests {
 
         let mut graph = DspGraph::default();
 
-        graph.add_connection(Connection {
-            source_id,
-            destination_id,
-        });
+        graph.add_connection(Connection::new(source_id, destination_id));
 
-        graph.remove_connection(Connection {
-            source_id,
-            destination_id,
-        });
+        graph.remove_connection(Connection::new(source_id, destination_id));
 
-        assert!(!graph.is_connected_to(&source_id, &destination_id));
+        assert!(!graph.is_connected_to(&Endpoint::new(source_id), &Endpoint::new(destination_id)));
     }
 
     #[test]
@@ -275,17 +262,11 @@ mod tests {
 
         let mut graph = DspGraph::default();
 
-        graph.add_connection(Connection {
-            source_id,
-            destination_id,
-        });
+        graph.add_connection(Connection::new(source_id, destination_id));
 
-        graph.add_connection(Connection {
-            source_id,
-            destination_id: other_id,
-        });
+        graph.add_connection(Connection::new(source_id, other_id));
 
-        assert!(!graph.is_connected_to(&source_id, &destination_id));
-        assert!(graph.is_connected_to(&source_id, &other_id));
+        assert!(!graph.is_connected_to(&Endpoint::new(source_id), &Endpoint::new(destination_id)));
+        assert!(graph.is_connected_to(&Endpoint::new(source_id), &Endpoint::new(other_id)));
     }
 }
