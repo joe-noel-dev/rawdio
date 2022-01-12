@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use crate::{
     buffer::audio_buffer::AudioBuffer,
     commands::{command::ParameterChangeRequest, id::Id},
+    graph::{connection::Connection, dsp::Dsp, endpoint::Endpoint},
     timestamp::Timestamp,
     utility::{
         garbage_collector::{run_garbage_collector, GarbageCollectionCommand},
@@ -11,8 +12,6 @@ use crate::{
 };
 
 use lockfree::channel::{spsc, spsc::Sender};
-
-use super::{connection::Connection, dsp::Dsp, endpoint::Endpoint};
 
 pub struct DspGraph {
     dsps: Pool<Id, RefCell<Dsp>>,

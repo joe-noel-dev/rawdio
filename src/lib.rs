@@ -6,5 +6,6 @@ pub mod graph;
 pub mod nodes;
 pub mod parameter;
 mod realtime;
+mod realtime_graph;
 pub mod timestamp;
 pub mod utility;
