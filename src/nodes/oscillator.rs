@@ -50,7 +50,7 @@ impl OscillatorNode {
         parameters.insert(realtime_frequency.get_id(), realtime_frequency);
 
         let (gain, realtime_gain) =
-            AudioParameter::new(id, MIN_GAIN, MAX_GAIN, 2.0, command_queue.clone());
+            AudioParameter::new(id, 1.0, MIN_GAIN, MAX_GAIN, command_queue.clone());
         parameters.insert(realtime_gain.get_id(), realtime_gain);
 
         let dsp = Dsp::new(
