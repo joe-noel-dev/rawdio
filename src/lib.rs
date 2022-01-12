@@ -1,11 +1,11 @@
 pub mod audio_process;
 pub mod buffer;
-pub mod commands;
+mod commands;
 pub mod context;
 pub mod graph;
 pub mod nodes;
-pub mod parameter;
+mod parameter;
 mod realtime;
 mod realtime_graph;
 pub mod timestamp;
-pub mod utility;
+mod utility;

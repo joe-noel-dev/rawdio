@@ -33,8 +33,4 @@ where
     pub fn all(&self) -> impl Iterator<Item = (&KeyType, &ValueType)> {
         self.items.iter()
     }
-
-    pub fn all_mut(&mut self) -> impl Iterator<Item = (&KeyType, &mut ValueType)> {
-        self.items.iter_mut()
-    }
 }

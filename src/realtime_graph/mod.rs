@@ -1,1 +1,1 @@
-pub(crate) mod dsp_graph;
+pub mod dsp_graph;
