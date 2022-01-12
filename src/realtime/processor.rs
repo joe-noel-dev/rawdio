@@ -2,10 +2,11 @@ use crate::{
     audio_process::AudioProcess,
     buffer::audio_buffer::AudioBuffer,
     commands::{command::Command, notification::Notification},
-    realtime_graph::dsp_graph::DspGraph,
     timestamp::Timestamp,
 };
 use lockfree::channel::{mpsc::Receiver, spsc::Sender};
+
+use super::dsp_graph::DspGraph;
 
 const MAXIMUM_NUMBER_OF_FRAMES: usize = 1024;
 const MAXIMUM_NUMBER_OF_CHANNELS: usize = 2;

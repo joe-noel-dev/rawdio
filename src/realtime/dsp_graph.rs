@@ -1,21 +1,44 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, collections::HashMap};
 
 use crate::{
     buffer::audio_buffer::AudioBuffer,
     commands::{command::ParameterChangeRequest, id::Id},
     graph::{connection::Connection, dsp::Dsp, endpoint::Endpoint},
     timestamp::Timestamp,
-    utility::{
-        garbage_collector::{run_garbage_collector, GarbageCollectionCommand},
-        pool::Pool,
-    },
+    utility::garbage_collector::{run_garbage_collector, GarbageCollectionCommand},
 };
 
 use lockfree::channel::{spsc, spsc::Sender};
 
+struct Node {
+    dsp: RefCell<Dsp>,
+    outgoing: Option<Id>,
+    incoming: Option<Id>,
+}
+
+impl Node {
+    pub fn new(dsp: RefCell<Dsp>) -> Self {
+        Self {
+            dsp,
+            outgoing: None,
+            incoming: None,
+        }
+    }
+}
+
+struct Edge {
+    connection: Connection,
+}
+
+impl Edge {
+    pub fn new(connection: Connection) -> Self {
+        Self { connection }
+    }
+}
+
 pub struct DspGraph {
-    dsps: Pool<Id, RefCell<Dsp>>,
-    connections: Vec<Connection>,
+    nodes: HashMap<Id, Node>,
+    edges: HashMap<Id, Edge>,
     output_endpoint: Option<Endpoint>,
     garbase_collection_tx: Sender<GarbageCollectionCommand>,
 }
@@ -34,33 +57,61 @@ impl DspGraph {
 
     pub fn add_dsp(&mut self, dsp: RefCell<Dsp>) {
         let id = dsp.borrow().get_id();
-        self.dsps.add(id, dsp);
+        self.nodes.insert(id, Node::new(dsp));
     }
 
     pub fn remove_dsp(&mut self, id: Id) {
-        if let Some(dsp) = self.dsps.remove(&id) {
+        if let Some(node) = self.nodes.remove(&id) {
             let _ = self
                 .garbase_collection_tx
-                .send(GarbageCollectionCommand::DisposeDsp(dsp));
+                .send(GarbageCollectionCommand::DisposeDsp(node.dsp));
         }
     }
 
     pub fn request_parameter_change(&mut self, change_request: ParameterChangeRequest) {
-        if let Some(dsp) = self.dsps.get_mut(&change_request.dsp_id) {
-            dsp.borrow_mut().request_parameter_change(change_request);
+        if let Some(node) = self.nodes.get_mut(&change_request.dsp_id) {
+            node.dsp
+                .borrow_mut()
+                .request_parameter_change(change_request);
         }
     }
 
     pub fn add_connection(&mut self, connection: Connection) {
-        self.connections.retain(|other| {
-            other.source != connection.source && other.destination != connection.destination
+        self.edges.retain(|_, edge| {
+            edge.connection.source != connection.source
+                && edge.connection.destination != connection.destination
         });
 
-        self.connections.push(connection);
+        let connection_id = Id::generate();
+
+        if let Some(source_node) = self.nodes.get_mut(&connection.source.node_id) {
+            source_node.outgoing = Some(connection_id);
+        }
+
+        if let Some(destination_node) = self.nodes.get_mut(&connection.destination.node_id) {
+            destination_node.incoming = Some(connection_id);
+        }
+
+        self.edges.insert(connection_id, Edge::new(connection));
+    }
+
+    fn find_connection_id_for_connection(&self, connection: &Connection) -> Option<Id> {
+        self.edges
+            .iter()
+            .find(|(_, edge)| edge.connection == *connection)
+            .map(|(id, _)| *id)
     }
 
     pub fn remove_connection(&mut self, connection: Connection) {
-        self.connections.retain(|other| connection != *other);
+        self.edges.retain(|_, edge| connection != edge.connection);
+
+        if let Some(source_node) = self.nodes.get_mut(&connection.source.node_id) {
+            source_node.outgoing = None;
+        }
+
+        if let Some(destination_node) = self.nodes.get_mut(&connection.destination.node_id) {
+            destination_node.incoming = None;
+        }
     }
 
     pub fn connect_to_output(&mut self, output_endpoint: Endpoint) {
@@ -73,20 +124,22 @@ impl DspGraph {
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
     ) {
-        let dsp = match self.dsps.get(dsp_id) {
-            Some(dsp) => dsp,
+        let node = match self.nodes.get(dsp_id) {
+            Some(node) => node,
             None => return,
         };
 
-        dsp.borrow_mut().process_audio(output_buffer, start_time);
+        node.dsp
+            .borrow_mut()
+            .process_audio(output_buffer, start_time);
     }
 
     pub fn is_connected_to(&self, source: &Endpoint, destination: &Endpoint) -> bool {
-        let connection = Connection {
-            source: source.clone(),
-            destination: destination.clone(),
-        };
-        self.connections.iter().any(|conn| *conn == connection)
+        self.find_connection_id_for_connection(&Connection::new(
+            source.node_id,
+            destination.node_id,
+        ))
+        .is_some()
     }
 
     fn process_dependencies(
@@ -95,8 +148,8 @@ impl DspGraph {
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
     ) {
-        self.dsps
-            .all()
+        self.nodes
+            .iter()
             .map(|(id, _)| Endpoint::new(*id))
             .filter(|source_endpoint| self.is_connected_to(source_endpoint, destination_endpoint))
             .for_each(|source_endpoint| {
@@ -121,10 +174,10 @@ impl Default for DspGraph {
         run_garbage_collector(garbage_collection_rx);
 
         Self {
-            dsps: Pool::new(64),
+            nodes: HashMap::with_capacity(512),
+            edges: HashMap::with_capacity(512),
             output_endpoint: None,
             garbase_collection_tx,
-            connections: Vec::with_capacity(128),
         }
     }
 }
