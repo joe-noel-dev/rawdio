@@ -10,35 +10,11 @@ use crate::{
 
 use lockfree::channel::{spsc, spsc::Sender};
 
-struct Node {
-    dsp: RefCell<Dsp>,
-    outgoing: Option<Id>,
-    incoming: Option<Id>,
-}
-
-impl Node {
-    pub fn new(dsp: RefCell<Dsp>) -> Self {
-        Self {
-            dsp,
-            outgoing: None,
-            incoming: None,
-        }
-    }
-}
-
-struct Edge {
-    connection: Connection,
-}
-
-impl Edge {
-    pub fn new(connection: Connection) -> Self {
-        Self { connection }
-    }
-}
+use super::{edge::Edge, node::Node};
 
 pub struct DspGraph {
-    nodes: HashMap<Id, Node>,
-    edges: HashMap<Id, Edge>,
+    nodes: HashMap<Id, Node<RefCell<Dsp>>>,
+    edges: HashMap<Id, Edge<Connection>>,
     output_endpoint: Option<Endpoint>,
     garbase_collection_tx: Sender<GarbageCollectionCommand>,
 }
@@ -64,13 +40,13 @@ impl DspGraph {
         if let Some(node) = self.nodes.remove(&id) {
             let _ = self
                 .garbase_collection_tx
-                .send(GarbageCollectionCommand::DisposeDsp(node.dsp));
+                .send(GarbageCollectionCommand::DisposeDsp(node.node_data));
         }
     }
 
     pub fn request_parameter_change(&mut self, change_request: ParameterChangeRequest) {
         if let Some(node) = self.nodes.get_mut(&change_request.dsp_id) {
-            node.dsp
+            node.node_data
                 .borrow_mut()
                 .request_parameter_change(change_request);
         }
@@ -78,8 +54,8 @@ impl DspGraph {
 
     pub fn add_connection(&mut self, connection: Connection) {
         self.edges.retain(|_, edge| {
-            edge.connection.source != connection.source
-                && edge.connection.destination != connection.destination
+            edge.edge_data.source != connection.source
+                && edge.edge_data.destination != connection.destination
         });
 
         let connection_id = Id::generate();
@@ -98,12 +74,12 @@ impl DspGraph {
     fn find_connection_id_for_connection(&self, connection: &Connection) -> Option<Id> {
         self.edges
             .iter()
-            .find(|(_, edge)| edge.connection == *connection)
+            .find(|(_, edge)| edge.edge_data == *connection)
             .map(|(id, _)| *id)
     }
 
     pub fn remove_connection(&mut self, connection: Connection) {
-        self.edges.retain(|_, edge| connection != edge.connection);
+        self.edges.retain(|_, edge| connection != edge.edge_data);
 
         if let Some(source_node) = self.nodes.get_mut(&connection.source.node_id) {
             source_node.outgoing = None;
@@ -129,7 +105,7 @@ impl DspGraph {
             None => return,
         };
 
-        node.dsp
+        node.node_data
             .borrow_mut()
             .process_audio(output_buffer, start_time);
     }
