@@ -4,7 +4,8 @@ pub struct Edge<EdgeData> {
     pub from_node_id: Id,
     pub to_node_id: Id,
     pub edge_data: EdgeData,
-    pub next: Option<Id>,
+    pub next_out: Option<Id>,
+    pub next_in: Option<Id>,
 }
 
 impl<EdgeData> Edge<EdgeData> {
@@ -13,7 +14,8 @@ impl<EdgeData> Edge<EdgeData> {
             from_node_id,
             to_node_id,
             edge_data,
-            next: None,
+            next_out: None,
+            next_in: None,
         }
     }
 }

@@ -4,7 +4,7 @@ use crate::commands::id::Id;
 
 use super::{
     edge::Edge,
-    graph_utils::{Direction, EdgeMap, NodeIterator, NodeMap},
+    graph_utils::{is_connected_to, Direction, EdgeMap, NodeIterator, NodeMap},
     node::Node,
 };
 
@@ -33,17 +33,34 @@ impl TopologicalSort {
         self.ready_to_process.clear();
 
         for node_id in nodes.keys() {
-            self.dependency_count.insert(*node_id, 0);
+            let num_incoming_nodes =
+                NodeIterator::new(*node_id, Direction::Incoming, nodes, edges).count();
+            self.dependency_count.insert(*node_id, num_incoming_nodes);
         }
 
-        for node_id in nodes.keys() {
-            NodeIterator::new(*node_id, Direction::Outgoing, nodes, edges).for_each(|_| {
-                let previous = self.dependency_count.get(node_id).unwrap();
-                self.dependency_count.insert(*node_id, previous + 1);
-            });
+        while let Some(next_node_id) = self.node_without_dependencies() {
+            self.order.push(next_node_id);
+            self.dependency_count.remove(&next_node_id);
+
+            for node_id in nodes.keys() {
+                if is_connected_to(next_node_id, *node_id, nodes, edges) {
+                    let previous_value = self.dependency_count.get_mut(node_id).unwrap();
+                    assert!(*previous_value > 0);
+                    *previous_value -= 1;
+                }
+            }
         }
+
+        assert_eq!(self.order.len(), nodes.len()); // cycle detected
 
         &self.order
+    }
+
+    fn node_without_dependencies(&self) -> Option<Id> {
+        self.dependency_count
+            .iter()
+            .find(|(_, count)| **count == 0)
+            .map(|(id, _)| *id)
     }
 }
 
@@ -86,11 +103,11 @@ mod tests {
 
         let mut edges = EdgeMap::new();
 
-        let _ = add_connection(a_id, b_id, (), &mut nodes, &mut edges);
-        let _ = add_connection(b_id, c_id, (), &mut nodes, &mut edges);
-        let _ = add_connection(b_id, d_id, (), &mut nodes, &mut edges);
-        let _ = add_connection(c_id, e_id, (), &mut nodes, &mut edges);
-        let _ = add_connection(d_id, e_id, (), &mut nodes, &mut edges);
+        add_connection(a_id, b_id, (), &mut nodes, &mut edges);
+        add_connection(b_id, c_id, (), &mut nodes, &mut edges);
+        add_connection(b_id, d_id, (), &mut nodes, &mut edges);
+        add_connection(c_id, e_id, (), &mut nodes, &mut edges);
+        add_connection(d_id, e_id, (), &mut nodes, &mut edges);
 
         let mut topo_sort = TopologicalSort::with_capacity(5);
         let sorted = topo_sort.sort(&nodes, &edges);
