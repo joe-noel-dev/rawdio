@@ -4,7 +4,7 @@ use crate::{commands::id::Id, realtime::graph::Direction};
 
 use super::graph::Graph;
 
-struct TopologicalSort {
+pub struct TopologicalSort {
     dependency_count: HashMap<Id, usize>,
     order: Vec<Id>,
     ready_to_process: Vec<Id>,
@@ -17,6 +17,10 @@ impl TopologicalSort {
             order: Vec::with_capacity(capacity),
             ready_to_process: Vec::with_capacity(capacity),
         }
+    }
+
+    pub fn get_sorted_graph(&self) -> &[Id] {
+        &self.order
     }
 
     pub fn sort<NodeData, EdgeData>(&mut self, graph: &Graph<NodeData, EdgeData>) -> &[Id] {
@@ -58,8 +62,6 @@ impl TopologicalSort {
 #[cfg(test)]
 mod tests {
 
-    use std::cell::RefCell;
-
     use super::*;
 
     #[test]
@@ -72,17 +74,17 @@ mod tests {
 
         let mut graph = Graph::with_capacity(5, 5);
 
-        let a_id = graph.add_node(String::from("A"));
-        let b_id = graph.add_node(String::from("B"));
-        let c_id = graph.add_node(String::from("C"));
-        let d_id = graph.add_node(String::from("D"));
-        let e_id = graph.add_node(String::from("E"));
+        let a_id = graph._add_node(String::from("A"));
+        let b_id = graph._add_node(String::from("B"));
+        let c_id = graph._add_node(String::from("C"));
+        let d_id = graph._add_node(String::from("D"));
+        let e_id = graph._add_node(String::from("E"));
 
-        graph.add_connection(a_id, b_id, ());
-        graph.add_connection(b_id, c_id, ());
-        graph.add_connection(b_id, d_id, ());
-        graph.add_connection(c_id, e_id, ());
-        graph.add_connection(d_id, e_id, ());
+        graph.add_edge(a_id, b_id, ());
+        graph.add_edge(b_id, c_id, ());
+        graph.add_edge(b_id, d_id, ());
+        graph.add_edge(c_id, e_id, ());
+        graph.add_edge(d_id, e_id, ());
 
         let mut topo_sort = TopologicalSort::with_capacity(5);
         let sorted = topo_sort.sort(&graph);

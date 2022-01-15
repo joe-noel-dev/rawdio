@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap};
+use std::cell::RefCell;
 
 use crate::{
     buffer::audio_buffer::AudioBuffer,
@@ -10,144 +10,86 @@ use crate::{
 
 use lockfree::channel::{spsc, spsc::Sender};
 
-use super::{edge::Edge, node::Node};
+use super::{graph::Graph, topological_sort::TopologicalSort};
 
 pub struct DspGraph {
-    nodes: HashMap<Id, Node<RefCell<Dsp>>>,
-    edges: HashMap<Id, Edge<Connection>>,
+    graph: Graph<RefCell<Dsp>, Connection>,
+    topological_sort: TopologicalSort,
     output_endpoint: Option<Endpoint>,
     garbase_collection_tx: Sender<GarbageCollectionCommand>,
+    graph_needs_sort: bool,
 }
 
 impl DspGraph {
     pub fn process(&mut self, output_buffer: &mut dyn AudioBuffer, start_time: &Timestamp) {
         output_buffer.clear();
 
-        let output_endpoint = match self.output_endpoint.clone() {
-            Some(output_endpoint) => output_endpoint,
-            None => return,
-        };
+        if self.graph_needs_sort {
+            self.topological_sort.sort(&self.graph);
+            self.graph_needs_sort = false;
+        }
 
-        self.process_connection(&output_endpoint, output_buffer, start_time);
+        for dsp_id in self.topological_sort.get_sorted_graph() {
+            self.process_dsp(*dsp_id, output_buffer, start_time);
+        }
     }
 
     pub fn add_dsp(&mut self, dsp: RefCell<Dsp>) {
         let id = dsp.borrow().get_id();
-        self.nodes.insert(id, Node::new(dsp));
+        self.graph.add_node_with_id(id, dsp);
+        self.mark_graph_needs_sort();
+    }
+
+    pub fn mark_graph_needs_sort(&mut self) {
+        self.graph_needs_sort = true;
     }
 
     pub fn remove_dsp(&mut self, id: Id) {
-        if let Some(node) = self.nodes.remove(&id) {
+        if let Some(dsp) = self.graph.remove_node(id) {
             let _ = self
                 .garbase_collection_tx
-                .send(GarbageCollectionCommand::DisposeDsp(node.node_data));
+                .send(GarbageCollectionCommand::DisposeDsp(dsp));
         }
+
+        self.mark_graph_needs_sort();
     }
 
     pub fn request_parameter_change(&mut self, change_request: ParameterChangeRequest) {
-        if let Some(node) = self.nodes.get_mut(&change_request.dsp_id) {
-            node.node_data
-                .borrow_mut()
-                .request_parameter_change(change_request);
+        if let Some(dsp) = self.graph.get_node_mut(change_request.dsp_id) {
+            dsp.borrow_mut().request_parameter_change(change_request);
         }
     }
 
     pub fn add_connection(&mut self, connection: Connection) {
-        self.edges.retain(|_, edge| {
-            edge.edge_data.source != connection.source
-                && edge.edge_data.destination != connection.destination
-        });
+        // TODO: Remove conflicting connections
 
-        let connection_id = Id::generate();
-
-        if let Some(source_node) = self.nodes.get_mut(&connection.source.node_id) {
-            source_node.outgoing = Some(connection_id);
-        }
-
-        if let Some(destination_node) = self.nodes.get_mut(&connection.destination.node_id) {
-            destination_node.incoming = Some(connection_id);
-        }
-
-        self.edges.insert(
-            connection_id,
-            Edge::new(
-                connection.source.node_id,
-                connection.destination.node_id,
-                connection,
-            ),
+        self.graph.add_edge(
+            connection.source.dsp_id,
+            connection.destination.dsp_id,
+            connection,
         );
-    }
 
-    fn find_connection_id_for_connection(&self, connection: &Connection) -> Option<Id> {
-        self.edges
-            .iter()
-            .find(|(_, edge)| edge.edge_data == *connection)
-            .map(|(id, _)| *id)
+        self.mark_graph_needs_sort();
     }
 
     pub fn remove_connection(&mut self, connection: Connection) {
-        self.edges.retain(|_, edge| connection != edge.edge_data);
+        self.graph
+            .remove_edge(connection.source.dsp_id, connection.destination.dsp_id);
 
-        if let Some(source_node) = self.nodes.get_mut(&connection.source.node_id) {
-            source_node.outgoing = None;
-        }
-
-        if let Some(destination_node) = self.nodes.get_mut(&connection.destination.node_id) {
-            destination_node.incoming = None;
-        }
+        self.mark_graph_needs_sort();
     }
 
     pub fn connect_to_output(&mut self, output_endpoint: Endpoint) {
         self.output_endpoint = Some(output_endpoint);
     }
 
-    fn process_dsp(
-        &self,
-        dsp_id: &Id,
-        output_buffer: &mut dyn AudioBuffer,
-        start_time: &Timestamp,
-    ) {
-        let node = match self.nodes.get(dsp_id) {
+    fn process_dsp(&self, dsp_id: Id, output_buffer: &mut dyn AudioBuffer, start_time: &Timestamp) {
+        let dsp = match self.graph.get_node(dsp_id) {
             Some(node) => node,
             None => return,
         };
 
-        node.node_data
-            .borrow_mut()
-            .process_audio(output_buffer, start_time);
-    }
-
-    pub fn is_connected_to(&self, source: &Endpoint, destination: &Endpoint) -> bool {
-        self.find_connection_id_for_connection(&Connection::new(
-            source.node_id,
-            destination.node_id,
-        ))
-        .is_some()
-    }
-
-    fn process_dependencies(
-        &self,
-        destination_endpoint: &Endpoint,
-        output_buffer: &mut dyn AudioBuffer,
-        start_time: &Timestamp,
-    ) {
-        self.nodes
-            .iter()
-            .map(|(id, _)| Endpoint::new(*id))
-            .filter(|source_endpoint| self.is_connected_to(source_endpoint, destination_endpoint))
-            .for_each(|source_endpoint| {
-                self.process_connection(&source_endpoint, output_buffer, start_time)
-            });
-    }
-
-    fn process_connection(
-        &self,
-        source_endpoint: &Endpoint,
-        output_buffer: &mut dyn AudioBuffer,
-        start_time: &Timestamp,
-    ) {
-        self.process_dependencies(source_endpoint, output_buffer, start_time);
-        self.process_dsp(&source_endpoint.node_id, output_buffer, start_time);
+        dsp.borrow_mut().process_audio(output_buffer, start_time);
     }
 }
 
@@ -157,8 +99,9 @@ impl Default for DspGraph {
         run_garbage_collector(garbage_collection_rx);
 
         Self {
-            nodes: HashMap::with_capacity(512),
-            edges: HashMap::with_capacity(512),
+            graph: Graph::with_capacity(512, 512),
+            topological_sort: TopologicalSort::with_capacity(512),
+            graph_needs_sort: false,
             output_endpoint: None,
             garbase_collection_tx,
         }
@@ -259,49 +202,5 @@ mod tests {
 
         assert_eq!(frame_count_1.load(Ordering::Acquire), num_frames);
         assert_eq!(frame_count_2.load(Ordering::Acquire), num_frames);
-    }
-
-    #[test]
-    fn add_connection() {
-        let source_id = Id::generate();
-        let destination_id = Id::generate();
-        let other_id = Id::generate();
-
-        let mut graph = DspGraph::default();
-
-        graph.add_connection(Connection::new(source_id, destination_id));
-
-        assert!(graph.is_connected_to(&Endpoint::new(source_id), &Endpoint::new(destination_id)));
-        assert!(!graph.is_connected_to(&Endpoint::new(source_id), &Endpoint::new(other_id)));
-    }
-
-    #[test]
-    fn remove_connection() {
-        let source_id = Id::generate();
-        let destination_id = Id::generate();
-
-        let mut graph = DspGraph::default();
-
-        graph.add_connection(Connection::new(source_id, destination_id));
-
-        graph.remove_connection(Connection::new(source_id, destination_id));
-
-        assert!(!graph.is_connected_to(&Endpoint::new(source_id), &Endpoint::new(destination_id)));
-    }
-
-    #[test]
-    fn replaces_connections() {
-        let source_id = Id::generate();
-        let destination_id = Id::generate();
-        let other_id = Id::generate();
-
-        let mut graph = DspGraph::default();
-
-        graph.add_connection(Connection::new(source_id, destination_id));
-
-        graph.add_connection(Connection::new(source_id, other_id));
-
-        assert!(!graph.is_connected_to(&Endpoint::new(source_id), &Endpoint::new(destination_id)));
-        assert!(graph.is_connected_to(&Endpoint::new(source_id), &Endpoint::new(other_id)));
     }
 }
