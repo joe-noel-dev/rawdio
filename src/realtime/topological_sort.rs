@@ -1,12 +1,8 @@
-use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap};
+use std::collections::HashMap;
 
-use crate::commands::id::Id;
+use crate::{commands::id::Id, realtime::graph::Direction};
 
-use super::{
-    edge::Edge,
-    graph_utils::{is_connected_to, Direction, EdgeMap, NodeIterator, NodeMap},
-    node::Node,
-};
+use super::graph::Graph;
 
 struct TopologicalSort {
     dependency_count: HashMap<Id, usize>,
@@ -23,18 +19,13 @@ impl TopologicalSort {
         }
     }
 
-    pub fn sort<NodeData, EdgeData>(
-        &mut self,
-        nodes: &NodeMap<NodeData>,
-        edges: &EdgeMap<EdgeData>,
-    ) -> &[Id] {
+    pub fn sort<NodeData, EdgeData>(&mut self, graph: &Graph<NodeData, EdgeData>) -> &[Id] {
         self.dependency_count.clear();
         self.order.clear();
         self.ready_to_process.clear();
 
-        for node_id in nodes.keys() {
-            let num_incoming_nodes =
-                NodeIterator::new(*node_id, Direction::Incoming, nodes, edges).count();
+        for node_id in graph.all_node_ids() {
+            let num_incoming_nodes = graph.num_connections(*node_id, Direction::Incoming);
             self.dependency_count.insert(*node_id, num_incoming_nodes);
         }
 
@@ -42,8 +33,8 @@ impl TopologicalSort {
             self.order.push(next_node_id);
             self.dependency_count.remove(&next_node_id);
 
-            for node_id in nodes.keys() {
-                if is_connected_to(next_node_id, *node_id, nodes, edges) {
+            for node_id in graph.all_node_ids() {
+                if graph.is_connected_to(next_node_id, *node_id) {
                     let previous_value = self.dependency_count.get_mut(node_id).unwrap();
                     assert!(*previous_value > 0);
                     *previous_value -= 1;
@@ -51,7 +42,7 @@ impl TopologicalSort {
             }
         }
 
-        assert_eq!(self.order.len(), nodes.len()); // cycle detected
+        assert_eq!(self.order.len(), graph.num_nodes()); // cycle detected
 
         &self.order
     }
@@ -69,8 +60,6 @@ mod tests {
 
     use std::cell::RefCell;
 
-    use crate::realtime::graph_utils::add_connection;
-
     use super::*;
 
     #[test]
@@ -81,42 +70,28 @@ mod tests {
         //       \   /
         //         D
 
-        let node_a = Node::new(RefCell::new(String::from("A")));
-        let node_b = Node::new(RefCell::new(String::from("B")));
-        let node_c = Node::new(RefCell::new(String::from("C")));
-        let node_d = Node::new(RefCell::new(String::from("D")));
-        let node_e = Node::new(RefCell::new(String::from("E")));
+        let mut graph = Graph::with_capacity(5, 5);
 
-        let a_id = Id::generate();
-        let b_id = Id::generate();
-        let c_id = Id::generate();
-        let d_id = Id::generate();
-        let e_id = Id::generate();
+        let a_id = graph.add_node(String::from("A"));
+        let b_id = graph.add_node(String::from("B"));
+        let c_id = graph.add_node(String::from("C"));
+        let d_id = graph.add_node(String::from("D"));
+        let e_id = graph.add_node(String::from("E"));
 
-        let mut nodes = NodeMap::from([
-            (a_id, node_a),
-            (b_id, node_b),
-            (c_id, node_c),
-            (d_id, node_d),
-            (e_id, node_e),
-        ]);
-
-        let mut edges = EdgeMap::new();
-
-        add_connection(a_id, b_id, (), &mut nodes, &mut edges);
-        add_connection(b_id, c_id, (), &mut nodes, &mut edges);
-        add_connection(b_id, d_id, (), &mut nodes, &mut edges);
-        add_connection(c_id, e_id, (), &mut nodes, &mut edges);
-        add_connection(d_id, e_id, (), &mut nodes, &mut edges);
+        graph.add_connection(a_id, b_id, ());
+        graph.add_connection(b_id, c_id, ());
+        graph.add_connection(b_id, d_id, ());
+        graph.add_connection(c_id, e_id, ());
+        graph.add_connection(d_id, e_id, ());
 
         let mut topo_sort = TopologicalSort::with_capacity(5);
-        let sorted = topo_sort.sort(&nodes, &edges);
+        let sorted = topo_sort.sort(&graph);
 
         assert_eq!(sorted.len(), 5);
         assert_eq!(sorted[0], a_id);
-        assert!(sorted[1] == b_id || sorted[1] == c_id);
-        assert!(sorted[2] == b_id || sorted[2] == c_id);
-        assert_eq!(sorted[3], d_id);
+        assert!(sorted[1] == b_id);
+        assert!(sorted[2] == c_id || sorted[2] == d_id);
+        assert!(sorted[3] == c_id || sorted[3] == d_id);
         assert_eq!(sorted[4], e_id);
     }
 }

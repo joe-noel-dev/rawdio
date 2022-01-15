@@ -1,6 +1,6 @@
 mod dsp_graph;
 mod edge;
-mod graph_utils;
+mod graph;
 mod node;
 pub(crate) mod processor;
 mod topological_sort;
