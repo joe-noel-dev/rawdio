@@ -68,7 +68,14 @@ impl DspGraph {
             destination_node.incoming = Some(connection_id);
         }
 
-        self.edges.insert(connection_id, Edge::new(connection));
+        self.edges.insert(
+            connection_id,
+            Edge::new(
+                connection.source.node_id,
+                connection.destination.node_id,
+                connection,
+            ),
+        );
     }
 
     fn find_connection_id_for_connection(&self, connection: &Connection) -> Option<Id> {

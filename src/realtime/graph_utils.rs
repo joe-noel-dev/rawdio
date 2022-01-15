@@ -118,23 +118,33 @@ impl<'a, NodeData, EdgeData> Iterator for NodeIterator<'a, NodeData, EdgeData> {
     type Item = Id;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let next_value = if let Some(edge_id) = self.edge_id {
-            if let Some(edge) = self.edges.get(&edge_id) {
-                edge.next
-            } else {
-                None
+        let next_edge_id = match self.edge_id {
+            Some(edge_id) => EdgeIterator::new(edge_id, self.edges).next(),
+            None => {
+                if let Some(node) = self.nodes.get(&self.node_id) {
+                    match self.direction {
+                        Direction::Outgoing => node.outgoing,
+                        Direction::Incoming => node.incoming,
+                    }
+                } else {
+                    None
+                }
             }
-        } else if let Some(node) = self.nodes.get(&self.node_id) {
-            match self.direction {
-                Direction::Outgoing => node.outgoing,
-                Direction::Incoming => node.incoming,
-            }
-        } else {
-            None
         };
 
-        self.edge_id = next_value;
-        next_value
+        let next_node_id = match next_edge_id {
+            Some(next_edge_id) => match self.edges.get(&next_edge_id) {
+                Some(edge) => match self.direction {
+                    Direction::Outgoing => Some(edge.to_node_id),
+                    Direction::Incoming => Some(edge.from_node_id),
+                },
+                None => None,
+            },
+            None => None,
+        };
+
+        self.edge_id = next_edge_id;
+        next_node_id
     }
 }
 
