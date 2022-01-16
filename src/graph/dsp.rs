@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap};
+use std::collections::HashMap;
 
 use crate::{
     buffer::audio_buffer::AudioBuffer,
@@ -44,7 +44,7 @@ impl Dsp {
     }
 
     pub fn add_to_audio_process(dsp: Self, command_queue: &Sender<Command>) {
-        let _ = command_queue.send(Command::AddDsp(RefCell::new(dsp)));
+        let _ = command_queue.send(Command::AddDsp(Box::new(dsp)));
     }
 
     pub fn remove_from_audio_process(id: Id, command_queue: &Sender<Command>) {

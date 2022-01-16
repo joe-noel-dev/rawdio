@@ -113,7 +113,7 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
         self.nodes.get_mut(&id).map(|node| &mut node.node_data)
     }
 
-    pub fn get_node(&self, id: Id) -> Option<&NodeData> {
+    pub fn _get_node(&self, id: Id) -> Option<&NodeData> {
         self.nodes.get(&id).map(|node| &node.node_data)
     }
 
