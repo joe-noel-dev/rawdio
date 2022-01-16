@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 lockfree = "0.5.1"
 atomic_float = "0.1.0"
+lazy_static = "1.4.0"
 
 [dev-dependencies]
 anyhow = "1.0.51"

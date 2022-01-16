@@ -1,6 +1,6 @@
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    Host, Stream,
+    Host, SampleFormat, Stream,
 };
 use rust_audio_engine::{
     audio_process::AudioProcess,
@@ -9,8 +9,6 @@ use rust_audio_engine::{
         borrowed_audio_buffer::BorrowedAudioBuffer,
     },
 };
-
-const SAMPLE_RATE: u32 = 44100;
 
 pub struct AudioCallback {
     _output_stream: Stream,
@@ -30,7 +28,7 @@ fn print_output_devices(host: &Host) {
 }
 
 impl AudioCallback {
-    pub fn new(mut audio_process: Box<dyn AudioProcess + Send>) -> Self {
+    pub fn new(mut audio_process: Box<dyn AudioProcess + Send>, sample_rate: usize) -> Self {
         let host = cpal::default_host();
         println!("Using audio host: {}\n", host.id().name());
 
@@ -41,10 +39,16 @@ impl AudioCallback {
         let device = preferred_device.expect("Couldn't connect to output audio device");
 
         let mut output_configs = device.supported_output_configs().unwrap();
+
+        let cpal_sample_rate = cpal::SampleRate(sample_rate as u32);
         let config = output_configs
-            .next()
-            .expect("No configs supported")
-            .with_sample_rate(cpal::SampleRate(SAMPLE_RATE));
+            .find(|config| {
+                config.min_sample_rate() <= cpal_sample_rate
+                    && cpal_sample_rate <= config.max_sample_rate()
+                    && config.sample_format() == SampleFormat::F32
+            })
+            .expect("No matching configurations for device")
+            .with_sample_rate(cpal_sample_rate);
 
         println!("Connecting to device: {}", device.name().unwrap());
         println!("Sample rate: {}\n", config.sample_rate().0);

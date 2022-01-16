@@ -3,7 +3,10 @@ use std::cell::RefCell;
 use lockfree::channel::{spsc, spsc::Sender};
 
 use crate::{
-    buffer::{audio_buffer::AudioBuffer, sample_location::SampleLocation},
+    buffer::{
+        audio_buffer::AudioBuffer, audio_buffer_slice::AudioBufferSlice,
+        sample_location::SampleLocation,
+    },
     commands::{command::ParameterChangeRequest, id::Id},
     graph::{
         buffer_pool::BufferPool,
@@ -70,6 +73,9 @@ impl DspGraph {
             let mut node_input_buffer = self.buffer_pool.get_unassigned_buffer().unwrap();
             let mut node_output_buffer = self.buffer_pool.get_unassigned_buffer().unwrap();
 
+            let mut node_output_buffer_slice =
+                AudioBufferSlice::new(&mut node_output_buffer, 0, num_frames);
+
             for connected_node_id in self.graph.node_iter(*dsp_id, Direction::Incoming) {
                 let endpoint = Endpoint::new(connected_node_id, EndpointType::Output);
                 if let Some(buffer) = self.buffer_pool.get_assigned_buffer(endpoint) {
@@ -90,7 +96,7 @@ impl DspGraph {
             self.process_dsp(
                 *dsp_id,
                 &node_input_buffer,
-                &mut node_output_buffer,
+                &mut node_output_buffer_slice,
                 start_time,
             );
 

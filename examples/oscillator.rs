@@ -13,8 +13,9 @@ use crate::audio_callback::AudioCallback;
 mod audio_callback;
 
 fn main() {
-    let mut context = Context::new(44100);
-    let _audio_callack = AudioCallback::new(context.get_audio_process());
+    let sample_rate = 44100;
+    let mut context = Context::new(sample_rate);
+    let _audio_callack = AudioCallback::new(context.get_audio_process(), sample_rate);
 
     let mut oscillator_1 = OscillatorNode::new(context.get_command_queue(), 440.0);
     oscillator_1

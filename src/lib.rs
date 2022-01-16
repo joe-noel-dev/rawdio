@@ -8,3 +8,6 @@ mod parameter;
 mod realtime;
 pub mod timestamp;
 mod utility;
+
+#[macro_use]
+extern crate lazy_static;
