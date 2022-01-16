@@ -32,7 +32,9 @@ pub trait AudioBuffer {
                     frame + destination_location.frame,
                 );
 
-                self.set_sample(&dest, source_buffer.get_sample(&source));
+                let original_value = self.get_sample(&dest);
+                let source_value = source_buffer.get_sample(&source);
+                self.set_sample(&dest, original_value + source_value);
             }
         }
     }

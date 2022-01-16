@@ -44,6 +44,24 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug example 'file_render'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=file_render",
+                    "--package=rust-audio-engine"
+                ],
+                "filter": {
+                    "name": "file_render",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug unit tests in example 'oscillator'",
             "cargo": {
                 "args": [

@@ -1,5 +1,7 @@
 use std::cell::RefCell;
 
+use lockfree::channel::{spsc, spsc::Sender};
+
 use crate::{
     buffer::{audio_buffer::AudioBuffer, sample_location::SampleLocation},
     commands::{command::ParameterChangeRequest, id::Id},
@@ -12,8 +14,6 @@ use crate::{
     timestamp::Timestamp,
     utility::garbage_collector::{run_garbage_collector, GarbageCollectionCommand},
 };
-
-use lockfree::channel::{spsc, spsc::Sender};
 
 use super::{
     graph::{Direction, Graph},
@@ -56,6 +56,9 @@ impl DspGraph {
     pub fn process(&mut self, output_buffer: &mut dyn AudioBuffer, start_time: &Timestamp) {
         output_buffer.clear();
 
+        let num_channels = output_buffer.num_channels();
+        let num_frames = output_buffer.num_frames();
+
         if self.graph_needs_sort {
             self.topological_sort.sort(&self.graph);
             self.graph_needs_sort = false;
@@ -70,12 +73,13 @@ impl DspGraph {
             for connected_node_id in self.graph.node_iter(*dsp_id, Direction::Incoming) {
                 let endpoint = Endpoint::new(connected_node_id, EndpointType::Output);
                 if let Some(buffer) = self.buffer_pool.get_assigned_buffer(endpoint) {
+                    let sample_location = SampleLocation::new(0, 0);
                     node_input_buffer.add_from(
                         &buffer,
-                        &SampleLocation::new(0, 0),
-                        &SampleLocation::new(0, 0),
-                        output_buffer.num_channels(),
-                        output_buffer.num_frames(),
+                        &sample_location,
+                        &sample_location,
+                        num_channels,
+                        num_frames,
                     );
 
                     self.buffer_pool
@@ -97,12 +101,13 @@ impl DspGraph {
 
         if let Some(output_endpoint) = self.output_endpoint {
             if let Some(buffer) = self.buffer_pool.get_assigned_buffer(output_endpoint) {
+                let sample_location = SampleLocation::new(0, 0);
                 output_buffer.add_from(
                     &buffer,
-                    &SampleLocation::new(0, 0),
-                    &SampleLocation::new(0, 0),
-                    output_buffer.num_channels(),
-                    output_buffer.num_frames(),
+                    &sample_location,
+                    &sample_location,
+                    num_channels,
+                    num_frames,
                 );
 
                 self.buffer_pool
@@ -182,7 +187,6 @@ impl DspGraph {
 
 #[cfg(test)]
 mod tests {
-
     use approx::{assert_relative_eq, assert_relative_ne};
 
     use crate::{

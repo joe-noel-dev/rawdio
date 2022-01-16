@@ -48,7 +48,7 @@ impl BufferPool {
         while !self.assigned_buffers.is_empty() {
             let endpoint = *self.assigned_buffers.keys().next().unwrap();
             let buffer = self.assigned_buffers.remove(&endpoint).unwrap();
-            self.free_buffers.push(buffer);
+            self.return_buffer(buffer);
         }
     }
 
