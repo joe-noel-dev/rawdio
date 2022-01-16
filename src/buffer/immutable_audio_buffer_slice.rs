@@ -28,7 +28,7 @@ impl<'a> AudioBuffer for ImmutableAudioBufferSlice<'a> {
         self.buffer.num_frames() - self.offset
     }
 
-    fn sample_rate(&self) -> u32 {
+    fn sample_rate(&self) -> usize {
         self.buffer.sample_rate()
     }
 

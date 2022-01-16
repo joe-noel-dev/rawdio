@@ -5,7 +5,7 @@ use super::sample_location::SampleLocation;
 pub trait AudioBuffer {
     fn num_channels(&self) -> usize;
     fn num_frames(&self) -> usize;
-    fn sample_rate(&self) -> u32;
+    fn sample_rate(&self) -> usize;
     fn clear(&mut self);
 
     fn set_sample(&mut self, sample_location: &SampleLocation, value: f32);

@@ -1,3 +1,4 @@
+#[derive(Copy, Clone, Debug)]
 pub struct SampleLocation {
     pub channel: usize,
     pub frame: usize,

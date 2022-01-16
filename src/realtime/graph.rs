@@ -127,7 +127,7 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
             .any(|id| id == to_node_id)
     }
 
-    pub fn _edge_iter(&self, edge_id: Id, direction: Direction) -> EdgeIterator<EdgeData> {
+    fn _edge_iter(&self, edge_id: Id, direction: Direction) -> EdgeIterator<EdgeData> {
         EdgeIterator::new(edge_id, direction, &self.edges)
     }
 

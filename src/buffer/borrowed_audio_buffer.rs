@@ -3,11 +3,11 @@ use super::{audio_buffer::AudioBuffer, sample_location::SampleLocation};
 pub struct BorrowedAudioBuffer<'a> {
     data: &'a mut [f32],
     num_channels: usize,
-    sample_rate: u32,
+    sample_rate: usize,
 }
 
 impl<'a> BorrowedAudioBuffer<'a> {
-    pub fn new(data: &'a mut [f32], num_channels: usize, sample_rate: u32) -> Self {
+    pub fn new(data: &'a mut [f32], num_channels: usize, sample_rate: usize) -> Self {
         Self {
             data,
             num_channels,
@@ -25,7 +25,7 @@ impl<'a> AudioBuffer for BorrowedAudioBuffer<'a> {
         self.data.len() / self.num_channels
     }
 
-    fn sample_rate(&self) -> u32 {
+    fn sample_rate(&self) -> usize {
         self.sample_rate
     }
 

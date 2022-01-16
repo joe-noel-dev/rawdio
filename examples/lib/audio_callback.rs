@@ -56,7 +56,7 @@ impl AudioCallback {
                     let mut audio_buffer = BorrowedAudioBuffer::new(
                         data,
                         usize::from(config.channels()),
-                        config.sample_rate().0,
+                        config.sample_rate().0 as usize,
                     );
 
                     let mut offset = 0;

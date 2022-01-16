@@ -66,6 +66,7 @@ impl GainProcessor {
 impl DspProcessor for GainProcessor {
     fn process_audio(
         &mut self,
+        input_buffer: &dyn AudioBuffer,
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
         parameters: &DspParameterMap,
@@ -83,7 +84,7 @@ impl DspProcessor for GainProcessor {
 
             for channel in 0..output_buffer.num_channels() {
                 let location = SampleLocation::new(channel, frame);
-                let value = output_buffer.get_sample(&location);
+                let value = input_buffer.get_sample(&location);
                 output_buffer.set_sample(&location, value * (gain as f32));
             }
         }

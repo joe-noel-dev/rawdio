@@ -95,6 +95,7 @@ impl OscillatorDspProcess {
 impl DspProcessor for OscillatorDspProcess {
     fn process_audio(
         &mut self,
+        _input_buffer: &dyn AudioBuffer,
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
         parameters: &DspParameterMap,

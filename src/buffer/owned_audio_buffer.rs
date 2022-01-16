@@ -3,11 +3,11 @@ use super::{audio_buffer::AudioBuffer, sample_location::SampleLocation};
 pub struct OwnedAudioBuffer {
     data: Vec<f32>,
     num_channels: usize,
-    sample_rate: u32,
+    sample_rate: usize,
 }
 
 impl OwnedAudioBuffer {
-    pub fn new(num_frames: usize, num_channels: usize, sample_rate: u32) -> Self {
+    pub fn new(num_frames: usize, num_channels: usize, sample_rate: usize) -> Self {
         Self {
             data: vec![0.0; num_frames * num_channels],
             num_channels,
@@ -25,7 +25,7 @@ impl AudioBuffer for OwnedAudioBuffer {
         self.data.len() / self.num_channels
     }
 
-    fn sample_rate(&self) -> u32 {
+    fn sample_rate(&self) -> usize {
         self.sample_rate
     }
 

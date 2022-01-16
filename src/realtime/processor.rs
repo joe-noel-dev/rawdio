@@ -33,7 +33,11 @@ impl Processor {
             command_rx,
             notification_tx,
             sample_position: 0,
-            graph: DspGraph::default(),
+            graph: DspGraph::new(
+                MAXIMUM_NUMBER_OF_FRAMES,
+                MAXIMUM_NUMBER_OF_CHANNELS,
+                sample_rate,
+            ),
         }
     }
 }

@@ -23,6 +23,7 @@ pub struct Dsp {
 pub trait DspProcessor {
     fn process_audio(
         &mut self,
+        input_buffer: &dyn AudioBuffer,
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
         parameters: &DspParameterMap,
@@ -54,13 +55,18 @@ impl Dsp {
         self.id
     }
 
-    pub fn process_audio(&mut self, output_buffer: &mut dyn AudioBuffer, start_time: &Timestamp) {
+    pub fn process_audio(
+        &mut self,
+        input_buffer: &dyn AudioBuffer,
+        output_buffer: &mut dyn AudioBuffer,
+        start_time: &Timestamp,
+    ) {
         for (_, parameter) in self.parameters.iter_mut() {
             parameter.set_current_time(*start_time);
         }
 
         self.processor
-            .process_audio(output_buffer, start_time, &self.parameters);
+            .process_audio(input_buffer, output_buffer, start_time, &self.parameters);
     }
 
     pub fn request_parameter_change(&mut self, parameter_change: ParameterChangeRequest) {
