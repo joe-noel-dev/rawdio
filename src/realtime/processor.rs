@@ -8,7 +8,7 @@ use lockfree::channel::{mpsc::Receiver, spsc::Sender};
 
 use super::dsp_graph::DspGraph;
 
-const MAXIMUM_NUMBER_OF_FRAMES: usize = 32;
+const MAXIMUM_NUMBER_OF_FRAMES: usize = 512;
 const MAXIMUM_NUMBER_OF_CHANNELS: usize = 2;
 
 pub struct Processor {
