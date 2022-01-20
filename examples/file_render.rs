@@ -17,22 +17,22 @@ fn main() {
     let mut oscillator_1 = OscillatorNode::new(context.get_command_queue(), 440.0);
     oscillator_1
         .gain
-        .set_value_at_time(0.8, Timestamp::from_seconds(0.0));
+        .set_value_at_time(0.4, Timestamp::from_seconds(0.0));
 
     let mut oscillator_2 = OscillatorNode::new(context.get_command_queue(), 880.0);
     oscillator_2
         .gain
-        .set_value_at_time(0.4, Timestamp::from_seconds(0.0));
+        .set_value_at_time(0.2, Timestamp::from_seconds(0.0));
 
     let mut oscillator_3 = OscillatorNode::new(context.get_command_queue(), 1320.0);
     oscillator_3
         .gain
-        .set_value_at_time(0.2, Timestamp::from_seconds(0.0));
+        .set_value_at_time(0.1, Timestamp::from_seconds(0.0));
 
     let mut oscillator_4 = OscillatorNode::new(context.get_command_queue(), 1760.0);
     oscillator_4
         .gain
-        .set_value_at_time(0.1, Timestamp::from_seconds(0.0));
+        .set_value_at_time(0.05, Timestamp::from_seconds(0.0));
 
     let mut gain = GainNode::new(context.get_command_queue());
 
@@ -51,38 +51,41 @@ fn main() {
 
     context.start();
 
+    let int_24_max = 2_i32.pow(24 - 1) - 1;
+
     let file_spec = hound::WavSpec {
         channels: 2,
         sample_rate: sample_rate as u32,
-        bits_per_sample: 16,
+        bits_per_sample: 24,
         sample_format: hound::SampleFormat::Int,
     };
 
     let mut writer = hound::WavWriter::create("output.wav", file_spec).unwrap();
 
-    let mut audio_buffer = OwnedAudioBuffer::new(sample_rate * 4, 2, sample_rate);
+    let length_in_seconds = 4.0;
+    let total_num_frames = sample_rate * length_in_seconds as usize;
 
-    let mut offset = 0;
+    let max_number_of_frames = 1024;
+    let mut audio_buffer = OwnedAudioBuffer::new(total_num_frames, 2, sample_rate);
 
-    while offset < audio_buffer.num_frames() {
-        let num_frames = std::cmp::min(
-            audio_buffer.num_frames() - offset,
-            audio_process.get_maximum_number_of_frames(),
-        );
+    let mut position = 0;
+    while position < total_num_frames {
+        let frames_this_time = std::cmp::min(max_number_of_frames, total_num_frames - position);
 
-        let mut audio_buffer = AudioBufferSlice::new(&mut audio_buffer, offset, num_frames);
-        audio_process.process(&mut audio_buffer);
+        let mut frame_buffer = AudioBufferSlice::new(&mut audio_buffer, position, frames_this_time);
 
-        offset += num_frames;
-    }
+        audio_process.process(&mut frame_buffer);
 
-    for frame in 0..audio_buffer.num_frames() {
-        for channel in 0..audio_buffer.num_channels() {
-            let sample = audio_buffer.get_sample(&SampleLocation::new(channel, frame));
-            let scale = i16::MAX as f32;
-            let sample = (sample * scale) as i16;
-            writer.write_sample(sample).expect("Failed to write sample");
+        for frame in 0..frame_buffer.num_frames() {
+            for channel in 0..frame_buffer.num_channels() {
+                let sample = frame_buffer.get_sample(&SampleLocation::new(channel, frame));
+                let sample = sample.clamp(-1.0, 1.0);
+                let sample = (sample * int_24_max as f32) as i32;
+                writer.write_sample(sample).expect("Failed to write sample");
+            }
         }
+
+        position += frames_this_time;
     }
 
     context.stop();
