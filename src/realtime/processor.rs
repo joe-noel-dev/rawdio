@@ -1,6 +1,6 @@
 use crate::{
     audio_process::AudioProcess,
-    buffer::audio_buffer::AudioBuffer,
+    buffer::{audio_buffer::AudioBuffer, audio_buffer_slice::AudioBufferSlice},
     commands::{command::Command, notification::Notification},
     timestamp::Timestamp,
 };
@@ -8,7 +8,7 @@ use lockfree::channel::{mpsc::Receiver, spsc::Sender};
 
 use super::dsp_graph::DspGraph;
 
-const MAXIMUM_NUMBER_OF_FRAMES: usize = 1024;
+const MAXIMUM_NUMBER_OF_FRAMES: usize = 32;
 const MAXIMUM_NUMBER_OF_CHANNELS: usize = 2;
 
 pub struct Processor {
@@ -40,12 +40,29 @@ impl Processor {
             ),
         }
     }
+
+    fn process_graph(&mut self, output_buffer: &mut dyn AudioBuffer) {
+        let current_time = self.current_time();
+
+        let mut offset = 0;
+
+        while offset < output_buffer.num_frames() {
+            let num_frames = std::cmp::min(
+                output_buffer.num_frames() - offset,
+                self.get_maximum_number_of_frames(),
+            );
+
+            let mut audio_buffer = AudioBufferSlice::new(output_buffer, offset, num_frames);
+
+            self.graph.process(&mut audio_buffer, &current_time);
+
+            offset += num_frames;
+        }
+    }
 }
 
 impl AudioProcess for Processor {
     fn process(&mut self, output_buffer: &mut dyn AudioBuffer) {
-        assert!(output_buffer.num_frames() <= self.get_maximum_number_of_frames());
-
         output_buffer.clear();
 
         self.process_commands();
@@ -54,10 +71,7 @@ impl AudioProcess for Processor {
             return;
         }
 
-        let current_time = self.current_time();
-
-        self.graph.process(output_buffer, &current_time);
-
+        self.process_graph(output_buffer);
         self.update_position(output_buffer.num_frames());
         self.notify_position();
     }

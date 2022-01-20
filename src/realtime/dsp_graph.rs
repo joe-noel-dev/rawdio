@@ -28,6 +28,8 @@ pub struct DspGraph {
     garbase_collection_tx: Sender<GarbageCollectionCommand>,
     graph_needs_sort: bool,
     buffer_pool: BufferPool,
+    maximum_number_of_channels: usize,
+    maximum_number_of_frames: usize,
 }
 
 impl DspGraph {
@@ -51,16 +53,21 @@ impl DspGraph {
                 maximum_number_of_channels,
                 sample_rate,
             ),
+            maximum_number_of_channels,
+            maximum_number_of_frames,
         }
     }
 
     pub fn process(&mut self, output_buffer: &mut dyn AudioBuffer, start_time: &Timestamp) {
-        let num_channels = output_buffer.num_channels();
-        let num_frames = output_buffer.num_frames();
+        let num_channels = std::cmp::min(
+            output_buffer.num_channels(),
+            self.maximum_number_of_channels,
+        );
+        let num_frames = std::cmp::min(output_buffer.num_frames(), self.maximum_number_of_frames);
 
         self.sort_graph();
         self.process_dsps(num_frames, num_channels, start_time);
-        self.write_to_output(output_buffer);
+        self.write_to_output(output_buffer, num_channels, num_frames);
 
         self.buffer_pool.clear_assignments();
         assert!(self.buffer_pool.all_buffers_are_available())
@@ -143,10 +150,13 @@ impl DspGraph {
         }
     }
 
-    fn write_to_output(&mut self, output_buffer: &mut dyn AudioBuffer) {
+    fn write_to_output(
+        &mut self,
+        output_buffer: &mut dyn AudioBuffer,
+        num_channels: usize,
+        num_frames: usize,
+    ) {
         if let Some(output_endpoint) = self.output_endpoint {
-            let num_channels = output_buffer.num_channels();
-            let num_frames = output_buffer.num_frames();
             Self::mix_in_endpoint(
                 &mut self.buffer_pool,
                 output_endpoint,
@@ -338,5 +348,43 @@ mod tests {
 
         assert_relative_eq!(audio_buffer.get_sample(&location_1), value_1);
         assert_relative_eq!(audio_buffer.get_sample(&location_2), value_2);
+    }
+
+    #[test]
+    fn doesnt_write_too_many_channels() {
+        let dsp = make_dsp(0.0, SampleLocation::new(0, 0));
+        let dsp_id = dsp.get_id();
+        let sample_rate = 44100;
+        let maximum_number_of_channels = 2;
+
+        let mut graph = DspGraph::new(128, maximum_number_of_channels, sample_rate);
+
+        graph.add_dsp(dsp);
+
+        let num_frames = 128;
+
+        graph.connect_to_output(Endpoint::new(dsp_id, EndpointType::Output));
+
+        let mut audio_buffer =
+            OwnedAudioBuffer::new(num_frames, maximum_number_of_channels * 2, 44100);
+
+        graph.process(&mut audio_buffer, &Timestamp::default());
+    }
+
+    #[test]
+    fn doesnt_write_too_many_frames() {
+        let dsp = make_dsp(0.0, SampleLocation::new(0, 0));
+        let dsp_id = dsp.get_id();
+        let sample_rate = 44100;
+        let maximum_number_of_frames = 512;
+
+        let mut graph = DspGraph::new(maximum_number_of_frames, 2, sample_rate);
+
+        graph.add_dsp(dsp);
+
+        graph.connect_to_output(Endpoint::new(dsp_id, EndpointType::Output));
+
+        let mut audio_buffer = OwnedAudioBuffer::new(maximum_number_of_frames * 2, 2, 44100);
+        graph.process(&mut audio_buffer, &Timestamp::default());
     }
 }

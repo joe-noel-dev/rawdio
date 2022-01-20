@@ -3,11 +3,7 @@ use cpal::{
     Host, SampleFormat, Stream,
 };
 use rust_audio_engine::{
-    audio_process::AudioProcess,
-    buffer::{
-        audio_buffer::AudioBuffer, audio_buffer_slice::AudioBufferSlice,
-        borrowed_audio_buffer::BorrowedAudioBuffer,
-    },
+    audio_process::AudioProcess, buffer::borrowed_audio_buffer::BorrowedAudioBuffer,
 };
 
 pub struct AudioCallback {
@@ -63,20 +59,7 @@ impl AudioCallback {
                         config.sample_rate().0 as usize,
                     );
 
-                    let mut offset = 0;
-
-                    while offset < audio_buffer.num_frames() {
-                        let num_frames = std::cmp::min(
-                            audio_buffer.num_frames() - offset,
-                            audio_process.get_maximum_number_of_frames(),
-                        );
-
-                        let mut audio_buffer =
-                            AudioBufferSlice::new(&mut audio_buffer, offset, num_frames);
-                        audio_process.process(&mut audio_buffer);
-
-                        offset += num_frames;
-                    }
+                    audio_process.process(&mut audio_buffer);
                 },
                 move |err| eprintln!("Stream error: {:?}", err),
             )
