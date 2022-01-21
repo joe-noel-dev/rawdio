@@ -12,6 +12,18 @@ pub trait AudioBuffer {
     fn add_sample(&mut self, sample_location: &SampleLocation, value: f32);
     fn get_sample(&self, sample_location: &SampleLocation) -> f32;
 
+    fn length_in_seconds(&self) -> f64 {
+        self.num_frames() as f64 / self.sample_rate() as f64
+    }
+
+    fn fill_with_value(&mut self, value: f32) {
+        for frame in 0..self.num_frames() {
+            for channel in 0..self.num_channels() {
+                self.set_sample(&SampleLocation::new(channel, frame), value);
+            }
+        }
+    }
+
     fn add_from(
         &mut self,
         source_buffer: &dyn AudioBuffer,

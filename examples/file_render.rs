@@ -45,12 +45,13 @@ fn main() {
 
     context.start();
 
-    let int_24_max = 2_i32.pow(24 - 1) - 1;
+    let bits_per_sample = 24;
+    let max_value = 2_i32.pow(bits_per_sample - 1) - 1;
 
     let file_spec = hound::WavSpec {
         channels: 2,
         sample_rate: sample_rate as u32,
-        bits_per_sample: 24,
+        bits_per_sample: bits_per_sample as u16,
         sample_format: hound::SampleFormat::Int,
     };
 
@@ -74,7 +75,7 @@ fn main() {
             for channel in 0..frame_buffer.num_channels() {
                 let sample = frame_buffer.get_sample(&SampleLocation::new(channel, frame));
                 let sample = sample.clamp(-1.0, 1.0);
-                let sample = (sample * int_24_max as f32) as i32;
+                let sample = (sample * max_value as f32) as i32;
                 writer.write_sample(sample).expect("Failed to write sample");
             }
         }

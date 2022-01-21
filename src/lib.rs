@@ -13,8 +13,9 @@ pub type Level = utility::level::Level;
 pub type Context = context::Context;
 pub type Timestamp = timestamp::Timestamp;
 
-pub type Gain = nodes::gain::GainNode;
-pub type Oscillator = nodes::oscillator::OscillatorNode;
+pub type Gain = nodes::gain::node::GainNode;
+pub type Oscillator = nodes::oscillator::node::OscillatorNode;
+pub type Sampler = nodes::sampler::node::SamplerNode;
 
 pub type AudioBufferSlice<'a> = buffer::audio_buffer_slice::AudioBufferSlice<'a>;
 pub type OwnedAudioBuffer = buffer::owned_audio_buffer::OwnedAudioBuffer;
