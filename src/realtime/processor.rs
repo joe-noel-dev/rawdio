@@ -6,10 +6,11 @@ use crate::{
 };
 use lockfree::channel::{mpsc::Receiver, spsc::Sender};
 
-use super::dsp_graph::DspGraph;
+use super::{dsp_graph::DspGraph, periodic_notification::PeriodicNotification};
 
 const MAXIMUM_NUMBER_OF_FRAMES: usize = 512;
 const MAXIMUM_NUMBER_OF_CHANNELS: usize = 2;
+const POSITION_INTERVAL_HZ: f64 = 30.0;
 
 pub struct Processor {
     started: bool,
@@ -19,6 +20,8 @@ pub struct Processor {
 
     sample_position: usize,
     graph: DspGraph,
+
+    position_notification: PeriodicNotification,
 }
 
 impl Processor {
@@ -38,6 +41,7 @@ impl Processor {
                 MAXIMUM_NUMBER_OF_CHANNELS,
                 sample_rate,
             ),
+            position_notification: PeriodicNotification::new(sample_rate, POSITION_INTERVAL_HZ),
         }
     }
 
@@ -71,17 +75,10 @@ impl AudioProcess for Processor {
             return;
         }
 
+        let num_frames = output_buffer.num_frames();
         self.process_graph(output_buffer);
-        self.update_position(output_buffer.num_frames());
-        self.notify_position();
-    }
-
-    fn get_maximum_number_of_frames(&self) -> usize {
-        MAXIMUM_NUMBER_OF_FRAMES
-    }
-
-    fn get_maximum_number_of_channel(&self) -> usize {
-        MAXIMUM_NUMBER_OF_CHANNELS
+        self.update_position(num_frames);
+        self.notify_position(num_frames);
     }
 }
 
@@ -108,6 +105,10 @@ impl Processor {
         }
     }
 
+    fn get_maximum_number_of_frames(&self) -> usize {
+        MAXIMUM_NUMBER_OF_FRAMES
+    }
+
     fn send_notficiation(&mut self, notification: Notification) {
         let _ = self.notification_tx.send(notification);
     }
@@ -120,7 +121,9 @@ impl Processor {
         Timestamp::from_seconds(self.sample_position as f64 / self.sample_rate as f64)
     }
 
-    fn notify_position(&mut self) {
-        self.send_notficiation(Notification::Position(self.current_time()));
+    fn notify_position(&mut self, num_samples: usize) {
+        if self.position_notification.increment(num_samples) {
+            self.send_notficiation(Notification::Position(self.current_time()));
+        }
     }
 }
