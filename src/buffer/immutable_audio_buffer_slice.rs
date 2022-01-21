@@ -32,11 +32,17 @@ impl<'a> AudioBuffer for ImmutableAudioBufferSlice<'a> {
         self.buffer.sample_rate()
     }
 
-    fn clear(&mut self) {}
+    fn clear(&mut self) {
+        debug_assert!(false)
+    }
 
-    fn set_sample(&mut self, _sample_location: &SampleLocation, _value: f32) {}
+    fn set_sample(&mut self, _sample_location: &SampleLocation, _value: f32) {
+        debug_assert!(false)
+    }
 
-    fn add_sample(&mut self, _sample_location: &SampleLocation, _value: f32) {}
+    fn add_sample(&mut self, _sample_location: &SampleLocation, _value: f32) {
+        debug_assert!(false)
+    }
 
     fn get_sample(&self, sample_location: &SampleLocation) -> f32 {
         let new_location = self.translate_location(sample_location);

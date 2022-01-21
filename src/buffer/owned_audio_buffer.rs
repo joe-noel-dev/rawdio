@@ -14,6 +14,12 @@ impl OwnedAudioBuffer {
             sample_rate,
         }
     }
+
+    fn get_offset(&self, sample_location: &SampleLocation) -> usize {
+        debug_assert!(sample_location.channel < self.num_channels);
+        debug_assert!(sample_location.frame < self.num_frames());
+        sample_location.frame * self.num_channels + sample_location.channel
+    }
 }
 
 impl AudioBuffer for OwnedAudioBuffer {
@@ -30,15 +36,12 @@ impl AudioBuffer for OwnedAudioBuffer {
     }
 
     fn clear(&mut self) {
-        for value in self.data.iter_mut() {
-            *value = 0.0;
-        }
+        self.data.fill(0.0);
     }
 
     fn set_sample(&mut self, sample_location: &SampleLocation, value: f32) {
-        debug_assert!(sample_location.channel < self.num_channels);
-        debug_assert!(sample_location.frame < self.num_frames());
-        self.data[sample_location.frame * self.num_channels + sample_location.channel] = value;
+        let offset = self.get_offset(sample_location);
+        self.data[offset] = value;
     }
 
     fn add_sample(&mut self, sample_location: &SampleLocation, value: f32) {
@@ -47,8 +50,7 @@ impl AudioBuffer for OwnedAudioBuffer {
     }
 
     fn get_sample(&self, sample_location: &SampleLocation) -> f32 {
-        debug_assert!(sample_location.channel < self.num_channels);
-        debug_assert!(sample_location.frame < self.num_frames());
-        self.data[sample_location.frame * self.num_channels + sample_location.channel]
+        let offset = self.get_offset(sample_location);
+        self.data[offset]
     }
 }
