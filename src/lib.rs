@@ -9,5 +9,7 @@ mod realtime;
 pub mod timestamp;
 mod utility;
 
+pub type Level = utility::level::Level;
+
 #[macro_use]
 extern crate lazy_static;
