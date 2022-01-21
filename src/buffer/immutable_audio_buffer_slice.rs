@@ -6,7 +6,7 @@ pub struct ImmutableAudioBufferSlice<'a> {
 }
 
 impl<'a> ImmutableAudioBufferSlice<'a> {
-    pub fn new(buffer: &'a dyn AudioBuffer, offset: usize) -> Self {
+    pub fn _new(buffer: &'a dyn AudioBuffer, offset: usize) -> Self {
         if offset >= buffer.num_frames() {
             panic!("Invalid offset");
         }

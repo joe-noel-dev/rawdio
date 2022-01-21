@@ -1,5 +1,3 @@
-use std::f64::MIN;
-
 pub const MINUS_INFINITY_DECIBELS: f64 = -128.0;
 
 #[derive(Debug, Clone, Copy, Default)]

@@ -2,9 +2,7 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Host, SampleFormat, Stream,
 };
-use rust_audio_engine::{
-    audio_process::AudioProcess, buffer::borrowed_audio_buffer::BorrowedAudioBuffer,
-};
+use rust_audio_engine::{AudioProcess, BorrowedAudioBuffer};
 
 pub struct AudioCallback {
     _output_stream: Stream,

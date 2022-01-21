@@ -1,12 +1,6 @@
 use rust_audio_engine::{
-    buffer::{
-        audio_buffer::AudioBuffer, audio_buffer_slice::AudioBufferSlice,
-        owned_audio_buffer::OwnedAudioBuffer, sample_location::SampleLocation,
-    },
-    context::Context,
-    graph::node::Node,
-    nodes::{gain::GainNode, oscillator::OscillatorNode},
-    timestamp::Timestamp,
+    AudioBuffer, AudioBufferSlice, Context, Gain, Node, Oscillator, OwnedAudioBuffer,
+    SampleLocation, Timestamp,
 };
 
 fn main() {
@@ -14,27 +8,27 @@ fn main() {
     let mut context = Context::new(sample_rate);
     let mut audio_process = context.get_audio_process();
 
-    let mut oscillator_1 = OscillatorNode::new(context.get_command_queue(), 440.0);
+    let mut oscillator_1 = Oscillator::new(context.get_command_queue(), 440.0);
     oscillator_1
         .gain
         .set_value_at_time(0.4, Timestamp::from_seconds(0.0));
 
-    let mut oscillator_2 = OscillatorNode::new(context.get_command_queue(), 880.0);
+    let mut oscillator_2 = Oscillator::new(context.get_command_queue(), 880.0);
     oscillator_2
         .gain
         .set_value_at_time(0.2, Timestamp::from_seconds(0.0));
 
-    let mut oscillator_3 = OscillatorNode::new(context.get_command_queue(), 1320.0);
+    let mut oscillator_3 = Oscillator::new(context.get_command_queue(), 1320.0);
     oscillator_3
         .gain
         .set_value_at_time(0.1, Timestamp::from_seconds(0.0));
 
-    let mut oscillator_4 = OscillatorNode::new(context.get_command_queue(), 1760.0);
+    let mut oscillator_4 = Oscillator::new(context.get_command_queue(), 1760.0);
     oscillator_4
         .gain
         .set_value_at_time(0.05, Timestamp::from_seconds(0.0));
 
-    let mut gain = GainNode::new(context.get_command_queue());
+    let mut gain = Gain::new(context.get_command_queue());
 
     oscillator_1.connect_to(gain.get_id());
     oscillator_2.connect_to(gain.get_id());
