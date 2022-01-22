@@ -36,8 +36,18 @@ impl Sub for Timestamp {
 }
 
 impl Timestamp {
+    pub fn zero() -> Self {
+        Self { seconds: 0.0 }
+    }
+
     pub fn from_seconds(seconds: f64) -> Self {
         Self { seconds }
+    }
+
+    pub fn from_samples(samples: f64, sample_rate: usize) -> Self {
+        Self {
+            seconds: samples / sample_rate as f64,
+        }
     }
 
     pub fn get_seconds(&self) -> f64 {

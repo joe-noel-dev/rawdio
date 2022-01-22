@@ -289,7 +289,7 @@ mod tests {
 
         realtime_parameter.add_parameter_change(ParameterChange {
             value: 0.0,
-            end_time: Timestamp::from_seconds(0.0),
+            end_time: Timestamp::zero(),
             method: ValueChangeMethod::Immediate,
         });
 
