@@ -13,10 +13,10 @@ use crate::{
         endpoint::{Endpoint, EndpointType},
     },
     timestamp::Timestamp,
-    utility::garbage_collector::{run_garbage_collector, GarbageCollectionCommand},
 };
 
 use super::{
+    garbage_collector::{run_garbage_collector, GarbageCollectionCommand},
     graph::{Direction, Graph},
     topological_sort::TopologicalSort,
 };

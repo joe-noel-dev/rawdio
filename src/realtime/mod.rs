@@ -1,5 +1,6 @@
 mod dsp_graph;
 mod edge;
+mod garbage_collector;
 mod graph;
 mod node;
 mod periodic_notification;
