@@ -247,7 +247,7 @@ mod tests {
                 epsilon = 1e-6
             );
 
-            current_time = current_time.incremented_by_samples(1, 44100.0);
+            current_time = current_time.incremented_by_samples(1, 44_100);
         }
     }
 
@@ -277,7 +277,7 @@ mod tests {
                 epsilon = 1e-6
             );
 
-            current_time = current_time.incremented_by_samples(1, 44100.0);
+            current_time = current_time.incremented_by_samples(1, 44_100);
         }
     }
 
@@ -341,7 +341,7 @@ mod tests {
                 epsilon = 1e-6
             );
 
-            current_time = current_time.incremented_by_samples(1, 44100.0);
+            current_time = current_time.incremented_by_samples(1, 44_100);
 
             realtime_parameter.set_current_time(current_time);
         }
