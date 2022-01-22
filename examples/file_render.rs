@@ -9,24 +9,16 @@ fn main() {
     let mut audio_process = context.get_audio_process();
 
     let mut oscillator_1 = Oscillator::new(context.get_command_queue(), 440.0);
-    oscillator_1
-        .gain
-        .set_value_at_time(0.4, Timestamp::from_seconds(0.0));
+    oscillator_1.gain.set_value_at_time(0.4, Timestamp::zero());
 
     let mut oscillator_2 = Oscillator::new(context.get_command_queue(), 880.0);
-    oscillator_2
-        .gain
-        .set_value_at_time(0.2, Timestamp::from_seconds(0.0));
+    oscillator_2.gain.set_value_at_time(0.2, Timestamp::zero());
 
     let mut oscillator_3 = Oscillator::new(context.get_command_queue(), 1320.0);
-    oscillator_3
-        .gain
-        .set_value_at_time(0.1, Timestamp::from_seconds(0.0));
+    oscillator_3.gain.set_value_at_time(0.1, Timestamp::zero());
 
     let mut oscillator_4 = Oscillator::new(context.get_command_queue(), 1760.0);
-    oscillator_4
-        .gain
-        .set_value_at_time(0.05, Timestamp::from_seconds(0.0));
+    oscillator_4.gain.set_value_at_time(0.05, Timestamp::zero());
 
     let mut gain = Gain::new(context.get_command_queue());
 
@@ -37,8 +29,7 @@ fn main() {
 
     gain.connect_to_output();
 
-    gain.gain
-        .set_value_at_time(0.9, Timestamp::from_seconds(0.0));
+    gain.gain.set_value_at_time(0.9, Timestamp::zero());
 
     gain.gain
         .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));

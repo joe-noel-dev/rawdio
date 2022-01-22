@@ -22,7 +22,7 @@ impl DspProcessor for GainProcessor {
         start_time: &Timestamp,
         parameters: &DspParameterMap,
     ) {
-        let sample_rate = output_buffer.sample_rate() as f64;
+        let sample_rate = output_buffer.sample_rate();
 
         let gain = match parameters.get(&self.gain_id) {
             Some(param) => param,

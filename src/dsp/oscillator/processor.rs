@@ -37,8 +37,8 @@ impl OscillatorDspProcess {
         }
     }
 
-    fn increment_phase(&mut self, frequency: f64, sample_rate: f64) {
-        self.phase += frequency / sample_rate;
+    fn increment_phase(&mut self, frequency: f64, sample_rate: usize) {
+        self.phase += frequency / (sample_rate as f64);
         while self.phase > 1.0 {
             self.phase -= 1.0;
         }
@@ -74,7 +74,7 @@ impl DspProcessor for OscillatorDspProcess {
         start_time: &Timestamp,
         parameters: &DspParameterMap,
     ) {
-        let sample_rate = output_buffer.sample_rate() as f64;
+        let sample_rate = output_buffer.sample_rate();
 
         let frequency = match parameters.get(&self.frequency_id) {
             Some(param) => param,

@@ -31,7 +31,10 @@ impl Voice {
 
     pub fn start_from_position(&mut self, position: usize) {
         self.position = position;
-        self.phase = Phase::FadingIn(0);
+        self.phase = match position {
+            0 => Phase::Playing,
+            _ => Phase::FadingIn(0),
+        };
     }
 
     pub fn get_position(&self) -> usize {

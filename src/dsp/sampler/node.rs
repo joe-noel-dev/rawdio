@@ -5,14 +5,15 @@ use lockfree::channel::mpsc::Sender;
 use crate::{
     commands::{command::Command, id::Id},
     graph::{dsp::Dsp, node::Node},
-    OwnedAudioBuffer,
+    OwnedAudioBuffer, Timestamp,
 };
 
-use super::processor::SamplerDspProcess;
+use super::processor::{EventTransmitter, SamplerDspProcess, SamplerEvent};
 
 pub struct SamplerNode {
     command_queue: Sender<Command>,
     id: Id,
+    event_transmitter: EventTransmitter,
 }
 
 impl Node for SamplerNode {
@@ -33,16 +34,35 @@ impl SamplerNode {
     ) -> Self {
         let id = Id::generate();
 
+        let (event_transmitter, event_receiver) = lockfree::channel::spsc::create();
+
         let parameters = HashMap::new();
 
-        let mut sampler_process = SamplerDspProcess::new(sample_rate, sample);
-        sampler_process.start(0);
+        let sampler_process = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
         let dsp = Dsp::new(id, Box::new(sampler_process), parameters);
 
         Dsp::add_to_audio_process(dsp, &command_queue);
 
-        Self { command_queue, id }
+        Self {
+            command_queue,
+            id,
+            event_transmitter,
+        }
+    }
+
+    pub fn start_from_position_at_time(
+        &mut self,
+        start_time: Timestamp,
+        position_in_sample: Timestamp,
+    ) {
+        let _ = self
+            .event_transmitter
+            .send(SamplerEvent::start(start_time, position_in_sample));
+    }
+
+    pub fn stop_at_time(&mut self, stop_time: Timestamp) {
+        let _ = self.event_transmitter.send(SamplerEvent::stop(stop_time));
     }
 }
 

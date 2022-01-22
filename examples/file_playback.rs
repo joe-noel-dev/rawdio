@@ -52,14 +52,16 @@ fn main() {
     let _audio_callack = AudioCallback::new(context.get_audio_process(), sample_rate);
 
     let length_in_seconds = sample.length_in_seconds().ceil() as u64;
-    let sampler = Sampler::new(context.get_command_queue(), sample_rate, sample);
+    let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, sample);
     let mut gain = Gain::new(context.get_command_queue());
 
     sampler.connect_to(gain.get_id());
+    sampler.start_from_position_at_time(Timestamp::zero(), Timestamp::zero());
+
     gain.connect_to_output();
 
     gain.gain
-        .set_value_at_time(Level::from_db(-6.0).as_gain(), Timestamp::from_seconds(0.0));
+        .set_value_at_time(Level::from_db(-6.0).as_gain(), Timestamp::zero());
 
     context.start();
 

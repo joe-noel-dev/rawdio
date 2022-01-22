@@ -247,7 +247,7 @@ mod tests {
                 epsilon = 1e-6
             );
 
-            current_time = current_time.incremented_by_samples(1, 44100.0);
+            current_time = current_time.incremented_by_samples(1, 44_100);
         }
     }
 
@@ -277,7 +277,7 @@ mod tests {
                 epsilon = 1e-6
             );
 
-            current_time = current_time.incremented_by_samples(1, 44100.0);
+            current_time = current_time.incremented_by_samples(1, 44_100);
         }
     }
 
@@ -289,7 +289,7 @@ mod tests {
 
         realtime_parameter.add_parameter_change(ParameterChange {
             value: 0.0,
-            end_time: Timestamp::from_seconds(0.0),
+            end_time: Timestamp::zero(),
             method: ValueChangeMethod::Immediate,
         });
 
@@ -341,7 +341,7 @@ mod tests {
                 epsilon = 1e-6
             );
 
-            current_time = current_time.incremented_by_samples(1, 44100.0);
+            current_time = current_time.incremented_by_samples(1, 44_100);
 
             realtime_parameter.set_current_time(current_time);
         }
