@@ -23,6 +23,8 @@ pub type BorrowedAudioBuffer<'a> = buffer::borrowed_audio_buffer::BorrowedAudioB
 
 pub type SampleLocation = buffer::sample_location::SampleLocation;
 
+pub type AudioParameter = parameter::audio_parameter::AudioParameter;
+
 pub use audio_process::AudioProcess;
 pub use buffer::audio_buffer::AudioBuffer;
 pub use graph::node::Node;

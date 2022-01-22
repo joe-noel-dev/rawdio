@@ -5,7 +5,7 @@ use lockfree::prelude::mpsc::Sender;
 use crate::{
     commands::{command::Command, id::Id},
     graph::{dsp::Dsp, node::Node},
-    parameter::AudioParameter,
+    parameter::audio_parameter::AudioParameter,
 };
 
 use super::processor::GainProcessor;

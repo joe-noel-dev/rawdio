@@ -6,7 +6,7 @@ use crate::{
         command::{Command, ParameterChangeRequest},
         id::Id,
     },
-    parameter::RealtimeAudioParameter,
+    parameter::realtime_parameter::RealtimeAudioParameter,
     timestamp::Timestamp,
 };
 
