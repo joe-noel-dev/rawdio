@@ -15,6 +15,8 @@ pub struct SamplerDspProcess {
     buffer: OwnedAudioBuffer,
     event_receiver: EventReceiver,
     pending_events: Vec<SamplerEvent>,
+
+    loop_points: Option<(Timestamp, Timestamp)>,
 }
 
 const NUM_VOICES: usize = 2;
@@ -24,6 +26,9 @@ const MAX_PENDING_EVENTS: usize = 10;
 pub enum SampleEventType {
     Start(Timestamp),
     Stop,
+
+    EnableLoop(Timestamp, Timestamp),
+    CancelLoop,
 }
 
 pub struct SamplerEvent {
@@ -39,10 +44,38 @@ impl SamplerEvent {
         }
     }
 
+    pub fn start_now() -> Self {
+        Self {
+            time: Timestamp::zero(),
+            event_type: SampleEventType::Start(Timestamp::zero()),
+        }
+    }
+
     pub fn stop(stop_at_time: Timestamp) -> Self {
         Self {
             time: stop_at_time,
             event_type: SampleEventType::Stop,
+        }
+    }
+
+    pub fn stop_now() -> Self {
+        Self {
+            time: Timestamp::zero(),
+            event_type: SampleEventType::Stop,
+        }
+    }
+
+    pub fn enable_loop(loop_start: Timestamp, loop_end: Timestamp) -> Self {
+        Self {
+            time: Timestamp::zero(),
+            event_type: SampleEventType::EnableLoop(loop_start, loop_end),
+        }
+    }
+
+    pub fn cancel_loop() -> Self {
+        Self {
+            time: Timestamp::zero(),
+            event_type: SampleEventType::CancelLoop,
         }
     }
 }
@@ -98,6 +131,7 @@ impl SamplerDspProcess {
             buffer,
             event_receiver,
             pending_events: Vec::with_capacity(MAX_PENDING_EVENTS),
+            loop_points: None,
         }
     }
 
@@ -147,7 +181,19 @@ impl SamplerDspProcess {
                 self.start(position_in_sample as usize);
             }
             SampleEventType::Stop => self.stop(),
+            SampleEventType::EnableLoop(loop_start, loop_end) => {
+                self.set_loop_points(loop_start, loop_end)
+            }
+            SampleEventType::CancelLoop => self.clear_loop_points(),
         }
+    }
+
+    fn set_loop_points(&mut self, loop_start: Timestamp, loop_end: Timestamp) {
+        self.loop_points = Some((loop_start, loop_end));
+    }
+
+    fn clear_loop_points(&mut self) {
+        self.loop_points = None
     }
 
     fn read_events(&mut self) {
@@ -283,12 +329,12 @@ mod tests {
         let (mut event_transmitter, event_receiver) = lockfree::channel::spsc::create();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
-        let _ = event_transmitter.send(SamplerEvent::start(Timestamp::zero(), Timestamp::zero()));
+        let _ = event_transmitter.send(SamplerEvent::start_now());
 
         let fade_length = sampler.fade.len();
 
         let _ = process_sampler(&mut sampler, 2 * fade_length, num_channels, sample_rate);
-        let _ = event_transmitter.send(SamplerEvent::stop(Timestamp::zero()));
+        let _ = event_transmitter.send(SamplerEvent::stop_now());
         let output = process_sampler(&mut sampler, 2 * fade_length, num_channels, sample_rate);
 
         expect_sample(1.0, &output, 0, 0);
@@ -317,7 +363,7 @@ mod tests {
             sample_rate,
         );
 
-        let _ = event_transmitter.send(SamplerEvent::stop(Timestamp::zero()));
+        let _ = event_transmitter.send(SamplerEvent::stop_now());
 
         let output = process_sampler(&mut sampler, 2 * fade_length, num_channels, sample_rate);
 
@@ -364,10 +410,39 @@ mod tests {
             sample_rate,
         )));
 
-        let _ = event_transmitter.send(SamplerEvent::start(Timestamp::zero(), Timestamp::zero()));
+        let _ = event_transmitter.send(SamplerEvent::start_now());
 
         let output = process_sampler(&mut sampler, num_frames, num_channels, sample_rate);
         expect_sample(1.0, &output, stop_time_in_samples, 0);
         expect_sample(0.0, &output, stop_time_in_samples + sampler.fade.len(), 0);
+    }
+
+    #[test]
+    fn loops_samples() {
+        let num_frames = 10_000;
+        let sample_rate = 48_000;
+        let num_channels = 2;
+
+        let mut sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+        sample.set_sample(&SampleLocation::new(0, 250), 0.250);
+        sample.set_sample(&SampleLocation::new(0, 499), 0.499);
+
+        let (mut event_transmitter, event_receiver) = lockfree::channel::spsc::create();
+        let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
+
+        let _ = event_transmitter.send(SamplerEvent::start_now());
+
+        let _ = event_transmitter.send(SamplerEvent::enable_loop(
+            Timestamp::from_samples(250.0, sample_rate),
+            Timestamp::from_samples(500.0, sample_rate),
+        ));
+
+        let output = process_sampler(&mut sampler, num_frames, num_channels, sample_rate);
+        expect_sample(0.25, &output, 250, 0);
+        expect_sample(0.499, &output, 499, 0);
+        expect_sample(0.25, &output, 500, 0);
+        expect_sample(0.499, &output, 749, 0);
+        expect_sample(0.25, &output, 750, 0);
+        expect_sample(0.499, &output, 999, 0);
     }
 }

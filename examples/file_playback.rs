@@ -56,7 +56,7 @@ fn main() {
     let mut gain = Gain::new(context.get_command_queue());
 
     sampler.connect_to(gain.get_id());
-    sampler.start_from_position_at_time(Timestamp::zero(), Timestamp::zero());
+    sampler.start_now();
 
     gain.connect_to_output();
 
