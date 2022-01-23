@@ -8,7 +8,7 @@ pub struct AudioBufferSlice<'a> {
 
 impl<'a> AudioBufferSlice<'a> {
     pub fn new(buffer: &'a mut dyn AudioBuffer, offset: usize, num_frames: usize) -> Self {
-        if offset >= buffer.num_frames() {
+        if offset + num_frames > buffer.num_frames() {
             panic!("Invalid offset");
         }
 
