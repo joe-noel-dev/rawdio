@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{
     graph::dsp::{DspParameterMap, DspProcessor},
     AudioBuffer, AudioBufferSlice, OwnedAudioBuffer, Timestamp,
@@ -20,7 +22,7 @@ pub struct SamplerDspProcess {
 }
 
 const NUM_VOICES: usize = 2;
-const FADE_LENGTH_MS: f64 = 50.0;
+const FADE_LENGTH: Duration = Duration::from_millis(50);
 const MAX_PENDING_EVENTS: usize = 10;
 
 pub enum SampleEventType {
@@ -105,8 +107,11 @@ impl DspProcessor for SamplerDspProcess {
             debug_assert!(end_frame <= output_buffer.num_frames());
             let num_frames = end_frame - position;
 
-            let mut output_buffer = AudioBufferSlice::new(output_buffer, position, num_frames);
-            self.process_voices(&mut output_buffer);
+            self.process_sample(&mut AudioBufferSlice::new(
+                output_buffer,
+                position,
+                num_frames,
+            ));
 
             position += num_frames;
             current_time = current_time.incremented_by_samples(num_frames, sample_rate);
@@ -125,7 +130,7 @@ impl SamplerDspProcess {
         event_receiver: EventReceiver,
     ) -> Self {
         Self {
-            fade: Fade::new(FADE_LENGTH_MS, sample_rate),
+            fade: Fade::new(FADE_LENGTH, sample_rate),
             voices: (0..NUM_VOICES).map(|_| Voice::default()).collect(),
             active_voice: None,
             buffer,
@@ -135,7 +140,53 @@ impl SamplerDspProcess {
         }
     }
 
-    pub fn process_voices(&mut self, output_buffer: &mut dyn AudioBuffer) {
+    fn end_position_in_sample(&self, sample_rate: usize) -> f64 {
+        match self.loop_points {
+            Some((_, loop_end)) => loop_end.get_samples(sample_rate),
+            None => self.buffer.num_frames() as f64,
+        }
+    }
+
+    fn process_sample(&mut self, output_buffer: &mut dyn AudioBuffer) {
+        let mut position = 0;
+
+        while position < output_buffer.num_frames() {
+            let current_position = self.get_active_voice_position().unwrap_or(0) as f64;
+            let end_of_frame = current_position + (output_buffer.num_frames() - position) as f64;
+            let end_of_sample = self.end_position_in_sample(output_buffer.sample_rate());
+
+            let end_point = if end_of_frame < end_of_sample {
+                end_of_frame
+            } else {
+                end_of_sample
+            };
+
+            let num_frames_to_render = end_point - current_position;
+            // FIXME: Error introduced if not on boundary
+            let num_frames_to_render = num_frames_to_render as usize;
+
+            if num_frames_to_render == 0 {
+                if let Some((loop_start, _)) = self.loop_points {
+                    self.stop();
+                    // FIXME: Error introduced if not on boundary
+                    self.start(loop_start.get_samples(output_buffer.sample_rate()).floor() as usize);
+                    continue;
+                } else {
+                    break;
+                }
+            }
+
+            self.process_voices(&mut AudioBufferSlice::new(
+                output_buffer,
+                position,
+                num_frames_to_render,
+            ));
+
+            position += num_frames_to_render;
+        }
+    }
+
+    fn process_voices(&mut self, output_buffer: &mut dyn AudioBuffer) {
         let fade = &self.fade;
         let sample = &self.buffer;
         self.voices
@@ -424,8 +475,7 @@ mod tests {
         let num_channels = 2;
 
         let mut sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
-        sample.set_sample(&SampleLocation::new(0, 250), 0.250);
-        sample.set_sample(&SampleLocation::new(0, 499), 0.499);
+        sample.set_sample(&SampleLocation::new(0, 4999), 0.4999);
 
         let (mut event_transmitter, event_receiver) = lockfree::channel::spsc::create();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
@@ -433,16 +483,43 @@ mod tests {
         let _ = event_transmitter.send(SamplerEvent::start_now());
 
         let _ = event_transmitter.send(SamplerEvent::enable_loop(
-            Timestamp::from_samples(250.0, sample_rate),
-            Timestamp::from_samples(500.0, sample_rate),
+            Timestamp::from_samples(1_000.0, sample_rate),
+            Timestamp::from_samples(5_000.0, sample_rate),
         ));
 
-        let output = process_sampler(&mut sampler, num_frames, num_channels, sample_rate);
-        expect_sample(0.25, &output, 250, 0);
-        expect_sample(0.499, &output, 499, 0);
-        expect_sample(0.25, &output, 500, 0);
-        expect_sample(0.499, &output, 749, 0);
-        expect_sample(0.25, &output, 750, 0);
-        expect_sample(0.499, &output, 999, 0);
+        let output = process_sampler(&mut sampler, 50_000, num_channels, sample_rate);
+        expect_sample(0.4999, &output, 4_999, 0);
+        expect_sample(0.4999, &output, 8_999, 0);
+        expect_sample(0.4999, &output, 12_999, 0);
+    }
+
+    #[test]
+    fn loops_and_frame_length_aligned() {
+        let num_frames = 10_000;
+        let sample_rate = 48_000;
+        let num_channels = 2;
+
+        let mut sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+        sample.set_sample(&SampleLocation::new(0, 9999), 0.123);
+
+        let (mut event_transmitter, event_receiver) = lockfree::channel::spsc::create();
+        let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
+
+        let _ = event_transmitter.send(SamplerEvent::start_now());
+
+        let _ = event_transmitter.send(SamplerEvent::enable_loop(
+            Timestamp::from_samples(0.0, sample_rate),
+            Timestamp::from_samples(10_000.0, sample_rate),
+        ));
+
+        let output = process_sampler(&mut sampler, 20_000, num_channels, sample_rate);
+        expect_sample(0.123, &output, 9_999, 0);
+        expect_sample(0.123, &output, 19_999, 0);
+        let output = process_sampler(&mut sampler, 20_000, num_channels, sample_rate);
+        expect_sample(0.123, &output, 9_999, 0);
+        expect_sample(0.123, &output, 19_999, 0);
+        let output = process_sampler(&mut sampler, 20_000, num_channels, sample_rate);
+        expect_sample(0.123, &output, 9_999, 0);
+        expect_sample(0.123, &output, 19_999, 0);
     }
 }
