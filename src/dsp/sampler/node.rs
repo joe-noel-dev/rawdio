@@ -51,6 +51,14 @@ impl SamplerNode {
         }
     }
 
+    pub fn start_now(&mut self) {
+        let _ = self.event_transmitter.send(SamplerEvent::start_now());
+    }
+
+    pub fn stop_now(&mut self) {
+        let _ = self.event_transmitter.send(SamplerEvent::stop_now());
+    }
+
     pub fn start_from_position_at_time(
         &mut self,
         start_time: Timestamp,
@@ -63,6 +71,16 @@ impl SamplerNode {
 
     pub fn stop_at_time(&mut self, stop_time: Timestamp) {
         let _ = self.event_transmitter.send(SamplerEvent::stop(stop_time));
+    }
+
+    pub fn enable_loop(&mut self, loop_start: Timestamp, loop_end: Timestamp) {
+        let _ = self
+            .event_transmitter
+            .send(SamplerEvent::enable_loop(loop_start, loop_end));
+    }
+
+    pub fn cancel_loop(&mut self) {
+        let _ = self.event_transmitter.send(SamplerEvent::cancel_loop());
     }
 }
 

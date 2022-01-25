@@ -1,13 +1,17 @@
 use std::ops::Sub;
 
+type FixedPoint = fixed::types::I32F32;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Timestamp {
-    seconds: f64,
+    seconds: FixedPoint,
 }
 
 impl Default for Timestamp {
     fn default() -> Self {
-        Self { seconds: 0.0 }
+        Self {
+            seconds: FixedPoint::from_num(0.0),
+        }
     }
 }
 
@@ -37,36 +41,40 @@ impl Sub for Timestamp {
 
 impl Timestamp {
     pub fn zero() -> Self {
-        Self { seconds: 0.0 }
+        Self {
+            seconds: FixedPoint::ZERO,
+        }
     }
 
     pub fn from_seconds(seconds: f64) -> Self {
-        Self { seconds }
+        Self {
+            seconds: FixedPoint::from_num(seconds),
+        }
     }
 
     pub fn from_samples(samples: f64, sample_rate: usize) -> Self {
         Self {
-            seconds: samples / sample_rate as f64,
+            seconds: FixedPoint::from_num(samples / sample_rate as f64),
         }
     }
 
     pub fn get_seconds(&self) -> f64 {
-        self.seconds
+        self.seconds.to_num()
     }
 
     pub fn get_samples(&self, sample_rate: usize) -> f64 {
-        self.seconds * sample_rate as f64
+        self.seconds.to_num::<f64>() * sample_rate as f64
     }
 
     pub fn incremented_by_samples(&self, num_samples: usize, sample_rate: usize) -> Self {
         Self {
-            seconds: self.seconds + num_samples as f64 / sample_rate as f64,
+            seconds: self.seconds + FixedPoint::from_num(num_samples as f64 / sample_rate as f64),
         }
     }
 
     pub fn incremented_by_seconds(&self, num_seconds: f64) -> Self {
         Self {
-            seconds: self.seconds + num_seconds,
+            seconds: self.seconds + FixedPoint::from_num(num_seconds),
         }
     }
 }
