@@ -17,8 +17,13 @@ pub struct SamplerDspProcess {
     buffer: OwnedAudioBuffer,
     event_receiver: EventReceiver,
     pending_events: Vec<SamplerEvent>,
+    sample_rate: usize,
 
     loop_points: Option<(Timestamp, Timestamp)>,
+
+    position: Timestamp,
+    start_position_in_sample: Timestamp,
+    completed_loops: usize,
 }
 
 const NUM_VOICES: usize = 2;
@@ -90,19 +95,16 @@ impl DspProcessor for SamplerDspProcess {
         start_time: &Timestamp,
         _parameters: &DspParameterMap,
     ) {
+        debug_assert_eq!(self.sample_rate, output_buffer.sample_rate());
+
         self.read_events();
 
-        let sample_rate = output_buffer.sample_rate();
         let mut current_time = *start_time;
         let mut position = 0;
 
         while position < output_buffer.num_frames() {
-            let (end_frame, event) = self.next_render_point(
-                start_time,
-                &current_time,
-                output_buffer.num_frames(),
-                sample_rate,
-            );
+            let (end_frame, event) =
+                self.next_render_point(start_time, &current_time, output_buffer.num_frames());
 
             debug_assert!(end_frame <= output_buffer.num_frames());
             let num_frames = end_frame - position;
@@ -114,10 +116,10 @@ impl DspProcessor for SamplerDspProcess {
             ));
 
             position += num_frames;
-            current_time = current_time.incremented_by_samples(num_frames, sample_rate);
+            current_time = current_time.incremented_by_samples(num_frames, self.sample_rate);
 
             if let Some(event) = event {
-                self.process_event(&event, sample_rate);
+                self.process_event(&event);
             }
         }
     }
@@ -137,23 +139,40 @@ impl SamplerDspProcess {
             event_receiver,
             pending_events: Vec::with_capacity(MAX_PENDING_EVENTS),
             loop_points: None,
+            position: Timestamp::zero(),
+            start_position_in_sample: Timestamp::zero(),
+            completed_loops: 0,
+            sample_rate,
         }
     }
 
-    fn end_position_in_sample(&self, sample_rate: usize) -> f64 {
-        match self.loop_points {
-            Some((_, loop_end)) => loop_end.get_samples(sample_rate),
-            None => self.buffer.num_frames() as f64,
-        }
+    fn next_loop_position(&self) -> Timestamp {
+        let (loop_start, loop_end) = match self.loop_points {
+            Some(loop_points) => loop_points,
+            None => {
+                return Timestamp::from_samples(self.buffer.num_frames() as f64, self.sample_rate)
+            }
+        };
+
+        let first_loop_length = loop_end - self.start_position_in_sample;
+        let subsequent_loop_length = loop_end - loop_start;
+
+        let sample_position = first_loop_length.get_samples(self.sample_rate)
+            + subsequent_loop_length.get_samples(self.sample_rate) * self.completed_loops as f64;
+
+        Timestamp::from_samples(sample_position, self.sample_rate)
     }
 
     fn process_sample(&mut self, output_buffer: &mut dyn AudioBuffer) {
-        let mut position = 0;
+        let mut frame_position = 0;
 
-        while position < output_buffer.num_frames() {
-            let current_position = self.get_active_voice_position().unwrap_or(0) as f64;
-            let end_of_frame = current_position + (output_buffer.num_frames() - position) as f64;
-            let end_of_sample = self.end_position_in_sample(output_buffer.sample_rate());
+        while frame_position < output_buffer.num_frames() {
+            let end_of_frame = self.position.incremented_by_samples(
+                output_buffer.num_frames() - frame_position,
+                self.sample_rate,
+            );
+
+            let end_of_sample = self.next_loop_position();
 
             let end_point = if end_of_frame < end_of_sample {
                 end_of_frame
@@ -161,15 +180,15 @@ impl SamplerDspProcess {
                 end_of_sample
             };
 
-            let num_frames_to_render = end_point - current_position;
-            // FIXME: Error introduced if not on boundary
-            let num_frames_to_render = num_frames_to_render as usize;
+            let render_interval = end_point - self.position;
+            let num_frames_to_render = std::cmp::min(
+                render_interval.get_samples(self.sample_rate).round() as usize,
+                output_buffer.num_frames() - frame_position,
+            );
 
             if num_frames_to_render == 0 {
                 if let Some((loop_start, _)) = self.loop_points {
-                    self.stop();
-                    // FIXME: Error introduced if not on boundary
-                    self.start(loop_start.get_samples(output_buffer.sample_rate()).floor() as usize);
+                    self.loop_back(loop_start);
                     continue;
                 } else {
                     break;
@@ -178,11 +197,15 @@ impl SamplerDspProcess {
 
             self.process_voices(&mut AudioBufferSlice::new(
                 output_buffer,
-                position,
+                frame_position,
                 num_frames_to_render,
             ));
 
-            position += num_frames_to_render;
+            frame_position += num_frames_to_render;
+
+            self.position = self
+                .position
+                .incremented_by_samples(num_frames_to_render, self.sample_rate);
         }
     }
 
@@ -199,15 +222,15 @@ impl SamplerDspProcess {
         frame_start_time: &Timestamp,
         current_frame_position: &Timestamp,
         number_of_frames: usize,
-        sample_rate: usize,
     ) -> (usize, Option<SamplerEvent>) {
-        let frame_end_time = frame_start_time.incremented_by_samples(number_of_frames, sample_rate);
+        let frame_end_time =
+            frame_start_time.incremented_by_samples(number_of_frames, self.sample_rate);
 
         if let Some(next_event) = self.next_event_before(&frame_end_time) {
             let event_time = std::cmp::max(next_event.time, *current_frame_position);
             let position_in_frame = event_time - *frame_start_time;
             (
-                position_in_frame.get_samples(sample_rate).floor() as usize,
+                position_in_frame.get_samples(self.sample_rate).floor() as usize,
                 Some(next_event),
             )
         } else {
@@ -225,11 +248,10 @@ impl SamplerDspProcess {
         None
     }
 
-    fn process_event(&mut self, event: &SamplerEvent, sample_rate: usize) {
+    fn process_event(&mut self, event: &SamplerEvent) {
         match event.event_type {
             SampleEventType::Start(position_in_sample) => {
-                let position_in_sample = position_in_sample.get_samples(sample_rate);
-                self.start(position_in_sample as usize);
+                self.start(position_in_sample);
             }
             SampleEventType::Stop => self.stop(),
             SampleEventType::EnableLoop(loop_start, loop_end) => {
@@ -287,14 +309,34 @@ impl SamplerDspProcess {
         self.get_active_voice().map(|voice| voice.get_position())
     }
 
-    fn start(&mut self, from_position: usize) {
+    fn start(&mut self, from_position: Timestamp) {
+        let sample_position = from_position.get_samples(self.sample_rate).round() as usize;
+
         if let Some(current_position) = self.get_active_voice_position() {
-            if current_position == from_position {
+            if current_position == sample_position {
                 return;
             }
         }
 
-        self.assign_voice(from_position);
+        self.completed_loops = 0;
+        self.position = Timestamp::zero();
+        self.start_position_in_sample = from_position;
+
+        self.assign_voice(sample_position);
+    }
+
+    fn loop_back(&mut self, from_position: Timestamp) {
+        self.completed_loops += 1;
+
+        let sample_position = from_position.get_samples(self.sample_rate).round() as usize;
+
+        if let Some(current_position) = self.get_active_voice_position() {
+            if current_position == sample_position {
+                return;
+            }
+        }
+
+        self.assign_voice(sample_position);
     }
 
     fn stop(&mut self) {
@@ -521,5 +563,32 @@ mod tests {
         let output = process_sampler(&mut sampler, 20_000, num_channels, sample_rate);
         expect_sample(0.123, &output, 9_999, 0);
         expect_sample(0.123, &output, 19_999, 0);
+    }
+
+    #[test]
+    fn between_sample_looping() {
+        let num_frames = 10_000;
+        let sample_rate = 48_000;
+        let num_channels = 2;
+
+        let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+
+        let (mut event_transmitter, event_receiver) = lockfree::channel::spsc::create();
+        let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
+
+        let _ = event_transmitter.send(SamplerEvent::start(
+            Timestamp::zero(),
+            Timestamp::from_samples(0.5, sample_rate),
+        ));
+
+        let _ = event_transmitter.send(SamplerEvent::enable_loop(
+            Timestamp::from_samples(0.5, sample_rate),
+            Timestamp::from_samples(12.2, sample_rate),
+        ));
+
+        let _ = process_sampler(&mut sampler, 1_170, num_channels, sample_rate);
+        assert_eq!(99, sampler.completed_loops);
+        let _ = process_sampler(&mut sampler, 1, num_channels, sample_rate);
+        assert_eq!(100, sampler.completed_loops);
     }
 }
