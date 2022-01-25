@@ -44,7 +44,7 @@ fn main() {
     gain.gain.set_value_at_time(0.0, Timestamp::zero());
 
     gain.gain
-        .set_value_at_time(1.0, Timestamp::from_seconds(0.1));
+        .linear_ramp_to_value(1.0, Timestamp::from_seconds(0.1));
 
     gain.gain
         .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
