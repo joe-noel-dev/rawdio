@@ -26,7 +26,7 @@ fn read_file_into_buffer(file_path: &str) -> (OwnedAudioBuffer, usize) {
             for channel in 0..file_specification.channels {
                 let frame = position / num_channels;
                 let sample = (sample as f64 / max_value as f64) as f32;
-                output_buffer.set_sample(&SampleLocation::new(channel as usize, frame), sample);
+                output_buffer.set_sample(SampleLocation::new(channel as usize, frame), sample);
             }
         }
     }

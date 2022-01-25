@@ -390,7 +390,7 @@ mod tests {
     fn expect_sample(expected_value: f32, buffer: &dyn AudioBuffer, frame: usize, channel: usize) {
         approx::assert_relative_eq!(
             expected_value,
-            buffer.get_sample(&SampleLocation::new(channel, frame)),
+            buffer.get_sample(SampleLocation::new(channel, frame)),
             epsilon = 1e-2
         );
     }
@@ -522,7 +522,7 @@ mod tests {
         let num_channels = 2;
 
         let mut sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
-        sample.set_sample(&SampleLocation::new(0, 4999), 0.4999);
+        sample.set_sample(SampleLocation::new(0, 4999), 0.4999);
 
         let (mut event_transmitter, event_receiver) = lockfree::channel::spsc::create();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
@@ -547,7 +547,7 @@ mod tests {
         let num_channels = 2;
 
         let mut sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
-        sample.set_sample(&SampleLocation::new(0, 9999), 0.123);
+        sample.set_sample(SampleLocation::new(0, 9999), 0.123);
 
         let (mut event_transmitter, event_receiver) = lockfree::channel::spsc::create();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);

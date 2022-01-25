@@ -14,7 +14,7 @@ impl<'a> ImmutableAudioBufferSlice<'a> {
         Self { buffer, offset }
     }
 
-    fn translate_location(&self, sample_location: &SampleLocation) -> SampleLocation {
+    fn translate_location(&self, sample_location: SampleLocation) -> SampleLocation {
         SampleLocation::new(sample_location.channel, sample_location.frame + self.offset)
     }
 }
@@ -36,16 +36,16 @@ impl<'a> AudioBuffer for ImmutableAudioBufferSlice<'a> {
         debug_assert!(false)
     }
 
-    fn set_sample(&mut self, _sample_location: &SampleLocation, _value: f32) {
+    fn set_sample(&mut self, _sample_location: SampleLocation, _value: f32) {
         debug_assert!(false)
     }
 
-    fn add_sample(&mut self, _sample_location: &SampleLocation, _value: f32) {
+    fn add_sample(&mut self, _sample_location: SampleLocation, _value: f32) {
         debug_assert!(false)
     }
 
-    fn get_sample(&self, sample_location: &SampleLocation) -> f32 {
+    fn get_sample(&self, sample_location: SampleLocation) -> f32 {
         let new_location = self.translate_location(sample_location);
-        self.buffer.get_sample(&new_location)
+        self.buffer.get_sample(new_location)
     }
 }

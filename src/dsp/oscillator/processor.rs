@@ -98,7 +98,7 @@ impl DspProcessor for OscillatorDspProcess {
             let value = gain * self.get_value();
 
             for channel in 0..num_channels {
-                output_buffer.set_sample(&SampleLocation::new(channel, frame), value as f32);
+                output_buffer.set_sample(SampleLocation::new(channel, frame), value as f32);
             }
         }
     }

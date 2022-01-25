@@ -133,8 +133,8 @@ impl Voice {
 
         output.add_from(
             source,
-            &source_location,
-            &destination_location,
+            source_location,
+            destination_location,
             num_channels,
             num_frames,
         );
@@ -178,9 +178,9 @@ impl Voice {
                     frame: destination_offset + frame,
                 };
 
-                let sample = output.get_sample(&dest_location)
-                    + fade_value * source.get_sample(&source_location);
-                output.set_sample(&dest_location, sample);
+                let sample = output.get_sample(dest_location)
+                    + fade_value * source.get_sample(source_location);
+                output.set_sample(dest_location, sample);
             }
         }
 

@@ -15,7 +15,7 @@ impl<'a> BorrowedAudioBuffer<'a> {
         }
     }
 
-    fn get_offset(&self, sample_location: &SampleLocation) -> usize {
+    fn get_offset(&self, sample_location: SampleLocation) -> usize {
         debug_assert!(sample_location.channel < self.num_channels);
         debug_assert!(sample_location.frame < self.num_frames());
         sample_location.frame * self.num_channels + sample_location.channel
@@ -39,17 +39,17 @@ impl<'a> AudioBuffer for BorrowedAudioBuffer<'a> {
         self.data.fill(0.0);
     }
 
-    fn set_sample(&mut self, sample_location: &SampleLocation, value: f32) {
+    fn set_sample(&mut self, sample_location: SampleLocation, value: f32) {
         let offset = self.get_offset(sample_location);
         self.data[offset] = value;
     }
 
-    fn add_sample(&mut self, sample_location: &SampleLocation, value: f32) {
+    fn add_sample(&mut self, sample_location: SampleLocation, value: f32) {
         let value_before = self.get_sample(sample_location);
         self.set_sample(sample_location, value + value_before)
     }
 
-    fn get_sample(&self, sample_location: &SampleLocation) -> f32 {
+    fn get_sample(&self, sample_location: SampleLocation) -> f32 {
         let offset = self.get_offset(sample_location);
         self.data[offset]
     }

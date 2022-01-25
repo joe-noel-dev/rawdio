@@ -35,8 +35,8 @@ impl DspProcessor for GainProcessor {
 
             for channel in 0..output_buffer.num_channels() {
                 let location = SampleLocation::new(channel, frame);
-                let value = input_buffer.get_sample(&location);
-                output_buffer.set_sample(&location, value * (gain as f32));
+                let value = input_buffer.get_sample(location);
+                output_buffer.set_sample(location, value * (gain as f32));
             }
         }
     }

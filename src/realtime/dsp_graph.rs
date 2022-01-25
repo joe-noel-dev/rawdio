@@ -140,8 +140,8 @@ impl DspGraph {
             let sample_location = SampleLocation::new(0, 0);
             output_buffer.add_from(
                 &buffer,
-                &sample_location,
-                &sample_location,
+                sample_location,
+                sample_location,
                 num_channels,
                 num_frames,
             );
@@ -273,13 +273,13 @@ mod tests {
         ) {
             output_buffer.add_from(
                 input_buffer,
-                &SampleLocation::new(0, 0),
-                &SampleLocation::new(0, 0),
+                SampleLocation::new(0, 0),
+                SampleLocation::new(0, 0),
                 output_buffer.num_channels(),
                 output_buffer.num_frames(),
             );
 
-            output_buffer.set_sample(&self.location_to_write, self.value_to_write);
+            output_buffer.set_sample(self.location_to_write, self.value_to_write);
         }
     }
 
@@ -307,13 +307,13 @@ mod tests {
         let mut audio_buffer = OwnedAudioBuffer::new(num_frames, 2, sample_rate);
         graph.process(&mut audio_buffer, &Timestamp::default());
 
-        assert_relative_ne!(audio_buffer.get_sample(&location), value);
+        assert_relative_ne!(audio_buffer.get_sample(location), value);
 
         graph.connect_to_output(Endpoint::new(dsp_id, EndpointType::Output));
 
         graph.process(&mut audio_buffer, &Timestamp::default());
 
-        assert_relative_eq!(audio_buffer.get_sample(&location), value);
+        assert_relative_eq!(audio_buffer.get_sample(location), value);
     }
 
     #[test]
@@ -346,8 +346,8 @@ mod tests {
         let mut audio_buffer = OwnedAudioBuffer::new(num_frames, 2, 44100);
         graph.process(&mut audio_buffer, &Timestamp::default());
 
-        assert_relative_eq!(audio_buffer.get_sample(&location_1), value_1);
-        assert_relative_eq!(audio_buffer.get_sample(&location_2), value_2);
+        assert_relative_eq!(audio_buffer.get_sample(location_1), value_1);
+        assert_relative_eq!(audio_buffer.get_sample(location_2), value_2);
     }
 
     #[test]

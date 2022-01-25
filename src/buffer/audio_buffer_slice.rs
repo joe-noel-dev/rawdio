@@ -17,7 +17,7 @@ impl<'a> AudioBufferSlice<'a> {
         }
     }
 
-    fn translate_location(&self, sample_location: &SampleLocation) -> SampleLocation {
+    fn translate_location(&self, sample_location: SampleLocation) -> SampleLocation {
         debug_assert!(sample_location.frame < self.num_frames);
 
         SampleLocation::new(
@@ -43,24 +43,24 @@ impl<'a> AudioBuffer for AudioBufferSlice<'a> {
     fn clear(&mut self) {
         for frame in 0..self.num_frames {
             for channel in 0..self.num_channels() {
-                self.set_sample(&SampleLocation::new(channel, frame), 0.0);
+                self.set_sample(SampleLocation::new(channel, frame), 0.0);
             }
         }
     }
 
-    fn set_sample(&mut self, sample_location: &SampleLocation, value: f32) {
+    fn set_sample(&mut self, sample_location: SampleLocation, value: f32) {
         let new_location = self.translate_location(sample_location);
-        self.buffer.set_sample(&new_location, value)
+        self.buffer.set_sample(new_location, value)
     }
 
-    fn add_sample(&mut self, sample_location: &SampleLocation, value: f32) {
+    fn add_sample(&mut self, sample_location: SampleLocation, value: f32) {
         let new_location = self.translate_location(sample_location);
-        self.buffer.add_sample(&new_location, value)
+        self.buffer.add_sample(new_location, value)
     }
 
-    fn get_sample(&self, sample_location: &SampleLocation) -> f32 {
+    fn get_sample(&self, sample_location: SampleLocation) -> f32 {
         let new_location = self.translate_location(sample_location);
-        self.buffer.get_sample(&new_location)
+        self.buffer.get_sample(new_location)
     }
 }
 
@@ -75,19 +75,16 @@ mod tests {
     #[test]
     fn translates_location_when_getting_samples() {
         let mut original_buffer = OwnedAudioBuffer::new(1_000, 2, 44100);
-        original_buffer.set_sample(&SampleLocation::new(0, 54), 0.54);
+        original_buffer.set_sample(SampleLocation::new(0, 54), 0.54);
         let slice = AudioBufferSlice::new(&mut original_buffer, 50, 50);
-        assert_relative_eq!(slice.get_sample(&SampleLocation::new(0, 4)), 0.54);
+        assert_relative_eq!(slice.get_sample(SampleLocation::new(0, 4)), 0.54);
     }
 
     #[test]
     fn translates_location_when_setting_samples() {
         let mut original_buffer = OwnedAudioBuffer::new(1_000, 2, 44100);
         let mut slice = AudioBufferSlice::new(&mut original_buffer, 50, 50);
-        slice.set_sample(&SampleLocation::new(0, 12), 0.12);
-        assert_relative_eq!(
-            original_buffer.get_sample(&SampleLocation::new(0, 62)),
-            0.12
-        );
+        slice.set_sample(SampleLocation::new(0, 12), 0.12);
+        assert_relative_eq!(original_buffer.get_sample(SampleLocation::new(0, 62)), 0.12);
     }
 }

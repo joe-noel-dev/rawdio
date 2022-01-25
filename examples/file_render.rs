@@ -64,7 +64,7 @@ fn main() {
 
         for frame in 0..frame_buffer.num_frames() {
             for channel in 0..frame_buffer.num_channels() {
-                let sample = frame_buffer.get_sample(&SampleLocation::new(channel, frame));
+                let sample = frame_buffer.get_sample(SampleLocation::new(channel, frame));
                 let sample = sample.clamp(-1.0, 1.0);
                 let sample = (sample * max_value as f32) as i32;
                 writer.write_sample(sample).expect("Failed to write sample");
