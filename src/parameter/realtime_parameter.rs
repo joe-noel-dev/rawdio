@@ -117,3 +117,74 @@ impl RealtimeAudioParameter {
             .sort_by(|a, b| a.end_time.partial_cmp(&b.end_time).unwrap());
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use approx::assert_relative_eq;
+    use atomic_float::AtomicF64;
+
+    #[test]
+    fn immediate_parameter_changes() {
+        let id = Id::generate();
+        let value = ParameterValue::new(AtomicF64::new(0.0));
+        let mut param = RealtimeAudioParameter::new(id, value);
+
+        param.add_parameter_change(ParameterChange {
+            value: 1.0,
+            end_time: Timestamp::from_seconds(1.0),
+            method: ValueChangeMethod::Immediate,
+        });
+
+        param.add_parameter_change(ParameterChange {
+            value: 2.0,
+            end_time: Timestamp::from_seconds(2.0),
+            method: ValueChangeMethod::Immediate,
+        });
+
+        param.add_parameter_change(ParameterChange {
+            value: 3.0,
+            end_time: Timestamp::from_seconds(3.0),
+            method: ValueChangeMethod::Immediate,
+        });
+
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(0.9)), 0.0);
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(1.0)), 1.0);
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(1.9)), 1.0);
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(2.0)), 2.0);
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(2.9)), 2.0);
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(3.0)), 3.0);
+    }
+
+    #[test]
+    fn ramped_parameter_changes() {
+        let id = Id::generate();
+        let value = ParameterValue::new(AtomicF64::new(0.0));
+        let mut param = RealtimeAudioParameter::new(id, value);
+
+        param.add_parameter_change(ParameterChange {
+            value: 1.0,
+            end_time: Timestamp::from_seconds(1.0),
+            method: ValueChangeMethod::Linear,
+        });
+
+        param.add_parameter_change(ParameterChange {
+            value: 2.0,
+            end_time: Timestamp::from_seconds(2.0),
+            method: ValueChangeMethod::Linear,
+        });
+
+        param.add_parameter_change(ParameterChange {
+            value: 3.0,
+            end_time: Timestamp::from_seconds(3.0),
+            method: ValueChangeMethod::Linear,
+        });
+
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(0.5)), 0.5);
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(1.0)), 1.0);
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(1.5)), 1.5);
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(2.0)), 2.0);
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(2.5)), 2.5);
+        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(3.0)), 3.0);
+    }
+}
