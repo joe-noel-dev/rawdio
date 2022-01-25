@@ -52,11 +52,16 @@ fn main() {
     let _audio_callack = AudioCallback::new(context.get_audio_process(), sample_rate);
 
     let length_in_seconds = sample.length_in_seconds().ceil() as u64;
+    let length_in_samples = sample.num_frames();
     let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, sample);
     let mut gain = Gain::new(context.get_command_queue());
 
     sampler.connect_to(gain.get_id());
     sampler.start_now();
+    sampler.enable_loop(
+        Timestamp::zero(),
+        Timestamp::from_samples(length_in_samples as f64, sample_rate),
+    );
 
     gain.connect_to_output();
 
@@ -65,7 +70,7 @@ fn main() {
 
     context.start();
 
-    thread::sleep(time::Duration::from_secs(length_in_seconds + 2));
+    thread::sleep(time::Duration::from_secs(4 * length_in_seconds + 2));
 
     context.process_notifications();
     context.stop();
