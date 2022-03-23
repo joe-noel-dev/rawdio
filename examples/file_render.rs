@@ -2,8 +2,19 @@ use rust_audio_engine::{
     AudioBuffer, AudioBufferSlice, Context, Gain, Node, Oscillator, OwnedAudioBuffer,
     SampleLocation, Timestamp,
 };
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+struct Options {
+    output_file: String,
+}
 
 fn main() {
+    let options = Options::from_args();
+    render_file(&options.output_file);
+}
+
+fn render_file(output_file: &str) {
     let sample_rate = 44100;
     let mut context = Context::new(sample_rate);
     let mut audio_process = context.get_audio_process();
@@ -46,7 +57,7 @@ fn main() {
         sample_format: hound::SampleFormat::Int,
     };
 
-    let mut writer = hound::WavWriter::create("output.wav", file_spec).unwrap();
+    let mut writer = hound::WavWriter::create(output_file, file_spec).unwrap();
 
     let length_in_seconds = 4.0;
     let total_num_frames = sample_rate * length_in_seconds as usize;
