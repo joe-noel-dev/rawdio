@@ -20,6 +20,7 @@ pub type Sampler = dsp::sampler::node::SamplerNode;
 pub type AudioBufferSlice<'a> = buffer::audio_buffer_slice::AudioBufferSlice<'a>;
 pub type OwnedAudioBuffer = buffer::owned_audio_buffer::OwnedAudioBuffer;
 pub type BorrowedAudioBuffer<'a> = buffer::borrowed_audio_buffer::BorrowedAudioBuffer<'a>;
+pub type ImmutableAudioBufferSlice<'a> = buffer::immutable_audio_buffer_slice::ImmutableAudioBufferSlice<'a>;
 
 pub type SampleLocation = buffer::sample_location::SampleLocation;
 
