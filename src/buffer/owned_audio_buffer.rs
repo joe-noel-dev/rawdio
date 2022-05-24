@@ -15,6 +15,14 @@ impl OwnedAudioBuffer {
         }
     }
 
+    pub fn new_from_data(data: Vec<f32>, num_channels: usize, sample_rate: usize) -> Self {
+        Self {
+            data,
+            num_channels,
+            sample_rate,
+        }
+    }
+
     fn get_offset(&self, sample_location: SampleLocation) -> usize {
         debug_assert!(sample_location.channel < self.num_channels);
         debug_assert!(sample_location.frame < self.num_frames());
