@@ -47,7 +47,6 @@ fn play_file(file_to_play: &str) {
 
     thread::sleep(time::Duration::from_secs(4 * length_in_seconds));
 
-    context.process_notifications();
     context.stop();
 
     thread::sleep(time::Duration::from_secs(1));

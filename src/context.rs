@@ -1,34 +1,27 @@
+use std::sync::{atomic::AtomicI64, Arc};
+
 use crate::{
-    audio_process::AudioProcess,
-    commands::{command::Command, notification::Notification},
-    realtime::processor::Processor,
-    timestamp::Timestamp,
+    audio_process::AudioProcess, commands::command::Command, realtime::processor::Processor, timestamp::Timestamp,
 };
 
-use lockfree::channel::{
-    mpsc::{self, Sender},
-    spsc::{self, Receiver},
-};
+use lockfree::channel::mpsc::{self, Sender};
 
 pub struct Context {
     sample_rate: usize,
-    timestamp: Timestamp,
+    timestamp: Arc<AtomicI64>,
     command_tx: Sender<Command>,
-    notification_rx: Receiver<Notification>,
     realtime_processor: Option<Processor>,
 }
 
 impl Context {
     pub fn new(sample_rate: usize) -> Self {
         let (command_tx, command_rx) = mpsc::create();
-        let (notification_tx, notification_rx) = spsc::create();
-
+        let timestamp = Arc::new(AtomicI64::new(0));
         Self {
             sample_rate,
-            timestamp: Timestamp::default(),
+            timestamp: timestamp.clone(),
             command_tx,
-            notification_rx,
-            realtime_processor: Some(Processor::new(sample_rate, command_rx, notification_tx)),
+            realtime_processor: Some(Processor::new(sample_rate, command_rx, Arc::clone(&timestamp))),
         }
     }
 
@@ -41,7 +34,7 @@ impl Context {
     }
 
     pub fn current_time(&self) -> Timestamp {
-        self.timestamp
+        Timestamp::from_raw_i64(self.timestamp.load(std::sync::atomic::Ordering::Acquire))
     }
 
     pub fn get_audio_process(&mut self) -> Box<dyn AudioProcess + Send> {
@@ -53,14 +46,6 @@ impl Context {
 
     pub fn get_sample_rate(&self) -> usize {
         self.sample_rate
-    }
-
-    pub fn process_notifications(&mut self) {
-        while let Ok(notification) = self.notification_rx.recv() {
-            match notification {
-                Notification::Position(timestamp) => self.timestamp = timestamp,
-            }
-        }
     }
 
     pub fn get_command_queue(&self) -> Sender<Command> {
