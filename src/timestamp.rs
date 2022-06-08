@@ -87,6 +87,12 @@ impl Timestamp {
             seconds: self.seconds + FixedPoint::from_num(num_seconds),
         }
     }
+
+    pub fn incremented(&self, value: &Self) -> Self {
+        Self {
+            seconds: self.seconds + value.seconds,
+        }
+    }
 }
 
 #[cfg(test)]

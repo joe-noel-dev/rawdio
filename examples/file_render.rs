@@ -1,6 +1,5 @@
 use rust_audio_engine::{
-    AudioBuffer, AudioBufferSlice, Context, Gain, Node, Oscillator, OwnedAudioBuffer,
-    SampleLocation, Timestamp,
+    create_context, AudioBuffer, AudioBufferSlice, Gain, Node, Oscillator, OwnedAudioBuffer, SampleLocation, Timestamp,
 };
 use structopt::StructOpt;
 
@@ -16,7 +15,7 @@ fn main() {
 
 fn render_file(output_file: &str) {
     let sample_rate = 44100;
-    let mut context = Context::new(sample_rate);
+    let mut context = create_context(sample_rate);
     let mut audio_process = context.get_audio_process();
 
     let mut oscillator_1 = Oscillator::new(context.get_command_queue(), 440.0);
@@ -42,8 +41,7 @@ fn render_file(output_file: &str) {
 
     gain.gain.set_value_at_time(0.9, Timestamp::zero());
 
-    gain.gain
-        .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
+    gain.gain.linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
 
     context.start();
 

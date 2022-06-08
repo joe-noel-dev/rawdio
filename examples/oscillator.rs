@@ -1,6 +1,6 @@
 use std::{thread, time};
 
-use rust_audio_engine::{Context, Gain, Level, Node, Oscillator, Timestamp};
+use rust_audio_engine::{create_context, Gain, Level, Node, Oscillator, Timestamp};
 
 use crate::audio_callback::AudioCallback;
 
@@ -9,7 +9,7 @@ mod audio_callback;
 
 fn main() {
     let sample_rate = 44100;
-    let mut context = Context::new(sample_rate);
+    let mut context = create_context(sample_rate);
     let _audio_callack = AudioCallback::new(context.get_audio_process(), sample_rate);
 
     let mut oscillator_1 = Oscillator::new(context.get_command_queue(), 440.0);
