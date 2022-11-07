@@ -44,7 +44,11 @@ impl SamplerEvent {
         }
     }
 
-    pub fn enable_loop_at_time(enable_at_time: Timestamp, loop_start: Timestamp, loop_end: Timestamp) -> Self {
+    pub fn enable_loop_at_time(
+        enable_at_time: Timestamp,
+        loop_start: Timestamp,
+        loop_end: Timestamp,
+    ) -> Self {
         Self {
             time: enable_at_time,
             event_type: SampleEventType::EnableLoop(loop_start, loop_end),

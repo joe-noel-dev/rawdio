@@ -52,7 +52,7 @@ impl Timestamp {
         }
     }
 
-    pub fn to_raw_i64(&self) -> i64 {
+    pub fn as_raw_i64(&self) -> i64 {
         self.seconds.to_bits()
     }
 

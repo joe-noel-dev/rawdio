@@ -1,5 +1,6 @@
 use rust_audio_engine::{
-    create_context, AudioBuffer, AudioBufferSlice, Gain, Node, Oscillator, OwnedAudioBuffer, SampleLocation, Timestamp,
+    create_context, AudioBuffer, AudioBufferSlice, Gain, Node, Oscillator, OwnedAudioBuffer,
+    SampleLocation, Timestamp,
 };
 use structopt::StructOpt;
 
@@ -41,7 +42,8 @@ fn render_file(output_file: &str) {
 
     gain.gain.set_value_at_time(0.9, Timestamp::zero());
 
-    gain.gain.linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
+    gain.gain
+        .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
 
     context.start();
 

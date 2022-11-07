@@ -15,7 +15,8 @@ pub type AudioParameter = parameter::audio_parameter::AudioParameter;
 pub type BorrowedAudioBuffer<'a> = buffer::borrowed_audio_buffer::BorrowedAudioBuffer<'a>;
 pub type Command = commands::command::Command;
 pub type Gain = dsp::gain::node::GainNode;
-pub type ImmutableAudioBufferSlice<'a> = buffer::immutable_audio_buffer_slice::ImmutableAudioBufferSlice<'a>;
+pub type ImmutableAudioBufferSlice<'a> =
+    buffer::immutable_audio_buffer_slice::ImmutableAudioBufferSlice<'a>;
 pub type Level = utility::level::Level;
 pub type Oscillator = dsp::oscillator::node::OscillatorNode;
 pub type OwnedAudioBuffer = buffer::owned_audio_buffer::OwnedAudioBuffer;
