@@ -3,7 +3,7 @@ pub struct ScopedTimeMeasure {
 }
 
 impl ScopedTimeMeasure {
-    fn _new() -> Self {
+    pub fn _new() -> Self {
         Self {
             start: std::time::Instant::now(),
         }
