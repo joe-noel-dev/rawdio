@@ -12,7 +12,7 @@ fixed = "1.11.0"
 [dev-dependencies]
 anyhow = "1.0.51"
 approx = "0.5.0"
-cpal = "0.13.4"
+cpal = "0.14.1"
 futures = "0.3.17"
 futures-channel = "0.3.17"
 futures-util = "0.3.17"
