@@ -46,6 +46,16 @@ impl Timestamp {
         }
     }
 
+    pub fn from_raw_i64(raw_value: i64) -> Self {
+        Self {
+            seconds: FixedPoint::from_bits(raw_value),
+        }
+    }
+
+    pub fn to_raw_i64(&self) -> i64 {
+        self.seconds.to_bits()
+    }
+
     pub fn from_seconds(seconds: f64) -> Self {
         Self {
             seconds: FixedPoint::from_num(seconds),
@@ -75,6 +85,12 @@ impl Timestamp {
     pub fn incremented_by_seconds(&self, num_seconds: f64) -> Self {
         Self {
             seconds: self.seconds + FixedPoint::from_num(num_seconds),
+        }
+    }
+
+    pub fn incremented(&self, value: &Self) -> Self {
+        Self {
+            seconds: self.seconds + value.seconds,
         }
     }
 }

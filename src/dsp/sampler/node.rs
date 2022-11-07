@@ -8,7 +8,10 @@ use crate::{
     OwnedAudioBuffer, Timestamp,
 };
 
-use super::processor::{EventTransmitter, SamplerDspProcess, SamplerEvent};
+use super::{
+    event::SamplerEvent,
+    processor::{EventTransmitter, SamplerDspProcess},
+};
 
 pub struct SamplerNode {
     command_queue: Sender<Command>,
@@ -27,11 +30,7 @@ impl Node for SamplerNode {
 }
 
 impl SamplerNode {
-    pub fn new(
-        command_queue: Sender<Command>,
-        sample_rate: usize,
-        sample: OwnedAudioBuffer,
-    ) -> Self {
+    pub fn new(command_queue: Sender<Command>, sample_rate: usize, sample: OwnedAudioBuffer) -> Self {
         let id = Id::generate();
 
         let (event_transmitter, event_receiver) = lockfree::channel::spsc::create();
@@ -59,11 +58,7 @@ impl SamplerNode {
         let _ = self.event_transmitter.send(SamplerEvent::stop_now());
     }
 
-    pub fn start_from_position_at_time(
-        &mut self,
-        start_time: Timestamp,
-        position_in_sample: Timestamp,
-    ) {
+    pub fn start_from_position_at_time(&mut self, start_time: Timestamp, position_in_sample: Timestamp) {
         let _ = self
             .event_transmitter
             .send(SamplerEvent::start(start_time, position_in_sample));
@@ -81,6 +76,22 @@ impl SamplerNode {
 
     pub fn cancel_loop(&mut self) {
         let _ = self.event_transmitter.send(SamplerEvent::cancel_loop());
+    }
+
+    pub fn cancel_all(&mut self) {
+        let _ = self.event_transmitter.send(SamplerEvent::cancel_all());
+    }
+
+    pub fn enable_loop_at_time(&mut self, enable_at_time: Timestamp, loop_start: Timestamp, loop_end: Timestamp) {
+        let _ = self
+            .event_transmitter
+            .send(SamplerEvent::enable_loop_at_time(enable_at_time, loop_start, loop_end));
+    }
+
+    pub fn cancel_loop_at_time(&mut self, cancel_time: Timestamp) {
+        let _ = self
+            .event_transmitter
+            .send(SamplerEvent::cancel_loop_at_time(cancel_time));
     }
 }
 

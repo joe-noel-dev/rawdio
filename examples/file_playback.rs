@@ -1,7 +1,7 @@
 use std::{thread, time};
 
 use rust_audio_engine::{
-    AudioBuffer, Context, Gain, Level, Node, OwnedAudioBuffer, SampleLocation, Sampler, Timestamp,
+    create_context, AudioBuffer, Gain, Level, Node, OwnedAudioBuffer, SampleLocation, Sampler, Timestamp,
 };
 use structopt::StructOpt;
 
@@ -23,7 +23,7 @@ fn main() {
 fn play_file(file_to_play: &str) {
     let (sample, sample_rate) = read_file_into_buffer(file_to_play);
 
-    let mut context = Context::new(sample_rate);
+    let mut context = create_context(sample_rate);
     let _audio_callack = AudioCallback::new(context.get_audio_process(), sample_rate);
 
     let length_in_seconds = sample.length_in_seconds().ceil() as u64;
@@ -47,7 +47,6 @@ fn play_file(file_to_play: &str) {
 
     thread::sleep(time::Duration::from_secs(4 * length_in_seconds));
 
-    context.process_notifications();
     context.stop();
 
     thread::sleep(time::Duration::from_secs(1));
