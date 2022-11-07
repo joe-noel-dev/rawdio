@@ -24,14 +24,22 @@ pub struct Processor {
 }
 
 impl Processor {
-    pub fn new(sample_rate: usize, command_rx: Receiver<Command>, current_time: Arc<AtomicI64>) -> Self {
+    pub fn new(
+        sample_rate: usize,
+        command_rx: Receiver<Command>,
+        current_time: Arc<AtomicI64>,
+    ) -> Self {
         Self {
             started: false,
             sample_rate,
             command_rx,
             sample_position: 0,
             current_time,
-            graph: DspGraph::new(MAXIMUM_NUMBER_OF_FRAMES, MAXIMUM_NUMBER_OF_CHANNELS, sample_rate),
+            graph: DspGraph::new(
+                MAXIMUM_NUMBER_OF_FRAMES,
+                MAXIMUM_NUMBER_OF_CHANNELS,
+                sample_rate,
+            ),
         }
     }
 
@@ -41,7 +49,10 @@ impl Processor {
         let current_time = Timestamp::from_raw_i64(self.current_time.load(Ordering::Acquire));
 
         while offset < output_buffer.num_frames() {
-            let num_frames = std::cmp::min(output_buffer.num_frames() - offset, self.get_maximum_number_of_frames());
+            let num_frames = std::cmp::min(
+                output_buffer.num_frames() - offset,
+                self.get_maximum_number_of_frames(),
+            );
 
             let mut audio_buffer = AudioBufferSlice::new(output_buffer, offset, num_frames);
 
@@ -78,11 +89,15 @@ impl Processor {
                 Command::AddDsp(dsp) => self.graph.add_dsp(dsp),
                 Command::RemoveDsp(id) => self.graph.remove_dsp(id),
 
-                Command::ParameterValueChange(change_request) => self.graph.request_parameter_change(change_request),
+                Command::ParameterValueChange(change_request) => {
+                    self.graph.request_parameter_change(change_request)
+                }
 
                 Command::AddConnection(connection) => self.graph.add_connection(connection),
                 Command::RemoveConnection(connection) => self.graph.remove_connection(connection),
-                Command::ConnectToOutput(output_connection) => self.graph.connect_to_output(output_connection),
+                Command::ConnectToOutput(output_connection) => {
+                    self.graph.connect_to_output(output_connection)
+                }
             }
         }
     }
@@ -94,7 +109,9 @@ impl Processor {
     fn update_position(&mut self, num_samples: usize) {
         self.sample_position += num_samples;
 
-        let seconds = Timestamp::from_seconds(self.sample_position as f64 / self.sample_rate as f64);
-        self.current_time.store(seconds.to_raw_i64(), Ordering::Release);
+        let seconds =
+            Timestamp::from_seconds(self.sample_position as f64 / self.sample_rate as f64);
+        self.current_time
+            .store(seconds.as_raw_i64(), Ordering::Release);
     }
 }

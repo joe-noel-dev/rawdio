@@ -1,8 +1,8 @@
 use std::sync::{atomic::AtomicI64, Arc};
 
 use crate::{
-    audio_process::AudioProcess, commands::command::Command, realtime::processor::Processor, timestamp::Timestamp,
-    Context,
+    audio_process::AudioProcess, commands::command::Command, realtime::processor::Processor,
+    timestamp::Timestamp, Context,
 };
 
 use lockfree::channel::mpsc::{self, Sender};
@@ -22,7 +22,11 @@ impl Engine {
             sample_rate,
             timestamp: timestamp.clone(),
             command_tx,
-            realtime_processor: Some(Processor::new(sample_rate, command_rx, Arc::clone(&timestamp))),
+            realtime_processor: Some(Processor::new(
+                sample_rate,
+                command_rx,
+                Arc::clone(&timestamp),
+            )),
         }
     }
 }

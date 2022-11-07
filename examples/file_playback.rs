@@ -1,7 +1,8 @@
 use std::{thread, time};
 
 use rust_audio_engine::{
-    create_context, AudioBuffer, Gain, Level, Node, OwnedAudioBuffer, SampleLocation, Sampler, Timestamp,
+    create_context, AudioBuffer, Gain, Level, Node, OwnedAudioBuffer, SampleLocation, Sampler,
+    Timestamp,
 };
 use structopt::StructOpt;
 

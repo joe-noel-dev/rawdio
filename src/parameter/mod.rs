@@ -6,7 +6,7 @@ use crate::Timestamp;
 
 pub type ParameterValue = Arc<AtomicF64>;
 
-#[derive(Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd)]
 pub enum ValueChangeMethod {
     Immediate,
     Linear,
