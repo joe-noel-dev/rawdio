@@ -1,27 +1,82 @@
-use super::sample_location::SampleLocation;
-
-// FIXME: Replace implementations with SIMD instructions
+use crate::SampleLocation;
 
 pub trait AudioBuffer {
-    fn num_channels(&self) -> usize;
-    fn num_frames(&self) -> usize;
-    fn sample_rate(&self) -> usize;
-    fn clear(&mut self);
+    fn fill_from_interleaved(
+        &mut self,
+        interleaved_data: &[f32],
+        num_channels: usize,
+        num_frames: usize,
+    ) {
+        for frame in 0..num_frames {
+            for channel in 0..num_channels {
+                let offset = frame * num_channels + channel;
+                let sample_value = interleaved_data[offset];
+                let location = SampleLocation::new(channel, frame);
+                self.set_sample(location, sample_value);
+            }
+        }
+    }
 
-    fn set_sample(&mut self, sample_location: SampleLocation, value: f32);
-    fn add_sample(&mut self, sample_location: SampleLocation, value: f32);
-    fn get_sample(&self, sample_location: SampleLocation) -> f32;
+    fn copy_to_interleaved(
+        &self,
+        interleaved_data: &mut [f32],
+        num_channels: usize,
+        num_frames: usize,
+    ) {
+        assert!(num_channels * num_frames <= interleaved_data.len());
+
+        for frame in 0..num_frames {
+            for channel in 0..num_channels {
+                let location = SampleLocation::new(channel, frame);
+                let sample_value = self.get_sample(location);
+                let offset = frame * num_channels + channel;
+                interleaved_data[offset] = sample_value;
+            }
+        }
+    }
+
+    fn num_channels(&self) -> usize;
+
+    fn num_frames(&self) -> usize;
+
+    fn sample_rate(&self) -> usize;
 
     fn length_in_seconds(&self) -> f64 {
         self.num_frames() as f64 / self.sample_rate() as f64
     }
 
+    fn clear(&mut self) {
+        self.fill_with_value(0.0_f32);
+    }
+
+    fn fill_channel_with_value(&mut self, channel: usize, value: f32) {
+        let data = self.get_data_mut(SampleLocation::new(channel, 0));
+        data.fill(value);
+    }
+
     fn fill_with_value(&mut self, value: f32) {
-        for frame in 0..self.num_frames() {
-            for channel in 0..self.num_channels() {
-                self.set_sample(SampleLocation::new(channel, frame), value);
-            }
+        for channel in 0..self.num_channels() {
+            self.fill_channel_with_value(channel, value);
         }
+    }
+
+    fn get_data(&self, sample_location: SampleLocation) -> &[f32];
+
+    fn get_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32];
+
+    fn set_sample(&mut self, sample_location: SampleLocation, value: f32) {
+        let data = self.get_data_mut(sample_location);
+        data[0] = value;
+    }
+
+    fn add_sample(&mut self, sample_location: SampleLocation, value: f32) {
+        let value_before = self.get_sample(sample_location);
+        self.set_sample(sample_location, value + value_before)
+    }
+
+    fn get_sample(&self, sample_location: SampleLocation) -> f32 {
+        let data = self.get_data(sample_location);
+        data[0]
     }
 
     fn add_from(
@@ -32,21 +87,15 @@ pub trait AudioBuffer {
         num_channels: usize,
         num_frames: usize,
     ) {
-        for frame in 0..num_frames {
-            for channel in 0..num_channels {
-                let source = SampleLocation::new(
-                    channel + source_location.channel,
-                    frame + source_location.frame,
-                );
+        for channel in 0..num_channels {
+            let source = source_buffer.get_data(source_location.with_channel(channel));
+            let source = &source[0..num_frames];
 
-                let dest = SampleLocation::new(
-                    channel + destination_location.channel,
-                    frame + destination_location.frame,
-                );
+            let destination = self.get_data_mut(destination_location.with_channel(channel));
+            let destination = &mut destination[0..num_frames];
 
-                let original_value = self.get_sample(dest);
-                let source_value = source_buffer.get_sample(source);
-                self.set_sample(dest, original_value + source_value);
+            for (source_value, destination_value) in source.iter().zip(destination.iter_mut()) {
+                *destination_value += *source_value;
             }
         }
     }

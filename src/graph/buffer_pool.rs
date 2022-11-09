@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-    buffer::{audio_buffer::AudioBuffer, owned_audio_buffer::OwnedAudioBuffer},
-    graph::endpoint::Endpoint,
-};
+use crate::{graph::endpoint::Endpoint, AudioBuffer, OwnedAudioBuffer};
 
 pub struct BufferPool {
     assigned_buffers: HashMap<Endpoint, OwnedAudioBuffer>,

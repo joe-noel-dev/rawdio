@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     graph::dsp::{DspParameterMap, DspProcessor},
-    AudioBuffer, AudioBufferSlice, OwnedAudioBuffer, Timestamp,
+    AudioBuffer, BorrowedAudioBuffer, OwnedAudioBuffer, Timestamp,
 };
 
 use super::{
@@ -56,11 +56,8 @@ impl DspProcessor for SamplerDspProcess {
             debug_assert!(end_frame <= output_buffer.num_frames());
             let num_frames = end_frame - position;
 
-            self.process_sample(&mut AudioBufferSlice::new(
-                output_buffer,
-                position,
-                num_frames,
-            ));
+            let mut slice = BorrowedAudioBuffer::slice(output_buffer, position, num_frames);
+            self.process_sample(&mut slice);
 
             position += num_frames;
             current_time = current_time.incremented_by_samples(num_frames, self.sample_rate);
@@ -157,7 +154,7 @@ impl SamplerDspProcess {
                 break;
             }
 
-            self.process_voices(&mut AudioBufferSlice::new(
+            self.process_voices(&mut BorrowedAudioBuffer::slice(
                 output_buffer,
                 frame_position,
                 num_frames_to_render,
@@ -305,7 +302,7 @@ impl SamplerDspProcess {
 
 #[cfg(test)]
 mod tests {
-    use crate::{OwnedAudioBuffer, SampleLocation};
+    use crate::{AudioBuffer, SampleLocation};
 
     use super::*;
 
