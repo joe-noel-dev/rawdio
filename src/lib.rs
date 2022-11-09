@@ -20,6 +20,7 @@ pub type Sampler = dsp::sampler::node::SamplerNode;
 pub type Timestamp = timestamp::Timestamp;
 pub type OwnedAudioBuffer = buffer::owned_audio_buffer::OwnedAudioBuffer;
 pub type BorrowedAudioBuffer<'a> = buffer::borrowed_audio_buffer::BorrowedAudioBuffer<'a>;
+pub type Pan = dsp::pan::node::PanNode;
 
 pub use audio_process::AudioProcess;
 pub use buffer::audio_buffer::AudioBuffer;

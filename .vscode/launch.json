@@ -56,7 +56,7 @@
                     "kind": "example"
                 }
             },
-            "args": [],
+            "args": ["output.wav"],
             "cwd": "${workspaceFolder}"
         },
         {

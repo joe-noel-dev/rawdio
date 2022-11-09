@@ -24,19 +24,22 @@ impl DspProcessor for GainProcessor {
     ) {
         let sample_rate = output_buffer.sample_rate();
 
-        let gain = match parameters.get(&self.gain_id) {
+        let gain_parameter = match parameters.get(&self.gain_id) {
             Some(param) => param,
             None => return,
         };
 
-        for frame in 0..output_buffer.num_frames() {
-            let frame_time = start_time.incremented_by_samples(frame, sample_rate);
-            let gain = gain.get_value_at_time(&frame_time);
+        for channel in 0..output_buffer.num_channels() {
+            let location = SampleLocation::new(channel, 0);
+            let output = output_buffer.get_data_mut(location);
+            let input = input_buffer.get_data(location);
 
-            for channel in 0..output_buffer.num_channels() {
-                let location = SampleLocation::new(channel, frame);
-                let value = input_buffer.get_sample(location);
-                output_buffer.set_sample(location, value * (gain as f32));
+            for (frame, (output_value, input_value)) in
+                output.iter_mut().zip(input.iter()).enumerate()
+            {
+                let frame_time = start_time.incremented_by_samples(frame, sample_rate);
+                let gain = gain_parameter.get_value_at_time(&frame_time);
+                *output_value = *input_value * (gain as f32);
             }
         }
     }

@@ -1,6 +1,6 @@
 use rust_audio_engine::{
     create_context, AudioBuffer, BorrowedAudioBuffer, Gain, Node, Oscillator, OwnedAudioBuffer,
-    SampleLocation, Timestamp,
+    Pan, SampleLocation, Timestamp,
 };
 use structopt::StructOpt;
 
@@ -32,16 +32,22 @@ fn render_file(output_file: &str) {
     oscillator_4.gain.set_value_at_time(0.05, Timestamp::zero());
 
     let mut gain = Gain::new(context.get_command_queue());
+    let mut pan = Pan::new(context.get_command_queue());
 
     oscillator_1.connect_to(gain.get_id());
     oscillator_2.connect_to(gain.get_id());
     oscillator_3.connect_to(gain.get_id());
     oscillator_4.connect_to(gain.get_id());
+    gain.connect_to(pan.get_id());
+    pan.connect_to_output();
 
-    gain.connect_to_output();
+    pan.pan.set_value_at_time(-1.0, Timestamp::zero());
+    pan.pan
+        .linear_ramp_to_value(1.0, Timestamp::from_seconds(2.0));
+    pan.pan
+        .linear_ramp_to_value(-1.0, Timestamp::from_seconds(4.0));
 
     gain.gain.set_value_at_time(0.9, Timestamp::zero());
-
     gain.gain
         .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
 
@@ -49,9 +55,10 @@ fn render_file(output_file: &str) {
 
     let bits_per_sample = 24;
     let max_value = 2_i32.pow(bits_per_sample - 1) - 1;
+    let num_channels = 2;
 
     let file_spec = hound::WavSpec {
-        channels: 2,
+        channels: num_channels as u16,
         sample_rate: sample_rate as u32,
         bits_per_sample: bits_per_sample as u16,
         sample_format: hound::SampleFormat::Int,
@@ -63,7 +70,8 @@ fn render_file(output_file: &str) {
     let total_num_frames = sample_rate * length_in_seconds as usize;
 
     let max_number_of_frames = 1024;
-    let mut audio_buffer = OwnedAudioBuffer::new(total_num_frames, 2, sample_rate);
+
+    let mut audio_buffer = OwnedAudioBuffer::new(total_num_frames, num_channels, sample_rate);
 
     let mut position = 0;
     while position < total_num_frames {
