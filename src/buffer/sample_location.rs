@@ -22,4 +22,11 @@ impl SampleLocation {
             frame: self.frame,
         }
     }
+
+    pub fn origin() -> Self {
+        Self {
+            channel: 0,
+            frame: 0,
+        }
+    }
 }

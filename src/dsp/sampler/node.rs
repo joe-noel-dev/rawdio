@@ -3,9 +3,9 @@ use std::collections::HashMap;
 use lockfree::channel::mpsc::Sender;
 
 use crate::{
-    commands::{command::Command, id::Id},
+    commands::id::Id,
     graph::{dsp::Dsp, node::Node},
-    OwnedAudioBuffer, Timestamp,
+    Command, OwnedAudioBuffer, Timestamp,
 };
 
 use super::{
