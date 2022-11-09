@@ -1,5 +1,7 @@
 # Rust Audio Engine
 
+[![Rust](https://github.com/joefocusrite/rust-audio-engine/actions/workflows/rust.yml/badge.svg)](https://github.com/joefocusrite/rust-audio-engine/actions/workflows/rust.yml)
+
 !! This is a work in progress !!
 
 This is an audio engine, inspired by the Web Audio API.
