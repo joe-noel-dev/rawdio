@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
-use lockfree::channel::mpsc::Sender;
-
 use crate::{
     commands::id::Id,
-    graph::{dsp::Dsp, node::Node},
-    Command, OwnedAudioBuffer, Timestamp,
+    graph::{
+        dsp::Dsp,
+        node::{CommandQueue, Node},
+    },
+    OwnedAudioBuffer, Timestamp,
 };
 
 use super::{
@@ -14,7 +15,7 @@ use super::{
 };
 
 pub struct SamplerNode {
-    command_queue: Sender<Command>,
+    command_queue: CommandQueue,
     id: Id,
     event_transmitter: EventTransmitter,
 }
@@ -24,17 +25,13 @@ impl Node for SamplerNode {
         self.id
     }
 
-    fn get_command_queue(&self) -> Sender<Command> {
+    fn get_command_queue(&self) -> CommandQueue {
         self.command_queue.clone()
     }
 }
 
 impl SamplerNode {
-    pub fn new(
-        command_queue: Sender<Command>,
-        sample_rate: usize,
-        sample: OwnedAudioBuffer,
-    ) -> Self {
+    pub fn new(command_queue: CommandQueue, sample_rate: usize, sample: OwnedAudioBuffer) -> Self {
         let id = Id::generate();
 
         let (event_transmitter, event_receiver) = lockfree::channel::spsc::create();

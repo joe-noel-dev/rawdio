@@ -1,6 +1,4 @@
-use lockfree::channel::mpsc::Sender;
-
-use crate::{AudioProcess, Command, Timestamp};
+use crate::{graph::node::CommandQueue, AudioProcess, Timestamp};
 
 pub trait Context {
     fn start(&mut self);
@@ -13,5 +11,5 @@ pub trait Context {
 
     fn get_sample_rate(&self) -> usize;
 
-    fn get_command_queue(&self) -> Sender<Command>;
+    fn get_command_queue(&self) -> CommandQueue;
 }

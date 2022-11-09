@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
-use lockfree::channel::mpsc::Sender;
-
-use crate::{commands::id::Id, graph::dsp::Dsp, AudioParameter, Command, Node};
+use crate::{
+    commands::id::Id,
+    graph::{dsp::Dsp, node::CommandQueue},
+    AudioParameter, Node,
+};
 
 use super::processor::PanProcessor;
 
@@ -10,7 +12,7 @@ const MIN_PAN: f64 = -1.0;
 const MAX_PAN: f64 = 1.0;
 
 pub struct PanNode {
-    command_queue: Sender<Command>,
+    command_queue: CommandQueue,
     id: Id,
     pub pan: AudioParameter,
 }
@@ -20,13 +22,13 @@ impl Node for PanNode {
         self.id
     }
 
-    fn get_command_queue(&self) -> Sender<crate::commands::command::Command> {
+    fn get_command_queue(&self) -> CommandQueue {
         self.command_queue.clone()
     }
 }
 
 impl PanNode {
-    pub fn new(command_queue: Sender<Command>) -> Self {
+    pub fn new(command_queue: CommandQueue) -> Self {
         let id = Id::generate();
         let mut parameters = HashMap::new();
 
