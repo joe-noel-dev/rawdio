@@ -1,10 +1,9 @@
-use lockfree::channel::mpsc::Sender;
-
 use crate::{
     commands::{
         command::{Command, ParameterChangeRequest},
         id::Id,
     },
+    graph::node::CommandQueue,
     timestamp::Timestamp,
 };
 use atomic_float::AtomicF64;
@@ -18,7 +17,7 @@ pub struct AudioParameter {
     value: ParameterValue,
     minimum_value: f64,
     maximum_value: f64,
-    command_queue: Sender<Command>,
+    command_queue: CommandQueue,
 }
 
 impl AudioParameter {
@@ -27,7 +26,7 @@ impl AudioParameter {
         initial_value: f64,
         minimum_value: f64,
         maximum_value: f64,
-        command_queue: Sender<Command>,
+        command_queue: CommandQueue,
     ) -> (Self, RealtimeAudioParameter) {
         assert!((minimum_value..maximum_value).contains(&initial_value));
         assert!(minimum_value < maximum_value);

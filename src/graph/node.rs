@@ -1,15 +1,16 @@
-use crate::commands::{command::Command, id::Id};
-use lockfree::channel::mpsc::Sender;
+use crate::{commands::id::Id, Command};
 
 use super::{
     connection::Connection,
     endpoint::{Endpoint, EndpointType},
 };
 
+pub type CommandQueue = lockfree::channel::mpsc::Sender<Command>;
+
 pub trait Node {
     fn get_id(&self) -> Id;
 
-    fn get_command_queue(&self) -> Sender<Command>;
+    fn get_command_queue(&self) -> CommandQueue;
 
     fn connect_to_output(&self) {
         let _ = self

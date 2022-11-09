@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use lockfree::prelude::mpsc::Sender;
-
 use crate::{
-    commands::{command::Command, id::Id},
-    graph::{dsp::Dsp, node::Node},
+    commands::id::Id,
+    graph::{
+        dsp::Dsp,
+        node::{CommandQueue, Node},
+    },
     parameter::audio_parameter::AudioParameter,
 };
 
@@ -12,7 +13,7 @@ use super::processor::GainProcessor;
 
 pub struct GainNode {
     id: Id,
-    command_queue: Sender<Command>,
+    command_queue: CommandQueue,
     pub gain: AudioParameter,
 }
 
@@ -20,7 +21,7 @@ const MIN_GAIN: f64 = -2.0;
 const MAX_GAIN: f64 = 2.0;
 
 impl GainNode {
-    pub fn new(command_queue: Sender<Command>) -> Self {
+    pub fn new(command_queue: CommandQueue) -> Self {
         let mut parameters = HashMap::new();
 
         let id = Id::generate();
@@ -45,7 +46,7 @@ impl Node for GainNode {
         self.id
     }
 
-    fn get_command_queue(&self) -> Sender<Command> {
+    fn get_command_queue(&self) -> CommandQueue {
         self.command_queue.clone()
     }
 }

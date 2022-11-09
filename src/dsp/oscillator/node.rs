@@ -1,17 +1,18 @@
 use std::collections::HashMap;
 
-use lockfree::channel::mpsc::Sender;
-
 use crate::{
-    commands::{command::Command, id::Id},
-    graph::{dsp::Dsp, node::Node},
+    commands::id::Id,
+    graph::{
+        dsp::Dsp,
+        node::{CommandQueue, Node},
+    },
     parameter::audio_parameter::AudioParameter,
 };
 
 use super::processor::OscillatorDspProcess;
 
 pub struct OscillatorNode {
-    command_queue: Sender<Command>,
+    command_queue: CommandQueue,
     id: Id,
     pub frequency: AudioParameter,
     pub gain: AudioParameter,
@@ -22,7 +23,7 @@ impl Node for OscillatorNode {
         self.id
     }
 
-    fn get_command_queue(&self) -> Sender<Command> {
+    fn get_command_queue(&self) -> CommandQueue {
         self.command_queue.clone()
     }
 }
@@ -33,7 +34,7 @@ const MIN_FREQUENCY: f64 = 20.0;
 const MAX_FREQUENCY: f64 = 20000.0;
 
 impl OscillatorNode {
-    pub fn new(command_queue: Sender<Command>, frequency: f64) -> Self {
+    pub fn new(command_queue: CommandQueue, frequency: f64) -> Self {
         let id = Id::generate();
 
         let mut parameters = HashMap::new();

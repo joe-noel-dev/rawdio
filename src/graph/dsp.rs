@@ -10,7 +10,7 @@ use crate::{
     AudioBuffer,
 };
 
-use lockfree::channel::mpsc::Sender;
+use super::node::CommandQueue;
 
 pub type DspParameterMap = HashMap<Id, RealtimeAudioParameter>;
 
@@ -43,11 +43,11 @@ impl Dsp {
         }
     }
 
-    pub fn add_to_audio_process(dsp: Self, command_queue: &Sender<Command>) {
+    pub fn add_to_audio_process(dsp: Self, command_queue: &CommandQueue) {
         let _ = command_queue.send(Command::AddDsp(Box::new(dsp)));
     }
 
-    pub fn remove_from_audio_process(id: Id, command_queue: &Sender<Command>) {
+    pub fn remove_from_audio_process(id: Id, command_queue: &CommandQueue) {
         let _ = command_queue.send(Command::RemoveDsp(id));
     }
 
