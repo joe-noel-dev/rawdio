@@ -1,5 +1,5 @@
 use rust_audio_engine::{
-    create_context, AudioBuffer, AudioBufferSlice, Gain, Node, Oscillator, OwnedAudioBuffer,
+    create_context, AudioBuffer, BorrowedAudioBuffer, Gain, Node, Oscillator, OwnedAudioBuffer,
     SampleLocation, Timestamp,
 };
 use structopt::StructOpt;
@@ -69,7 +69,8 @@ fn render_file(output_file: &str) {
     while position < total_num_frames {
         let frames_this_time = std::cmp::min(max_number_of_frames, total_num_frames - position);
 
-        let mut frame_buffer = AudioBufferSlice::new(&mut audio_buffer, position, frames_this_time);
+        let mut frame_buffer =
+            BorrowedAudioBuffer::slice(&mut audio_buffer, position, frames_this_time);
 
         audio_process.process(&mut frame_buffer);
 

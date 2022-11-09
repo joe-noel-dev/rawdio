@@ -1,10 +1,8 @@
 use std::sync::{atomic::AtomicI64, atomic::Ordering, Arc};
 
 use crate::{
-    audio_process::AudioProcess,
-    buffer::{audio_buffer::AudioBuffer, audio_buffer_slice::AudioBufferSlice},
-    commands::command::Command,
-    timestamp::Timestamp,
+    audio_process::AudioProcess, commands::command::Command, timestamp::Timestamp, AudioBuffer,
+    BorrowedAudioBuffer,
 };
 use lockfree::channel::mpsc::Receiver;
 
@@ -54,7 +52,7 @@ impl Processor {
                 self.get_maximum_number_of_frames(),
             );
 
-            let mut audio_buffer = AudioBufferSlice::new(output_buffer, offset, num_frames);
+            let mut audio_buffer = BorrowedAudioBuffer::slice(output_buffer, offset, num_frames);
 
             self.graph.process(&mut audio_buffer, &current_time);
 

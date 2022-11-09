@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use crate::{
-    buffer::audio_buffer::AudioBuffer,
     commands::{
         command::{Command, ParameterChangeRequest},
         id::Id,
     },
     parameter::realtime_parameter::RealtimeAudioParameter,
     timestamp::Timestamp,
+    AudioBuffer,
 };
 
 use lockfree::channel::mpsc::Sender;

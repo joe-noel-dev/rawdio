@@ -2,7 +2,7 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Host, SampleFormat, Stream,
 };
-use rust_audio_engine::{AudioProcess, BorrowedAudioBuffer};
+use rust_audio_engine::{AudioBuffer, AudioProcess, BorrowedAudioBuffer, OwnedAudioBuffer};
 
 pub struct AudioCallback {
     _output_stream: Stream,
@@ -47,17 +47,33 @@ impl AudioCallback {
         println!("Connecting to device: {}", device.name().unwrap());
         println!("Sample rate: {}\n", config.sample_rate().0);
 
+        let max_buffer_size = match config.buffer_size() {
+            cpal::SupportedBufferSize::Range { min: _, max } => *max,
+            cpal::SupportedBufferSize::Unknown => 4096,
+        };
+
+        let mut audio_buffer = OwnedAudioBuffer::new(
+            max_buffer_size as usize,
+            config.channels() as usize,
+            config.sample_rate().0 as usize,
+        );
+
         let stream = device
             .build_output_stream(
                 &config.config(),
                 move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-                    let mut audio_buffer = BorrowedAudioBuffer::new(
-                        data,
-                        usize::from(config.channels()),
-                        config.sample_rate().0 as usize,
-                    );
+                    let num_frames = data.len() / config.channels() as usize;
+                    let mut slice = BorrowedAudioBuffer::slice(&mut audio_buffer, 0, num_frames);
 
-                    audio_process.process(&mut audio_buffer);
+                    slice.clear();
+
+                    audio_process.process(&mut slice);
+
+                    slice.copy_to_interleaved(
+                        data,
+                        config.channels() as usize,
+                        data.len() / config.channels() as usize,
+                    );
                 },
                 move |err| eprintln!("Stream error: {:?}", err),
             )

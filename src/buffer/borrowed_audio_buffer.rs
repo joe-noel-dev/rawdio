@@ -1,56 +1,101 @@
-use super::{audio_buffer::AudioBuffer, sample_location::SampleLocation};
+use crate::{AudioBuffer, SampleLocation};
 
 pub struct BorrowedAudioBuffer<'a> {
-    data: &'a mut [f32],
-    num_channels: usize,
-    sample_rate: usize,
+    buffer: &'a mut dyn AudioBuffer,
+    num_frames: usize,
+    offset: usize,
 }
 
 impl<'a> BorrowedAudioBuffer<'a> {
-    pub fn new(data: &'a mut [f32], num_channels: usize, sample_rate: usize) -> Self {
+    pub fn slice(buffer: &'a mut dyn AudioBuffer, offset: usize, num_frames: usize) -> Self {
+        assert!(offset + num_frames <= buffer.num_frames());
         Self {
-            data,
-            num_channels,
-            sample_rate,
+            buffer,
+            num_frames,
+            offset,
         }
-    }
-
-    fn get_offset(&self, sample_location: SampleLocation) -> usize {
-        debug_assert!(sample_location.channel < self.num_channels);
-        debug_assert!(sample_location.frame < self.num_frames());
-        sample_location.frame * self.num_channels + sample_location.channel
     }
 }
 
 impl<'a> AudioBuffer for BorrowedAudioBuffer<'a> {
     fn num_channels(&self) -> usize {
-        self.num_channels
+        self.buffer.num_channels()
     }
 
     fn num_frames(&self) -> usize {
-        self.data.len() / self.num_channels
+        self.num_frames
     }
 
     fn sample_rate(&self) -> usize {
-        self.sample_rate
+        self.buffer.sample_rate()
     }
 
-    fn clear(&mut self) {
-        self.data.fill(0.0);
+    fn get_data(&self, sample_location: SampleLocation) -> &[f32] {
+        let data = self
+            .buffer
+            .get_data(sample_location.offset_frames(self.offset));
+        let end = self.num_frames - sample_location.frame;
+        &data[0..end]
     }
 
-    fn set_sample(&mut self, sample_location: SampleLocation, value: f32) {
-        let offset = self.get_offset(sample_location);
-        self.data[offset] = value;
+    fn get_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32] {
+        let data = self
+            .buffer
+            .get_data_mut(sample_location.offset_frames(self.offset));
+        let end = self.num_frames - sample_location.frame;
+        &mut data[0..end]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::OwnedAudioBuffer;
+
+    use super::*;
+    use approx::assert_relative_eq;
+
+    #[test]
+    fn translates_location_when_getting_samples() {
+        let num_frames = 1_000;
+        let num_channels = 2;
+        let sample_rate = 44_100;
+        let mut original_buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+
+        let channel = 0;
+        let frame = 54;
+        let location = SampleLocation::new(channel, frame);
+
+        let value = 0.54;
+        original_buffer.set_sample(location, value);
+
+        let slice_offset = 50;
+        let slice_num_frames = 100;
+        let slice =
+            BorrowedAudioBuffer::slice(&mut original_buffer, slice_offset, slice_num_frames);
+        let expected_location = SampleLocation::new(channel, frame - slice_offset);
+        assert_relative_eq!(slice.get_sample(expected_location), value);
     }
 
-    fn add_sample(&mut self, sample_location: SampleLocation, value: f32) {
-        let value_before = self.get_sample(sample_location);
-        self.set_sample(sample_location, value + value_before)
-    }
+    #[test]
+    fn translates_location_when_setting_samples() {
+        let num_frames = 1_000;
+        let num_channels = 2;
+        let sample_rate = 44_100;
+        let mut original_buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
 
-    fn get_sample(&self, sample_location: SampleLocation) -> f32 {
-        let offset = self.get_offset(sample_location);
-        self.data[offset]
+        let slice_offset = 50;
+        let slice_num_frames = 100;
+        let mut slice =
+            BorrowedAudioBuffer::slice(&mut original_buffer, slice_offset, slice_num_frames);
+
+        let channel = 0;
+        let offset_frame = 12;
+        let offset_location = SampleLocation::new(channel, offset_frame);
+        let sample_value = 0.12;
+        slice.set_sample(offset_location, sample_value);
+
+        let original_location = SampleLocation::new(channel, offset_frame + slice_offset);
+        assert_relative_eq!(original_buffer.get_sample(original_location), sample_value);
     }
 }

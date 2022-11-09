@@ -1,10 +1,6 @@
 use lockfree::channel::{spsc, spsc::Sender};
 
 use crate::{
-    buffer::{
-        audio_buffer::AudioBuffer, audio_buffer_slice::AudioBufferSlice,
-        sample_location::SampleLocation,
-    },
     commands::{command::ParameterChangeRequest, id::Id},
     graph::{
         buffer_pool::BufferPool,
@@ -13,6 +9,7 @@ use crate::{
         endpoint::{Endpoint, EndpointType},
     },
     timestamp::Timestamp,
+    AudioBuffer, BorrowedAudioBuffer, SampleLocation,
 };
 
 use super::{
@@ -214,7 +211,7 @@ impl DspGraph {
         let mut node_output_buffer = buffer_pool.get_unassigned_buffer().unwrap();
 
         let mut node_output_buffer_slice =
-            AudioBufferSlice::new(&mut node_output_buffer, 0, num_frames);
+            BorrowedAudioBuffer::slice(&mut node_output_buffer, 0, num_frames);
 
         Self::copy_output_from_dependencies(
             buffer_pool,
@@ -243,8 +240,9 @@ mod tests {
     use approx::{assert_relative_eq, assert_relative_ne};
 
     use crate::{
-        buffer::owned_audio_buffer::OwnedAudioBuffer,
+        buffer::audio_buffer::AudioBuffer,
         graph::dsp::{DspParameterMap, DspProcessor},
+        OwnedAudioBuffer,
     };
 
     use super::*;
