@@ -1,2 +1,5 @@
 pub(crate) mod command;
-pub(crate) mod id;
+mod id;
+
+pub(crate) type Id = id::Id;
+pub(crate) type Command = command::Command;

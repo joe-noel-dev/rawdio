@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 
 use crate::{
-    commands::id::Id,
+    commands::Id,
     graph::{
         dsp::Dsp,
         node::{CommandQueue, Node},
     },
-    parameter::audio_parameter::AudioParameter,
+    parameter::AudioParameter,
 };
 
-use super::processor::GainProcessor;
+use super::gain_processor::GainProcessor;
 
 pub struct GainNode {
     id: Id,

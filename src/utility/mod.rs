@@ -1,2 +1,4 @@
-pub mod level;
-pub mod scoped_time_measure;
+mod level;
+mod scoped_time_measure;
+
+pub type Level = level::Level;

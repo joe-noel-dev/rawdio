@@ -1,4 +1,4 @@
-use crate::{commands::id::Id, Timestamp};
+use crate::{commands::Id, Timestamp};
 
 use super::{ParameterChange, ParameterValue, ValueChangeMethod};
 

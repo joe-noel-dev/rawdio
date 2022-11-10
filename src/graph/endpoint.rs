@@ -1,4 +1,4 @@
-use crate::commands::id::Id;
+use crate::commands::Id;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EndpointType {

@@ -1,6 +1,6 @@
 use std::collections::{hash_map::Keys, HashMap};
 
-use crate::commands::id::Id;
+use crate::commands::Id;
 
 use super::{edge::Edge, node::Node};
 

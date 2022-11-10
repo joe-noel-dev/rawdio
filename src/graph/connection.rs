@@ -1,4 +1,4 @@
-use crate::commands::id::Id;
+use crate::commands::Id;
 
 use super::endpoint::{Endpoint, EndpointType};
 

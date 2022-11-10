@@ -1,11 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    commands::{
-        command::{Command, ParameterChangeRequest},
-        id::Id,
-    },
-    parameter::realtime_parameter::RealtimeAudioParameter,
+    commands::{command::ParameterChangeRequest, Command, Id},
+    parameter::RealtimeAudioParameter,
     timestamp::Timestamp,
     AudioBuffer,
 };

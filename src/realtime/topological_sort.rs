@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{commands::id::Id, realtime::graph::Direction};
+use crate::{commands::Id, realtime::graph::Direction};
 
 use super::graph::Graph;
 

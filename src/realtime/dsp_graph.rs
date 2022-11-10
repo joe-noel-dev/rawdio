@@ -1,7 +1,7 @@
 use lockfree::channel::{spsc, spsc::Sender};
 
 use crate::{
-    commands::{command::ParameterChangeRequest, id::Id},
+    commands::{command::ParameterChangeRequest, Id},
     graph::{
         buffer_pool::BufferPool,
         connection::Connection,
@@ -240,9 +240,8 @@ mod tests {
     use approx::{assert_relative_eq, assert_relative_ne};
 
     use crate::{
-        buffer::audio_buffer::AudioBuffer,
         graph::dsp::{DspParameterMap, DspProcessor},
-        OwnedAudioBuffer,
+        AudioBuffer, OwnedAudioBuffer,
     };
 
     use super::*;

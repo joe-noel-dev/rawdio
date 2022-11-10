@@ -1,4 +1,4 @@
-use crate::commands::id::Id;
+use crate::commands::Id;
 
 pub struct Edge<EdgeData> {
     pub from_node_id: Id,

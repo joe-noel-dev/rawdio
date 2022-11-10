@@ -1,7 +1,7 @@
 use crate::{
     commands::{
         command::{Command, ParameterChangeRequest},
-        id::Id,
+        Id,
     },
     graph::node::CommandQueue,
     timestamp::Timestamp,
