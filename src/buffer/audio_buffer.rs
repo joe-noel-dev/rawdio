@@ -99,4 +99,41 @@ pub trait AudioBuffer {
             }
         }
     }
+
+    fn frame_iter(&self) -> FrameIterator {
+        FrameIterator {
+            channel: 0,
+            frame: 0,
+            num_channels: self.num_channels(),
+            num_frames: self.num_frames(),
+        }
+    }
+}
+
+pub struct FrameIterator {
+    channel: usize,
+    frame: usize,
+    num_channels: usize,
+    num_frames: usize,
+}
+
+impl Iterator for FrameIterator {
+    type Item = SampleLocation;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let location = if self.channel < self.num_channels && self.frame < self.num_frames {
+            Some(SampleLocation::new(self.channel, self.frame))
+        } else {
+            None
+        };
+
+        self.frame += 1;
+
+        if self.frame >= self.num_frames {
+            self.channel += 1;
+            self.frame = 0;
+        }
+
+        location
+    }
 }

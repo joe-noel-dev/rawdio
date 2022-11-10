@@ -26,14 +26,11 @@ fn main() {
     pan.pan.set_value_at_time(-1.0, Timestamp::zero());
 
     pan.pan
-        .linear_ramp_to_value(1.0, Timestamp::from_seconds(2.0));
-
-    pan.pan
-        .linear_ramp_to_value(-1.0, Timestamp::from_seconds(4.0));
+        .linear_ramp_to_value(1.0, Timestamp::from_seconds(4.0));
 
     context.start();
 
-    thread::sleep(time::Duration::from_secs(4));
+    thread::sleep(time::Duration::from_secs(5));
 
     context.stop();
 

@@ -36,8 +36,8 @@ impl DspProcessor for PanProcessor {
             let frame_time = start_time.incremented_by_samples(frame, sample_rate);
             let pan = pan_parameter.get_value_at_time(&frame_time);
 
-            let l_gain = if pan < 0.0 { 1.0 } else { 1.0 - pan };
-            let r_gain = if pan > 0.0 { 1.0 } else { 1.0 + pan };
+            let l_gain = (1.0 - pan).min(1.0);
+            let r_gain = (1.0 + pan).min(1.0);
 
             let l_location = SampleLocation::new(0, frame);
             let r_location = SampleLocation::new(1, frame);
