@@ -1,8 +1,7 @@
 use std::sync::{atomic::AtomicI64, Arc};
 
 use crate::{
-    audio_process::AudioProcess, realtime::processor::Processor, Command, CommandQueue, Context,
-    Timestamp,
+    audio_process::AudioProcess, realtime::Processor, Command, CommandQueue, Context, Timestamp,
 };
 
 use lockfree::channel::mpsc;
