@@ -29,6 +29,10 @@ pub struct DspGraph {
     maximum_number_of_frames: usize,
 }
 
+static MAXIMUM_BUFFER_COUNT: usize = 128;
+static MAXIMUM_GRAPH_NODE_COUNT: usize = 512;
+static MAXIMUM_GRAPH_EDGE_COUNT: usize = 512;
+
 impl DspGraph {
     pub fn new(
         maximum_number_of_frames: usize,
@@ -39,13 +43,13 @@ impl DspGraph {
         run_garbage_collector(garbage_collection_rx);
 
         Self {
-            graph: Graph::with_capacity(512, 512),
-            topological_sort: TopologicalSort::with_capacity(512),
+            graph: Graph::with_capacity(MAXIMUM_GRAPH_NODE_COUNT, MAXIMUM_GRAPH_EDGE_COUNT),
+            topological_sort: TopologicalSort::with_capacity(MAXIMUM_GRAPH_NODE_COUNT),
             graph_needs_sort: false,
             output_endpoint: None,
             garbase_collection_tx,
             buffer_pool: BufferPool::with_capacity(
-                128,
+                MAXIMUM_BUFFER_COUNT,
                 maximum_number_of_frames,
                 maximum_number_of_channels,
                 sample_rate,
