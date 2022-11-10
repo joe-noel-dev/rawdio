@@ -1,16 +1,16 @@
 use std::sync::{atomic::AtomicI64, Arc};
 
 use crate::{
-    audio_process::AudioProcess, commands::command::Command, realtime::processor::Processor,
-    timestamp::Timestamp, Context,
+    audio_process::AudioProcess, realtime::processor::Processor, Command, CommandQueue, Context,
+    Timestamp,
 };
 
-use lockfree::channel::mpsc::{self, Sender};
+use lockfree::channel::mpsc;
 
 pub struct Engine {
     sample_rate: usize,
     timestamp: Arc<AtomicI64>,
-    command_tx: Sender<Command>,
+    command_tx: CommandQueue,
     realtime_processor: Option<Processor>,
 }
 
@@ -55,7 +55,7 @@ impl Context for Engine {
         self.sample_rate
     }
 
-    fn get_command_queue(&self) -> Sender<Command> {
+    fn get_command_queue(&self) -> CommandQueue {
         self.command_tx.clone()
     }
 }
