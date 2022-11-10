@@ -1,6 +1,6 @@
 use rust_audio_engine::{
     create_context, AudioBuffer, BorrowedAudioBuffer, Gain, Node, Oscillator, OwnedAudioBuffer,
-    Pan, SampleLocation, Timestamp,
+    Pan, Timestamp,
 };
 use structopt::StructOpt;
 
@@ -82,13 +82,11 @@ fn render_file(output_file: &str) {
 
         audio_process.process(&mut frame_buffer);
 
-        for frame in 0..frame_buffer.num_frames() {
-            for channel in 0..frame_buffer.num_channels() {
-                let sample = frame_buffer.get_sample(SampleLocation::new(channel, frame));
-                let sample = sample.clamp(-1.0, 1.0);
-                let sample = (sample * max_value as f32) as i32;
-                writer.write_sample(sample).expect("Failed to write sample");
-            }
+        for location in frame_buffer.frame_iter() {
+            let sample = frame_buffer.get_sample(location);
+            let sample = sample.clamp(-1.0, 1.0);
+            let sample = (sample * max_value as f32) as i32;
+            writer.write_sample(sample).expect("Failed to write sample");
         }
 
         position += frames_this_time;

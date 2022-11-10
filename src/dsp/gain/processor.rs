@@ -1,7 +1,7 @@
 use crate::{
     commands::id::Id,
     graph::dsp::{DspParameterMap, DspProcessor},
-    AudioBuffer, SampleLocation, Timestamp,
+    AudioBuffer, Timestamp,
 };
 
 pub struct GainProcessor {
@@ -29,18 +29,17 @@ impl DspProcessor for GainProcessor {
             None => return,
         };
 
-        for channel in 0..output_buffer.num_channels() {
-            let location = SampleLocation::new(channel, 0);
-            let output = output_buffer.get_data_mut(location);
-            let input = input_buffer.get_data(location);
+        for (frame, (output_location, input_location)) in output_buffer
+            .frame_iter()
+            .zip(input_buffer.frame_iter())
+            .enumerate()
+        {
+            let frame_time = start_time.incremented_by_samples(frame, sample_rate);
+            let gain = gain_parameter.get_value_at_time(&frame_time);
 
-            for (frame, (output_value, input_value)) in
-                output.iter_mut().zip(input.iter()).enumerate()
-            {
-                let frame_time = start_time.incremented_by_samples(frame, sample_rate);
-                let gain = gain_parameter.get_value_at_time(&frame_time);
-                *output_value = *input_value * (gain as f32);
-            }
+            let input_value = input_buffer.get_sample(input_location);
+            let output_value = input_value * (gain as f32);
+            output_buffer.set_sample(output_location, output_value);
         }
     }
 }
