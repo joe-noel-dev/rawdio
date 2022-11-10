@@ -1,15 +1,12 @@
 use crate::{
-    commands::{
-        command::{Command, ParameterChangeRequest},
-        Id,
-    },
+    commands::{command::ParameterChangeRequest, Command, Id},
     graph::node::CommandQueue,
     timestamp::Timestamp,
 };
 use atomic_float::AtomicF64;
 
+use super::{parameter_change::ValueChangeMethod, parameter_value::ParameterValue};
 use super::{realtime_parameter::RealtimeAudioParameter, ParameterChange};
-use super::{ParameterValue, ValueChangeMethod};
 
 pub struct AudioParameter {
     dsp_id: Id,
