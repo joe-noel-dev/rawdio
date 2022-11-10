@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 
 use crate::{
-    commands::id::Id,
+    commands::Id,
     graph::{
         dsp::Dsp,
         node::{CommandQueue, Node},
     },
-    parameter::audio_parameter::AudioParameter,
+    parameter::AudioParameter,
 };
 
-use super::processor::OscillatorDspProcess;
+use super::oscillator_processor::OscillatorProcessor;
 
 pub struct OscillatorNode {
     command_queue: CommandQueue,
@@ -53,7 +53,7 @@ impl OscillatorNode {
 
         let dsp = Dsp::new(
             id,
-            Box::new(OscillatorDspProcess::new(frequency.get_id(), gain.get_id())),
+            Box::new(OscillatorProcessor::new(frequency.get_id(), gain.get_id())),
             parameters,
         );
 

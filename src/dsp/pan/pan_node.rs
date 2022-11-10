@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use crate::{
-    commands::id::Id,
+    commands::Id,
     graph::{dsp::Dsp, node::CommandQueue},
     AudioParameter, Node,
 };
 
-use super::processor::PanProcessor;
+use super::pan_processor::PanProcessor;
 
 const MIN_PAN: f64 = -1.0;
 const MAX_PAN: f64 = 1.0;

@@ -1,4 +1,4 @@
-use crate::{commands::id::Id, Command};
+use crate::{commands::Id, Command};
 
 use super::{
     connection::Connection,

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    commands::id::Id,
+    commands::Id,
     graph::{
         dsp::Dsp,
         node::{CommandQueue, Node},
@@ -11,7 +11,7 @@ use crate::{
 
 use super::{
     event::SamplerEvent,
-    processor::{EventTransmitter, SamplerDspProcess},
+    sampler_processor::{EventTransmitter, SamplerDspProcess},
 };
 
 pub struct SamplerNode {

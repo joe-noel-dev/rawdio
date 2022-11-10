@@ -1,10 +1,10 @@
 use crate::{
-    commands::id::Id,
+    commands::Id,
     graph::dsp::{DspParameterMap, DspProcessor},
     AudioBuffer, SampleLocation, Timestamp,
 };
 
-pub struct OscillatorDspProcess {
+pub struct OscillatorProcessor {
     phase: f64,
     frequency_id: Id,
     gain_id: Id,
@@ -25,7 +25,7 @@ lazy_static! {
     };
 }
 
-impl OscillatorDspProcess {
+impl OscillatorProcessor {
     pub fn new(frequency_id: Id, gain_id: Id) -> Self {
         // ensure table is initialised off the realtime thread
         let _ = SINE_WAVE_TABLE[0];
@@ -66,7 +66,7 @@ fn interpolate(a: f64, b: f64, amount_of_b: f64) -> f64 {
     (1.0 - amount_of_b) * a + amount_of_b * b
 }
 
-impl DspProcessor for OscillatorDspProcess {
+impl DspProcessor for OscillatorProcessor {
     fn process_audio(
         &mut self,
         _input_buffer: &dyn AudioBuffer,

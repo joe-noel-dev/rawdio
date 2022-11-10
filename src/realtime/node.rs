@@ -1,4 +1,4 @@
-use crate::commands::id::Id;
+use crate::commands::Id;
 
 pub struct Node<NodeData> {
     pub node_data: NodeData,

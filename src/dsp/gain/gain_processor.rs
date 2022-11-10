@@ -1,5 +1,5 @@
 use crate::{
-    commands::id::Id,
+    commands::Id,
     graph::dsp::{DspParameterMap, DspProcessor},
     AudioBuffer, Timestamp,
 };

@@ -19,5 +19,8 @@ pub struct ParameterChange {
     method: ValueChangeMethod,
 }
 
-pub(crate) mod audio_parameter;
-pub(crate) mod realtime_parameter;
+mod audio_parameter;
+mod realtime_parameter;
+
+pub type AudioParameter = audio_parameter::AudioParameter;
+pub type RealtimeAudioParameter = realtime_parameter::RealtimeAudioParameter;

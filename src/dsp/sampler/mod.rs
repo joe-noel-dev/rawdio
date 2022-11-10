@@ -1,5 +1,7 @@
 mod event;
 mod fade;
-pub mod node;
-mod processor;
+mod sampler_node;
+mod sampler_processor;
 mod voice;
+
+pub type SamplerNode = sampler_node::SamplerNode;
