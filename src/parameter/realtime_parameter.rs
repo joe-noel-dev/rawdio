@@ -1,6 +1,8 @@
 use crate::{commands::Id, Timestamp};
 
-use super::{ParameterChange, ParameterValue, ValueChangeMethod};
+use super::{
+    parameter_change::ValueChangeMethod, parameter_value::ParameterValue, ParameterChange,
+};
 
 use std::sync::atomic::Ordering;
 
@@ -12,17 +14,16 @@ pub struct RealtimeAudioParameter {
     last_change: Timestamp,
 }
 
+const MAXIMUM_PENDING_PARAMETER_CHANGES: usize = 16;
+
 impl RealtimeAudioParameter {
     pub fn new(parameter_id: Id, value: ParameterValue) -> Self {
-        let mut parameter_changes = Vec::new();
-        parameter_changes.reserve(16);
-
         let initial_value = value.load(Ordering::Acquire);
 
         Self {
             parameter_id,
             value,
-            parameter_changes,
+            parameter_changes: Vec::with_capacity(MAXIMUM_PENDING_PARAMETER_CHANGES),
             last_change: Timestamp::default(),
             last_value: initial_value,
         }
