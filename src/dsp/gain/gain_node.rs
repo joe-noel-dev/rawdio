@@ -17,8 +17,9 @@ pub struct GainNode {
     pub gain: AudioParameter,
 }
 
-const MIN_GAIN: f64 = -2.0;
-const MAX_GAIN: f64 = 2.0;
+const MIN_GAIN: f64 = f64::NEG_INFINITY;
+const MAX_GAIN: f64 = f64::INFINITY;
+const DEFAULT_GAIN: f64 = 1.0;
 
 impl GainNode {
     pub fn new(command_queue: CommandQueue) -> Self {
@@ -27,7 +28,7 @@ impl GainNode {
         let id = Id::generate();
 
         let (gain, realtime_gain) =
-            AudioParameter::new(id, 1.0, MIN_GAIN, MAX_GAIN, command_queue.clone());
+            AudioParameter::new(id, DEFAULT_GAIN, MIN_GAIN, MAX_GAIN, command_queue.clone());
         parameters.insert(realtime_gain.get_id(), realtime_gain);
 
         let dsp = Dsp::new(id, Box::new(GainProcessor::new(gain.get_id())), parameters);
