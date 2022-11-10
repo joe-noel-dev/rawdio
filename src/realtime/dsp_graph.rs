@@ -2,12 +2,7 @@ use lockfree::channel::{spsc, spsc::Sender};
 
 use crate::{
     commands::{command::ParameterChangeRequest, Id},
-    graph::{
-        buffer_pool::BufferPool,
-        connection::Connection,
-        dsp::Dsp,
-        endpoint::{Endpoint, EndpointType},
-    },
+    graph::{BufferPool, Connection, Dsp, Endpoint, EndpointType},
     timestamp::Timestamp,
     AudioBuffer, BorrowedAudioBuffer, SampleLocation,
 };
@@ -244,7 +239,7 @@ mod tests {
     use approx::{assert_relative_eq, assert_relative_ne};
 
     use crate::{
-        graph::dsp::{DspParameterMap, DspProcessor},
+        graph::{DspParameterMap, DspProcessor},
         AudioBuffer, OwnedAudioBuffer,
     };
 

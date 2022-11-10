@@ -4,10 +4,8 @@ use crate::{
     commands::{command::ParameterChangeRequest, Command, Id},
     parameter::RealtimeAudioParameter,
     timestamp::Timestamp,
-    AudioBuffer,
+    AudioBuffer, CommandQueue,
 };
-
-use super::node::CommandQueue;
 
 pub type DspParameterMap = HashMap<Id, RealtimeAudioParameter>;
 

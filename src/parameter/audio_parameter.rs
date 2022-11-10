@@ -1,7 +1,7 @@
 use crate::{
     commands::{command::ParameterChangeRequest, Command, Id},
-    graph::node::CommandQueue,
     timestamp::Timestamp,
+    CommandQueue,
 };
 use atomic_float::AtomicF64;
 

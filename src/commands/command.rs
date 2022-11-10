@@ -1,5 +1,5 @@
 use crate::{
-    graph::{connection::Connection, dsp::Dsp, endpoint::Endpoint},
+    graph::{Connection, Dsp, Endpoint},
     parameter::ParameterChange,
 };
 

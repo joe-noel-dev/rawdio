@@ -1,10 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-    commands::Id,
-    graph::{dsp::Dsp, node::CommandQueue},
-    AudioParameter, Node,
-};
+use crate::{commands::Id, graph::Dsp, AudioParameter, CommandQueue, Node};
 
 use super::pan_processor::PanProcessor;
 

@@ -2,7 +2,7 @@ use std::{thread, time};
 
 use lockfree::channel::{spsc::Receiver, RecvErr};
 
-use crate::graph::dsp::Dsp;
+use crate::graph::Dsp;
 
 pub enum GarbageCollectionCommand {
     DisposeDsp(Box<Dsp>),

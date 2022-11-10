@@ -2,11 +2,8 @@ use std::collections::HashMap;
 
 use crate::{
     commands::Id,
-    graph::{
-        dsp::Dsp,
-        node::{CommandQueue, Node},
-    },
-    OwnedAudioBuffer, Timestamp,
+    graph::{Dsp, Node},
+    CommandQueue, OwnedAudioBuffer, Timestamp,
 };
 
 use super::{

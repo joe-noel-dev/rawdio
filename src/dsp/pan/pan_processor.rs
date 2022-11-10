@@ -1,6 +1,6 @@
 use crate::{
     commands::Id,
-    graph::dsp::{DspParameterMap, DspProcessor},
+    graph::{DspParameterMap, DspProcessor},
     AudioBuffer, SampleLocation, Timestamp,
 };
 

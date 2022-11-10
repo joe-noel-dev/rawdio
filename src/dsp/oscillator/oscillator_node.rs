@@ -2,11 +2,9 @@ use std::collections::HashMap;
 
 use crate::{
     commands::Id,
-    graph::{
-        dsp::Dsp,
-        node::{CommandQueue, Node},
-    },
+    graph::{Dsp, Node},
     parameter::AudioParameter,
+    CommandQueue,
 };
 
 use super::oscillator_processor::OscillatorProcessor;
