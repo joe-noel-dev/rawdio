@@ -100,6 +100,27 @@ pub trait AudioBuffer {
         }
     }
 
+    fn copy_from(
+        &mut self,
+        source_buffer: &dyn AudioBuffer,
+        source_location: SampleLocation,
+        destination_location: SampleLocation,
+        num_channels: usize,
+        num_frames: usize,
+    ) {
+        for channel in 0..num_channels {
+            let source = source_buffer.get_data(source_location.with_channel(channel));
+            let source = &source[0..num_frames];
+
+            let destination = self.get_data_mut(destination_location.with_channel(channel));
+            let destination = &mut destination[0..num_frames];
+
+            for (source_value, destination_value) in source.iter().zip(destination.iter_mut()) {
+                *destination_value = *source_value;
+            }
+        }
+    }
+
     fn frame_iter(&self) -> FrameIterator {
         FrameIterator {
             channel: 0,

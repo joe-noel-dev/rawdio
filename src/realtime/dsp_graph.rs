@@ -79,6 +79,7 @@ impl DspGraph {
                 output_buffer,
                 num_channels,
                 num_frames,
+                MixBehaviour::Overwrite,
             );
         }
 
@@ -161,22 +162,38 @@ fn process_dsps(
     }
 }
 
+enum MixBehaviour {
+    Overwrite,
+    Mix,
+}
+
 fn mix_in_endpoint(
     buffer_pool: &mut BufferPool,
     endpoint: Endpoint,
     output_buffer: &mut dyn AudioBuffer,
     num_channels: usize,
     num_frames: usize,
+    mix_behaviour: MixBehaviour,
 ) {
     if let Some(buffer) = buffer_pool.get_assigned_buffer(endpoint) {
         let sample_location = SampleLocation::new(0, 0);
-        output_buffer.add_from(
-            &buffer,
-            sample_location,
-            sample_location,
-            num_channels,
-            num_frames,
-        );
+
+        match mix_behaviour {
+            MixBehaviour::Overwrite => output_buffer.copy_from(
+                &buffer,
+                sample_location,
+                sample_location,
+                num_channels,
+                num_frames,
+            ),
+            MixBehaviour::Mix => output_buffer.add_from(
+                &buffer,
+                sample_location,
+                sample_location,
+                num_channels,
+                num_frames,
+            ),
+        }
 
         buffer_pool.return_buffer_with_assignment(buffer, endpoint);
     }
@@ -190,6 +207,8 @@ fn copy_output_from_dependencies(
     num_channels: usize,
     num_frames: usize,
 ) {
+    let mut mix_behaviour = MixBehaviour::Overwrite;
+
     for connected_node_id in graph.node_iter(dsp_id, Direction::Incoming) {
         let endpoint = Endpoint::new(connected_node_id, EndpointType::Output);
         mix_in_endpoint(
@@ -198,7 +217,10 @@ fn copy_output_from_dependencies(
             destination_buffer,
             num_channels,
             num_frames,
+            mix_behaviour,
         );
+
+        mix_behaviour = MixBehaviour::Mix;
     }
 }
 
