@@ -234,15 +234,13 @@ fn process_dsp(
 ) {
     let output_endpoint = Endpoint::new(dsp_id, EndpointType::Output);
 
-    let mut node_output_buffer = match buffer_pool.get_unassigned_buffer() {
-        Some(buffer) => buffer,
-        None => return,
-    };
+    let mut node_output_buffer = buffer_pool
+        .get_unassigned_buffer()
+        .expect("Ran out of buffers in pool");
 
-    let mut node_input_buffer = match buffer_pool.get_unassigned_buffer() {
-        Some(buffer) => buffer,
-        None => return,
-    };
+    let mut node_input_buffer = buffer_pool
+        .get_unassigned_buffer()
+        .expect("Ran out of buffers in pool");
 
     copy_output_from_dependencies(
         buffer_pool,
