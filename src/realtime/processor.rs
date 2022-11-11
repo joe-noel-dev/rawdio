@@ -52,7 +52,8 @@ impl Processor {
                 self.get_maximum_number_of_frames(),
             );
 
-            let mut audio_buffer = BorrowedAudioBuffer::slice(output_buffer, offset, num_frames);
+            let mut audio_buffer =
+                BorrowedAudioBuffer::slice_frames(output_buffer, offset, num_frames);
 
             self.graph.process(&mut audio_buffer, &current_time);
 

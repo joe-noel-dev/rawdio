@@ -234,11 +234,15 @@ fn process_dsp(
 ) {
     let output_endpoint = Endpoint::new(dsp_id, EndpointType::Output);
 
-    let mut node_input_buffer = buffer_pool.get_unassigned_buffer().unwrap();
-    let mut node_output_buffer = buffer_pool.get_unassigned_buffer().unwrap();
+    let mut node_output_buffer = match buffer_pool.get_unassigned_buffer() {
+        Some(buffer) => buffer,
+        None => return,
+    };
 
-    let mut node_output_buffer_slice =
-        BorrowedAudioBuffer::slice(&mut node_output_buffer, 0, num_frames);
+    let mut node_input_buffer = match buffer_pool.get_unassigned_buffer() {
+        Some(buffer) => buffer,
+        None => return,
+    };
 
     copy_output_from_dependencies(
         buffer_pool,
@@ -250,8 +254,19 @@ fn process_dsp(
     );
 
     if let Some(dsp) = graph.get_node_mut(dsp_id) {
+        let mut node_output_buffer_slice = BorrowedAudioBuffer::slice(
+            &mut node_output_buffer,
+            0,
+            num_frames,
+            0,
+            dsp.output_count(),
+        );
+
+        let node_input_buffer_slice =
+            BorrowedAudioBuffer::slice(&mut node_input_buffer, 0, num_frames, 0, dsp.input_count());
+
         dsp.process_audio(
-            &node_input_buffer,
+            &node_input_buffer_slice,
             &mut node_output_buffer_slice,
             start_time,
         );
@@ -309,7 +324,16 @@ mod tests {
     fn make_dsp(value_to_write: f32, location_to_write: SampleLocation) -> Box<Dsp> {
         let processor = Box::new(Processor::new(value_to_write, location_to_write));
         let parameters = DspParameterMap::new();
-        Box::new(Dsp::new(Id::generate(), processor, parameters))
+
+        let input_count = 2;
+        let output_count = 2;
+        Box::new(Dsp::new(
+            Id::generate(),
+            input_count,
+            output_count,
+            processor,
+            parameters,
+        ))
     }
 
     #[test]

@@ -56,7 +56,7 @@ impl DspProcessor for SamplerDspProcess {
             debug_assert!(end_frame <= output_buffer.num_frames());
             let num_frames = end_frame - position;
 
-            let mut slice = BorrowedAudioBuffer::slice(output_buffer, position, num_frames);
+            let mut slice = BorrowedAudioBuffer::slice_frames(output_buffer, position, num_frames);
             self.process_sample(&mut slice);
 
             position += num_frames;
@@ -154,7 +154,7 @@ impl SamplerDspProcess {
                 break;
             }
 
-            self.process_voices(&mut BorrowedAudioBuffer::slice(
+            self.process_voices(&mut BorrowedAudioBuffer::slice_frames(
                 output_buffer,
                 frame_position,
                 num_frames_to_render,

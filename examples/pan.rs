@@ -18,7 +18,8 @@ fn main() {
         .gain
         .set_value_at_time(Level::from_db(-3.0).as_gain(), Timestamp::zero());
 
-    let mut pan = Pan::new(context.get_command_queue());
+    let pan_input_count = 1;
+    let mut pan = Pan::new(context.get_command_queue(), pan_input_count);
 
     oscillator.connect_to(pan.get_id());
     pan.connect_to_output();

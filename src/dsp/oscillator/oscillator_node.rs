@@ -49,8 +49,13 @@ impl OscillatorNode {
             AudioParameter::new(id, 1.0, MIN_GAIN, MAX_GAIN, command_queue.clone());
         parameters.insert(realtime_gain.get_id(), realtime_gain);
 
+        let input_count = 0;
+        let output_count = 1;
+
         let dsp = Dsp::new(
             id,
+            input_count,
+            output_count,
             Box::new(OscillatorProcessor::new(frequency.get_id(), gain.get_id())),
             parameters,
         );

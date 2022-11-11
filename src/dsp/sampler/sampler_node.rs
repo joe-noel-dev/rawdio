@@ -37,7 +37,16 @@ impl SamplerNode {
 
         let sampler_process = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
-        let dsp = Dsp::new(id, Box::new(sampler_process), parameters);
+        let input_count = 0;
+        let output_count = 2;
+
+        let dsp = Dsp::new(
+            id,
+            input_count,
+            output_count,
+            Box::new(sampler_process),
+            parameters,
+        );
 
         Dsp::add_to_audio_process(dsp, &command_queue);
 

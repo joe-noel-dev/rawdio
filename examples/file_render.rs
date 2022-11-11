@@ -31,8 +31,11 @@ fn render_file(output_file: &str) {
     let mut oscillator_4 = Oscillator::new(context.get_command_queue(), 1760.0);
     oscillator_4.gain.set_value_at_time(0.05, Timestamp::zero());
 
-    let mut gain = Gain::new(context.get_command_queue());
-    let mut pan = Pan::new(context.get_command_queue());
+    let channel_count = 2;
+    let mut gain = Gain::new(context.get_command_queue(), channel_count);
+
+    let pan_input_count = 1;
+    let mut pan = Pan::new(context.get_command_queue(), pan_input_count);
 
     oscillator_1.connect_to(gain.get_id());
     oscillator_2.connect_to(gain.get_id());
@@ -78,7 +81,7 @@ fn render_file(output_file: &str) {
         let frames_this_time = std::cmp::min(max_number_of_frames, total_num_frames - position);
 
         let mut frame_buffer =
-            BorrowedAudioBuffer::slice(&mut audio_buffer, position, frames_this_time);
+            BorrowedAudioBuffer::slice_frames(&mut audio_buffer, position, frames_this_time);
 
         audio_process.process(&mut frame_buffer);
 

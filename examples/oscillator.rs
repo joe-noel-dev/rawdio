@@ -32,7 +32,8 @@ fn main() {
         .gain
         .set_value_at_time(Level::from_db(-21.0).as_gain(), Timestamp::zero());
 
-    let mut gain = Gain::new(context.get_command_queue());
+    let gain_channel_count = 2;
+    let mut gain = Gain::new(context.get_command_queue(), gain_channel_count);
 
     oscillator_1.connect_to(gain.get_id());
     oscillator_2.connect_to(gain.get_id());

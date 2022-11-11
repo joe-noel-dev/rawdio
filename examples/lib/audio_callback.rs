@@ -63,7 +63,8 @@ impl AudioCallback {
                 &config.config(),
                 move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
                     let num_frames = data.len() / config.channels() as usize;
-                    let mut slice = BorrowedAudioBuffer::slice(&mut audio_buffer, 0, num_frames);
+                    let mut slice =
+                        BorrowedAudioBuffer::slice_frames(&mut audio_buffer, 0, num_frames);
 
                     slice.clear();
 
