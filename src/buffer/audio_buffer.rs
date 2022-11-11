@@ -115,9 +115,7 @@ pub trait AudioBuffer {
             let destination = self.get_data_mut(destination_location.with_channel(channel));
             let destination = &mut destination[0..num_frames];
 
-            for (source_value, destination_value) in source.iter().zip(destination.iter_mut()) {
-                *destination_value = *source_value;
-            }
+            destination.copy_from_slice(source);
         }
     }
 
