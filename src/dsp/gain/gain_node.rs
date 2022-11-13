@@ -20,7 +20,7 @@ const MAX_GAIN: f64 = f64::INFINITY;
 const DEFAULT_GAIN: f64 = 1.0;
 
 impl GainNode {
-    pub fn new(command_queue: CommandQueue) -> Self {
+    pub fn new(command_queue: CommandQueue, channel_count: usize) -> Self {
         let mut parameters = HashMap::new();
 
         let id = Id::generate();
@@ -29,9 +29,16 @@ impl GainNode {
             AudioParameter::new(id, DEFAULT_GAIN, MIN_GAIN, MAX_GAIN, command_queue.clone());
         parameters.insert(realtime_gain.get_id(), realtime_gain);
 
-        let dsp = Dsp::new(id, Box::new(GainProcessor::new(gain.get_id())), parameters);
+        let dsp = Dsp::new(
+            id,
+            channel_count,
+            channel_count,
+            Box::new(GainProcessor::new(gain.get_id())),
+            parameters,
+        );
 
-        Dsp::add_to_audio_process(dsp, &command_queue);
+        dsp.add_to_audio_process(&command_queue);
+
         Self {
             id,
             command_queue,

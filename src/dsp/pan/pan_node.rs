@@ -24,7 +24,7 @@ impl Node for PanNode {
 }
 
 impl PanNode {
-    pub fn new(command_queue: CommandQueue) -> Self {
+    pub fn new(command_queue: CommandQueue, input_count: usize) -> Self {
         let id = Id::generate();
         let mut parameters = HashMap::new();
 
@@ -33,14 +33,27 @@ impl PanNode {
 
         parameters.insert(realtime_pan.get_id(), realtime_pan);
 
-        let dsp = Dsp::new(id, Box::new(PanProcessor::new(pan.get_id())), parameters);
+        let output_count = 2;
+        let dsp = Dsp::new(
+            id,
+            input_count,
+            output_count,
+            Box::new(PanProcessor::new(pan.get_id())),
+            parameters,
+        );
 
-        Dsp::add_to_audio_process(dsp, &command_queue);
+        dsp.add_to_audio_process(&command_queue);
 
         Self {
             command_queue,
             id,
             pan,
         }
+    }
+}
+
+impl Drop for PanNode {
+    fn drop(&mut self) {
+        Dsp::remove_from_audio_process(self.id, &self.command_queue)
     }
 }

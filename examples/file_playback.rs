@@ -30,7 +30,9 @@ fn play_file(file_to_play: &str) {
     let length_in_seconds = sample.length_in_seconds().ceil() as u64;
     let length_in_samples = sample.num_frames();
     let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, sample);
-    let mut gain = Gain::new(context.get_command_queue());
+
+    let channel_count = 2;
+    let mut gain = Gain::new(context.get_command_queue(), channel_count);
 
     sampler.connect_to(gain.get_id());
     sampler.start_now();

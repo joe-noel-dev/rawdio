@@ -11,6 +11,8 @@ pub type DspParameterMap = HashMap<Id, RealtimeAudioParameter>;
 
 pub struct Dsp {
     id: Id,
+    input_count: usize,
+    output_count: usize,
     processor: Box<dyn DspProcessor + Send + Sync>,
     parameters: DspParameterMap,
 }
@@ -28,18 +30,30 @@ pub trait DspProcessor {
 impl Dsp {
     pub fn new(
         id: Id,
+        input_count: usize,
+        output_count: usize,
         processor: Box<dyn DspProcessor + Send + Sync>,
         parameters: DspParameterMap,
     ) -> Self {
         Self {
             id,
+            input_count,
+            output_count,
             processor,
             parameters,
         }
     }
 
-    pub fn add_to_audio_process(dsp: Self, command_queue: &CommandQueue) {
-        let _ = command_queue.send(Command::AddDsp(Box::new(dsp)));
+    pub fn input_count(&self) -> usize {
+        self.input_count
+    }
+
+    pub fn output_count(&self) -> usize {
+        self.output_count
+    }
+
+    pub fn add_to_audio_process(self, command_queue: &CommandQueue) {
+        let _ = command_queue.send(Command::AddDsp(Box::new(self)));
     }
 
     pub fn remove_from_audio_process(id: Id, command_queue: &CommandQueue) {
@@ -56,6 +70,9 @@ impl Dsp {
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
     ) {
+        assert_eq!(input_buffer.num_channels(), self.input_count);
+        assert_eq!(output_buffer.num_channels(), self.output_count);
+
         for (_, parameter) in self.parameters.iter_mut() {
             parameter.set_current_time(*start_time);
         }

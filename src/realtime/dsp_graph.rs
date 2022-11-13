@@ -17,7 +17,7 @@ pub struct DspGraph {
     graph: Graph<Box<Dsp>, Connection>,
     topological_sort: TopologicalSort,
     output_endpoint: Option<Endpoint>,
-    garbase_collection_tx: Sender<GarbageCollectionCommand>,
+    garbage_collection_tx: Sender<GarbageCollectionCommand>,
     graph_needs_sort: bool,
     buffer_pool: BufferPool,
     maximum_number_of_channels: usize,
@@ -34,7 +34,7 @@ impl DspGraph {
         maximum_number_of_channels: usize,
         sample_rate: usize,
     ) -> Self {
-        let (garbase_collection_tx, garbage_collection_rx) = spsc::create();
+        let (garbage_collection_tx, garbage_collection_rx) = spsc::create();
         run_garbage_collector(garbage_collection_rx);
 
         Self {
@@ -42,7 +42,7 @@ impl DspGraph {
             topological_sort: TopologicalSort::with_capacity(MAXIMUM_GRAPH_NODE_COUNT),
             graph_needs_sort: false,
             output_endpoint: None,
-            garbase_collection_tx,
+            garbage_collection_tx,
             buffer_pool: BufferPool::with_capacity(
                 MAXIMUM_BUFFER_COUNT,
                 maximum_number_of_frames,
@@ -107,7 +107,7 @@ impl DspGraph {
     pub fn remove_dsp(&mut self, id: Id) {
         if let Some(dsp) = self.graph.remove_node(id) {
             let _ = self
-                .garbase_collection_tx
+                .garbage_collection_tx
                 .send(GarbageCollectionCommand::DisposeDsp(dsp));
         }
 
@@ -234,11 +234,13 @@ fn process_dsp(
 ) {
     let output_endpoint = Endpoint::new(dsp_id, EndpointType::Output);
 
-    let mut node_input_buffer = buffer_pool.get_unassigned_buffer().unwrap();
-    let mut node_output_buffer = buffer_pool.get_unassigned_buffer().unwrap();
+    let mut node_output_buffer = buffer_pool
+        .get_unassigned_buffer()
+        .expect("Ran out of buffers in pool");
 
-    let mut node_output_buffer_slice =
-        BorrowedAudioBuffer::slice(&mut node_output_buffer, 0, num_frames);
+    let mut node_input_buffer = buffer_pool
+        .get_unassigned_buffer()
+        .expect("Ran out of buffers in pool");
 
     copy_output_from_dependencies(
         buffer_pool,
@@ -250,8 +252,19 @@ fn process_dsp(
     );
 
     if let Some(dsp) = graph.get_node_mut(dsp_id) {
+        let mut node_output_buffer_slice = BorrowedAudioBuffer::slice(
+            &mut node_output_buffer,
+            0,
+            num_frames,
+            0,
+            dsp.output_count(),
+        );
+
+        let node_input_buffer_slice =
+            BorrowedAudioBuffer::slice(&mut node_input_buffer, 0, num_frames, 0, dsp.input_count());
+
         dsp.process_audio(
-            &node_input_buffer,
+            &node_input_buffer_slice,
             &mut node_output_buffer_slice,
             start_time,
         );
@@ -309,7 +322,16 @@ mod tests {
     fn make_dsp(value_to_write: f32, location_to_write: SampleLocation) -> Box<Dsp> {
         let processor = Box::new(Processor::new(value_to_write, location_to_write));
         let parameters = DspParameterMap::new();
-        Box::new(Dsp::new(Id::generate(), processor, parameters))
+
+        let input_count = 2;
+        let output_count = 2;
+        Box::new(Dsp::new(
+            Id::generate(),
+            input_count,
+            output_count,
+            processor,
+            parameters,
+        ))
     }
 
     #[test]

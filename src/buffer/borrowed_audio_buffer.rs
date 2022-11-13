@@ -2,28 +2,60 @@ use crate::{AudioBuffer, SampleLocation};
 
 pub struct BorrowedAudioBuffer<'a> {
     buffer: &'a mut dyn AudioBuffer,
-    num_frames: usize,
-    offset: usize,
+    frame_offset: usize,
+    frame_count: usize,
+    channel_offset: usize,
+    channel_count: usize,
 }
 
 impl<'a> BorrowedAudioBuffer<'a> {
-    pub fn slice(buffer: &'a mut dyn AudioBuffer, offset: usize, num_frames: usize) -> Self {
-        assert!(offset + num_frames <= buffer.num_frames());
+    pub fn slice_frames(
+        buffer: &'a mut dyn AudioBuffer,
+        frame_offset: usize,
+        frame_count: usize,
+    ) -> Self {
+        assert!(frame_offset + frame_count <= buffer.num_frames());
+        let num_channels = buffer.num_channels();
+        Self::slice(buffer, frame_offset, frame_count, 0, num_channels)
+    }
+
+    pub fn slice_channels(
+        buffer: &'a mut dyn AudioBuffer,
+        channel_offset: usize,
+        channel_count: usize,
+    ) -> Self {
+        assert!(channel_offset + channel_count <= buffer.num_channels());
+        let num_frames = buffer.num_frames();
+        Self::slice(buffer, 0, num_frames, channel_offset, channel_count)
+    }
+
+    pub fn slice(
+        buffer: &'a mut dyn AudioBuffer,
+        frame_offset: usize,
+        frame_count: usize,
+        channel_offset: usize,
+        channel_count: usize,
+    ) -> Self {
+        assert!(frame_offset + frame_count <= buffer.num_frames());
+        assert!(channel_offset + channel_count <= buffer.num_channels());
+
         Self {
             buffer,
-            num_frames,
-            offset,
+            frame_offset,
+            frame_count,
+            channel_offset,
+            channel_count,
         }
     }
 }
 
 impl<'a> AudioBuffer for BorrowedAudioBuffer<'a> {
     fn num_channels(&self) -> usize {
-        self.buffer.num_channels()
+        self.channel_count
     }
 
     fn num_frames(&self) -> usize {
-        self.num_frames
+        self.frame_count
     }
 
     fn sample_rate(&self) -> usize {
@@ -31,18 +63,22 @@ impl<'a> AudioBuffer for BorrowedAudioBuffer<'a> {
     }
 
     fn get_data(&self, sample_location: SampleLocation) -> &[f32] {
-        let data = self
-            .buffer
-            .get_data(sample_location.offset_frames(self.offset));
-        let end = self.num_frames - sample_location.frame;
+        let data = self.buffer.get_data(
+            sample_location
+                .offset_frames(self.frame_offset)
+                .offset_channels(self.channel_offset),
+        );
+        let end = self.frame_count - sample_location.frame;
         &data[0..end]
     }
 
     fn get_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32] {
-        let data = self
-            .buffer
-            .get_data_mut(sample_location.offset_frames(self.offset));
-        let end = self.num_frames - sample_location.frame;
+        let data = self.buffer.get_data_mut(
+            sample_location
+                .offset_frames(self.frame_offset)
+                .offset_channels(self.channel_offset),
+        );
+        let end = self.frame_count - sample_location.frame;
         &mut data[0..end]
     }
 }
@@ -72,7 +108,7 @@ mod tests {
         let slice_offset = 50;
         let slice_num_frames = 100;
         let slice =
-            BorrowedAudioBuffer::slice(&mut original_buffer, slice_offset, slice_num_frames);
+            BorrowedAudioBuffer::slice_frames(&mut original_buffer, slice_offset, slice_num_frames);
         let expected_location = SampleLocation::new(channel, frame - slice_offset);
         assert_relative_eq!(slice.get_sample(expected_location), value);
     }
@@ -87,7 +123,7 @@ mod tests {
         let slice_offset = 50;
         let slice_num_frames = 100;
         let mut slice =
-            BorrowedAudioBuffer::slice(&mut original_buffer, slice_offset, slice_num_frames);
+            BorrowedAudioBuffer::slice_frames(&mut original_buffer, slice_offset, slice_num_frames);
 
         let channel = 0;
         let offset_frame = 12;
