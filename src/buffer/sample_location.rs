@@ -10,23 +10,24 @@ impl SampleLocation {
     }
 
     pub fn offset_frames(self, frame_offset: usize) -> Self {
-        Self {
-            channel: self.channel,
-            frame: self.frame + frame_offset,
-        }
+        self.with_frame(self.frame + frame_offset)
     }
 
     pub fn offset_channels(self, channel_offset: usize) -> Self {
-        Self {
-            channel: self.channel + channel_offset,
-            frame: self.frame,
-        }
+        self.with_channel(self.channel + channel_offset)
     }
 
     pub fn with_channel(&self, channel: usize) -> Self {
         Self {
             channel,
             frame: self.frame,
+        }
+    }
+
+    pub fn with_frame(&self, frame: usize) -> Self {
+        Self {
+            channel: self.channel,
+            frame,
         }
     }
 

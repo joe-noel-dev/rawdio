@@ -32,7 +32,7 @@ const MIN_FREQUENCY: f64 = 20.0;
 const MAX_FREQUENCY: f64 = 20000.0;
 
 impl OscillatorNode {
-    pub fn new(command_queue: CommandQueue, frequency: f64) -> Self {
+    pub fn new(command_queue: CommandQueue, frequency: f64, output_count: usize) -> Self {
         let id = Id::generate();
 
         let mut parameters = HashMap::new();
@@ -50,7 +50,6 @@ impl OscillatorNode {
         parameters.insert(realtime_gain.get_id(), realtime_gain);
 
         let input_count = 0;
-        let output_count = 1;
 
         let dsp = Dsp::new(
             id,
@@ -60,7 +59,7 @@ impl OscillatorNode {
             parameters,
         );
 
-        Dsp::add_to_audio_process(dsp, &command_queue);
+        dsp.add_to_audio_process(&command_queue);
 
         Self {
             command_queue,

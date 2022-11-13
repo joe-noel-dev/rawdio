@@ -1,6 +1,8 @@
 use std::{thread, time};
 
-use rust_audio_engine::{create_context, Gain, Level, Node, Oscillator, Timestamp};
+use rust_audio_engine::{
+    create_context, Context, Gain, Level, Node, Oscillator, Splitter, Timestamp,
+};
 
 use crate::audio_callback::AudioCallback;
 
@@ -12,36 +14,52 @@ fn main() {
     let mut context = create_context(sample_rate);
     let _audio_callack = AudioCallback::new(context.get_audio_process(), sample_rate);
 
-    let mut oscillator_1 = Oscillator::new(context.get_command_queue(), 440.0);
-    oscillator_1
-        .gain
-        .set_value_at_time(Level::from_db(-3.0).as_gain(), Timestamp::zero());
+    let mut oscillators = create_oscillators(context.as_ref());
+    let mut gain = create_gain(context.as_ref());
+    let mut splitter = create_splitter(context.as_ref());
 
-    let mut oscillator_2 = Oscillator::new(context.get_command_queue(), 880.0);
-    oscillator_2
-        .gain
-        .set_value_at_time(Level::from_db(-9.0).as_gain(), Timestamp::zero());
+    schedule_gain_changes(&mut gain);
+    make_connections(&mut oscillators, &mut gain, &mut splitter);
 
-    let mut oscillator_3 = Oscillator::new(context.get_command_queue(), 1320.0);
-    oscillator_3
-        .gain
-        .set_value_at_time(Level::from_db(-15.0).as_gain(), Timestamp::zero());
+    run(context.as_mut());
+}
 
-    let mut oscillator_4 = Oscillator::new(context.get_command_queue(), 1760.0);
-    oscillator_4
-        .gain
-        .set_value_at_time(Level::from_db(-21.0).as_gain(), Timestamp::zero());
+fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
+    let channel_count = 1;
 
-    let gain_channel_count = 2;
-    let mut gain = Gain::new(context.get_command_queue(), gain_channel_count);
+    [
+        (440.0, Level::from_db(-3.0)),
+        (880.0, Level::from_db(-9.0)),
+        (1320.0, Level::from_db(-15.0)),
+        (1760.0, Level::from_db(-21.0)),
+    ]
+    .map(|(frequency, level)| {
+        let mut oscillator = Oscillator::new(context.get_command_queue(), frequency, channel_count);
 
-    oscillator_1.connect_to(gain.get_id());
-    oscillator_2.connect_to(gain.get_id());
-    oscillator_3.connect_to(gain.get_id());
-    oscillator_4.connect_to(gain.get_id());
+        oscillator
+            .gain
+            .set_value_at_time(level.as_gain(), Timestamp::zero());
 
-    gain.connect_to_output();
+        oscillator
+    })
+}
 
+fn create_splitter(context: &dyn Context) -> Splitter {
+    let splitter_input_channel_count = 1;
+    let splitter_output_channel_count = 2;
+    Splitter::new(
+        context.get_command_queue(),
+        splitter_input_channel_count,
+        splitter_output_channel_count,
+    )
+}
+
+fn create_gain(context: &dyn Context) -> Gain {
+    let gain_channel_count = 1;
+    Gain::new(context.get_command_queue(), gain_channel_count)
+}
+
+fn schedule_gain_changes(gain: &mut Gain) {
     gain.gain.set_value_at_time(0.0, Timestamp::zero());
 
     gain.gain
@@ -49,12 +67,24 @@ fn main() {
 
     gain.gain
         .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
+}
+
+fn make_connections(oscillators: &mut [Oscillator], gain: &mut Gain, splitter: &mut Splitter) {
+    for oscillator in oscillators {
+        oscillator.connect_to(gain.get_id());
+    }
+
+    gain.connect_to(splitter.get_id());
+
+    splitter.connect_to_output();
+}
+
+fn run(context: &mut dyn Context) {
+    let process_duration = time::Duration::from_secs(4);
+    let post_process_duration = time::Duration::from_secs(1);
 
     context.start();
-
-    thread::sleep(time::Duration::from_secs(4));
-
+    thread::sleep(process_duration);
     context.stop();
-
-    thread::sleep(time::Duration::from_secs(1));
+    thread::sleep(post_process_duration);
 }

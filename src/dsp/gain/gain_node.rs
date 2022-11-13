@@ -37,7 +37,8 @@ impl GainNode {
             parameters,
         );
 
-        Dsp::add_to_audio_process(dsp, &command_queue);
+        dsp.add_to_audio_process(&command_queue);
+
         Self {
             id,
             command_queue,

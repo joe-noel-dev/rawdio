@@ -48,7 +48,7 @@ impl SamplerNode {
             parameters,
         );
 
-        Dsp::add_to_audio_process(dsp, &command_queue);
+        dsp.add_to_audio_process(&command_queue);
 
         Self {
             command_queue,

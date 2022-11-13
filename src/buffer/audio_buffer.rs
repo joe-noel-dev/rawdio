@@ -88,10 +88,10 @@ pub trait AudioBuffer {
         num_frames: usize,
     ) {
         for channel in 0..num_channels {
-            let source = source_buffer.get_data(source_location.with_channel(channel));
+            let source = source_buffer.get_data(source_location.offset_channels(channel));
             let source = &source[0..num_frames];
 
-            let destination = self.get_data_mut(destination_location.with_channel(channel));
+            let destination = self.get_data_mut(destination_location.offset_channels(channel));
             let destination = &mut destination[0..num_frames];
 
             for (source_value, destination_value) in source.iter().zip(destination.iter_mut()) {
@@ -109,10 +109,10 @@ pub trait AudioBuffer {
         num_frames: usize,
     ) {
         for channel in 0..num_channels {
-            let source = source_buffer.get_data(source_location.with_channel(channel));
+            let source = source_buffer.get_data(source_location.offset_channels(channel));
             let source = &source[0..num_frames];
 
-            let destination = self.get_data_mut(destination_location.with_channel(channel));
+            let destination = self.get_data_mut(destination_location.offset_channels(channel));
             let destination = &mut destination[0..num_frames];
 
             destination.copy_from_slice(source);
@@ -146,11 +146,11 @@ impl Iterator for FrameIterator {
             None
         };
 
-        self.frame += 1;
+        self.channel += 1;
 
-        if self.frame >= self.num_frames {
-            self.channel += 1;
-            self.frame = 0;
+        if self.channel >= self.num_channels {
+            self.frame += 1;
+            self.channel = 0;
         }
 
         location

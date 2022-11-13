@@ -21,6 +21,7 @@ pub type Pan = dsp::Pan;
 pub type SampleLocation = buffer::SampleLocation;
 pub type Sampler = dsp::Sampler;
 pub type Timestamp = timestamp::Timestamp;
+pub type Splitter = dsp::Splitter;
 
 pub type CommandQueue = lockfree::channel::mpsc::Sender<Command>;
 

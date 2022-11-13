@@ -42,12 +42,18 @@ impl PanNode {
             parameters,
         );
 
-        Dsp::add_to_audio_process(dsp, &command_queue);
+        dsp.add_to_audio_process(&command_queue);
 
         Self {
             command_queue,
             id,
             pan,
         }
+    }
+}
+
+impl Drop for PanNode {
+    fn drop(&mut self) {
+        Dsp::remove_from_audio_process(self.id, &self.command_queue)
     }
 }
