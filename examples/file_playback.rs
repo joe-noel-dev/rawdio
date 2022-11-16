@@ -1,8 +1,7 @@
 use std::{thread, time};
 
 use rust_audio_engine::{
-    create_context, AudioBuffer, Gain, Level, Node, OwnedAudioBuffer, SampleLocation, Sampler,
-    Timestamp,
+    create_context, AudioBuffer, Gain, Level, OwnedAudioBuffer, SampleLocation, Sampler, Timestamp,
 };
 use structopt::StructOpt;
 
@@ -34,14 +33,14 @@ fn play_file(file_to_play: &str) {
     let channel_count = 2;
     let mut gain = Gain::new(context.get_command_queue(), channel_count);
 
-    sampler.connect_to(gain.get_id());
+    sampler.node.connect_to(&gain.node);
     sampler.start_now();
     sampler.enable_loop(
         Timestamp::zero(),
         Timestamp::from_samples(length_in_samples as f64, sample_rate),
     );
 
-    gain.connect_to_output();
+    gain.node.connect_to_output();
 
     gain.gain
         .set_value_at_time(Level::from_db(-6.0).as_gain(), Timestamp::zero());

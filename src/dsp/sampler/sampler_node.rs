@@ -1,10 +1,4 @@
-use std::collections::HashMap;
-
-use crate::{
-    commands::Id,
-    graph::{Dsp, Node},
-    CommandQueue, OwnedAudioBuffer, Timestamp,
-};
+use crate::{commands::Id, graph::DspParameters, CommandQueue, Node, OwnedAudioBuffer, Timestamp};
 
 use super::{
     event::SamplerEvent,
@@ -12,19 +6,8 @@ use super::{
 };
 
 pub struct SamplerNode {
-    command_queue: CommandQueue,
-    id: Id,
+    pub node: Node,
     event_transmitter: EventTransmitter,
-}
-
-impl Node for SamplerNode {
-    fn get_id(&self) -> Id {
-        self.id
-    }
-
-    fn get_command_queue(&self) -> CommandQueue {
-        self.command_queue.clone()
-    }
 }
 
 impl SamplerNode {
@@ -33,26 +16,22 @@ impl SamplerNode {
 
         let (event_transmitter, event_receiver) = lockfree::channel::spsc::create();
 
-        let parameters = HashMap::new();
-
-        let sampler_process = SamplerDspProcess::new(sample_rate, sample, event_receiver);
-
         let input_count = 0;
         let output_count = 2;
 
-        let dsp = Dsp::new(
+        let processor = Box::new(SamplerDspProcess::new(sample_rate, sample, event_receiver));
+
+        let node = Node::new(
             id,
+            command_queue,
             input_count,
             output_count,
-            Box::new(sampler_process),
-            parameters,
+            processor,
+            DspParameters::new(),
         );
 
-        dsp.add_to_audio_process(&command_queue);
-
         Self {
-            command_queue,
-            id,
+            node,
             event_transmitter,
         }
     }
@@ -112,11 +91,5 @@ impl SamplerNode {
         let _ = self
             .event_transmitter
             .send(SamplerEvent::cancel_loop_at_time(cancel_time));
-    }
-}
-
-impl Drop for SamplerNode {
-    fn drop(&mut self) {
-        Dsp::remove_from_audio_process(self.id, &self.command_queue);
     }
 }

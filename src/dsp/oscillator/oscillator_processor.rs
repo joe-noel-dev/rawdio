@@ -1,6 +1,6 @@
 use crate::{
     commands::Id,
-    graph::{DspParameterMap, DspProcessor},
+    graph::{DspParameters, DspProcessor},
     AudioBuffer, SampleLocation, Timestamp,
 };
 
@@ -72,7 +72,7 @@ impl DspProcessor for OscillatorProcessor {
         _input_buffer: &dyn AudioBuffer,
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
-        parameters: &DspParameterMap,
+        parameters: &DspParameters,
     ) {
         let sample_rate = output_buffer.sample_rate();
 

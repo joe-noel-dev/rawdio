@@ -279,7 +279,7 @@ mod tests {
     use approx::{assert_relative_eq, assert_relative_ne};
 
     use crate::{
-        graph::{DspParameterMap, DspProcessor},
+        graph::{DspParameters, DspProcessor},
         AudioBuffer, OwnedAudioBuffer,
     };
 
@@ -305,7 +305,7 @@ mod tests {
             input_buffer: &dyn AudioBuffer,
             output_buffer: &mut dyn AudioBuffer,
             _start_time: &Timestamp,
-            _parameters: &DspParameterMap,
+            _parameters: &DspParameters,
         ) {
             output_buffer.add_from(
                 input_buffer,
@@ -321,7 +321,6 @@ mod tests {
 
     fn make_dsp(value_to_write: f32, location_to_write: SampleLocation) -> Box<Dsp> {
         let processor = Box::new(Processor::new(value_to_write, location_to_write));
-        let parameters = DspParameterMap::new();
 
         let input_count = 2;
         let output_count = 2;
@@ -330,7 +329,7 @@ mod tests {
             input_count,
             output_count,
             processor,
-            parameters,
+            DspParameters::new(),
         ))
     }
 

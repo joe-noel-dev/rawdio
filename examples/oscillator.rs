@@ -1,8 +1,6 @@
 use std::{thread, time};
 
-use rust_audio_engine::{
-    create_context, Context, Gain, Level, Node, Oscillator, Splitter, Timestamp,
-};
+use rust_audio_engine::{create_context, Context, Gain, Level, Oscillator, Splitter, Timestamp};
 
 use crate::audio_callback::AudioCallback;
 
@@ -71,12 +69,12 @@ fn schedule_gain_changes(gain: &mut Gain) {
 
 fn make_connections(oscillators: &mut [Oscillator], gain: &mut Gain, splitter: &mut Splitter) {
     for oscillator in oscillators {
-        oscillator.connect_to(gain.get_id());
+        oscillator.node.connect_to(&gain.node);
     }
 
-    gain.connect_to(splitter.get_id());
+    gain.node.connect_to(&splitter.node);
 
-    splitter.connect_to_output();
+    splitter.node.connect_to_output();
 }
 
 fn run(context: &mut dyn Context) {
