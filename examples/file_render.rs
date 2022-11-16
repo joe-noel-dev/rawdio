@@ -1,6 +1,6 @@
 use rust_audio_engine::{
-    create_context, AudioBuffer, AudioProcess, BorrowedAudioBuffer, Context, Gain, Node,
-    Oscillator, OwnedAudioBuffer, Pan, Timestamp,
+    create_context, AudioBuffer, AudioProcess, BorrowedAudioBuffer, Context, Gain, Oscillator,
+    OwnedAudioBuffer, Pan, Timestamp,
 };
 use structopt::StructOpt;
 
@@ -63,11 +63,11 @@ fn create_pan(context: &dyn Context) -> Pan {
 
 fn make_connections(oscillators: &mut [Oscillator], gain: &mut Gain, pan: &mut Pan) {
     for oscillator in oscillators {
-        oscillator.connect_to(gain.get_id())
+        oscillator.node.connect_to(&gain.node);
     }
 
-    gain.connect_to(pan.get_id());
-    pan.connect_to_output();
+    gain.node.connect_to(&pan.node);
+    pan.node.connect_to_output();
 }
 
 fn render_to_file(sample_rate: usize, output_file: &str, audio_process: &mut dyn AudioProcess) {

@@ -1,6 +1,6 @@
 use std::{thread, time};
 
-use rust_audio_engine::{create_context, Context, Level, Node, Oscillator, Pan, Timestamp};
+use rust_audio_engine::{create_context, Context, Level, Oscillator, Pan, Timestamp};
 
 use crate::audio_callback::AudioCallback;
 
@@ -15,8 +15,8 @@ fn main() {
     let oscillator = create_oscillator(context.as_ref());
     let pan = create_pan(context.as_ref());
 
-    oscillator.connect_to(pan.get_id());
-    pan.connect_to_output();
+    oscillator.node.connect_to(&pan.node);
+    pan.node.connect_to_output();
 
     context.start();
     thread::sleep(time::Duration::from_secs(5));
@@ -40,7 +40,7 @@ fn create_oscillator(context: &dyn Context) -> Oscillator {
 }
 
 fn create_pan(context: &dyn Context) -> Pan {
-    let pan_input_count = 1;
+    let pan_input_count = 2;
     let mut pan = Pan::new(context.get_command_queue(), pan_input_count);
 
     pan.pan.set_value_at_time(-1.0, Timestamp::zero());

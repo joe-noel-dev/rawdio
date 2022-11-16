@@ -1,82 +1,91 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in library 'rust-audio-engine'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=rust-audio-engine"
-                ],
-                "filter": {
-                    "name": "rust-audio-engine",
-                    "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug example 'oscillator'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--example=oscillator",
-                    "--package=rust-audio-engine"
-                ],
-                "filter": {
-                    "name": "oscillator",
-                    "kind": "example"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug example 'file_render'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--example=file_render",
-                    "--package=rust-audio-engine"
-                ],
-                "filter": {
-                    "name": "file_render",
-                    "kind": "example"
-                }
-            },
-            "args": ["output.wav"],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in example 'oscillator'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--example=oscillator",
-                    "--package=rust-audio-engine"
-                ],
-                "filter": {
-                    "name": "oscillator",
-                    "kind": "example"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "test",
+      "cargo": {
+        "args": ["test", "--no-run", "--lib", "--package=rust-audio-engine"],
+        "filter": {
+          "name": "rust-audio-engine",
+          "kind": "lib"
         }
-    ]
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "oscillator: Debug",
+      "cargo": {
+        "args": [
+          "build",
+          "--example=oscillator",
+          "--package=rust-audio-engine"
+        ],
+        "filter": {
+          "name": "oscillator",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "file_render: debug",
+      "cargo": {
+        "args": [
+          "build",
+          "--example=file_render",
+          "--package=rust-audio-engine"
+        ],
+        "filter": {
+          "name": "file_render",
+          "kind": "example"
+        }
+      },
+      "args": ["output.wav"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "oscillator: Debug",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--example=oscillator",
+          "--package=rust-audio-engine"
+        ],
+        "filter": {
+          "name": "oscillator",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "pan: Debug",
+      "cargo": {
+        "args": ["build", "--example=pan", "--package=rust-audio-engine"],
+        "filter": {
+          "name": "pan",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
 }

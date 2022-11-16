@@ -1,20 +1,17 @@
-use std::collections::HashMap;
-
 use crate::{
     commands::{command::ParameterChangeRequest, Command, Id},
-    parameter::RealtimeAudioParameter,
     timestamp::Timestamp,
     AudioBuffer, CommandQueue,
 };
 
-pub type DspParameterMap = HashMap<Id, RealtimeAudioParameter>;
+use super::DspParameters;
 
 pub struct Dsp {
     id: Id,
     input_count: usize,
     output_count: usize,
     processor: Box<dyn DspProcessor + Send + Sync>,
-    parameters: DspParameterMap,
+    parameters: DspParameters,
 }
 
 pub trait DspProcessor {
@@ -23,7 +20,7 @@ pub trait DspProcessor {
         input_buffer: &dyn AudioBuffer,
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
-        parameters: &DspParameterMap,
+        parameters: &DspParameters,
     );
 }
 
@@ -33,7 +30,7 @@ impl Dsp {
         input_count: usize,
         output_count: usize,
         processor: Box<dyn DspProcessor + Send + Sync>,
-        parameters: DspParameterMap,
+        parameters: DspParameters,
     ) -> Self {
         Self {
             id,

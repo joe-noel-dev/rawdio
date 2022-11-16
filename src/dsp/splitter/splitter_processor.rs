@@ -1,5 +1,5 @@
 use crate::{
-    graph::{DspParameterMap, DspProcessor},
+    graph::{DspParameters, DspProcessor},
     AudioBuffer, SampleLocation, Timestamp,
 };
 
@@ -17,7 +17,7 @@ impl DspProcessor for SplitterProcessor {
         input_buffer: &dyn AudioBuffer,
         output_buffer: &mut dyn AudioBuffer,
         _start_time: &Timestamp,
-        _parameters: &DspParameterMap,
+        _parameters: &DspParameters,
     ) {
         let input_channel_count = input_buffer.num_channels();
         let output_channel_count = output_buffer.num_channels();

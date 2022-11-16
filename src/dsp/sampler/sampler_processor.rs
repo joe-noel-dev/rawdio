@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-    graph::{DspParameterMap, DspProcessor},
+    graph::{DspParameters, DspProcessor},
     AudioBuffer, BorrowedAudioBuffer, OwnedAudioBuffer, Timestamp,
 };
 
@@ -40,7 +40,7 @@ impl DspProcessor for SamplerDspProcess {
         _input_buffer: &dyn AudioBuffer,
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
-        _parameters: &DspParameterMap,
+        _parameters: &DspParameters,
     ) {
         debug_assert_eq!(self.sample_rate, output_buffer.sample_rate());
 
@@ -331,7 +331,7 @@ mod tests {
             &input_buffer,
             &mut output_buffer,
             &start_time,
-            &DspParameterMap::new(),
+            &DspParameters::new(),
         );
 
         output_buffer
