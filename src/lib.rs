@@ -28,7 +28,7 @@ pub type CommandQueue = lockfree::channel::mpsc::Sender<Command>;
 pub use audio_process::AudioProcess;
 pub use buffer::AudioBuffer;
 pub use context::Context;
-pub use engine::create_context;
+pub use engine::create_engine;
 pub use graph::Node;
 
 #[macro_use]

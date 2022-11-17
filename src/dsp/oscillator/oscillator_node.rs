@@ -10,8 +10,8 @@ pub struct OscillatorNode {
     pub gain: AudioParameter,
 }
 
-const MIN_GAIN: f64 = -2.0;
-const MAX_GAIN: f64 = 2.0;
+const MIN_GAIN: f64 = f64::NEG_INFINITY;
+const MAX_GAIN: f64 = f64::INFINITY;
 const MIN_FREQUENCY: f64 = 20.0;
 const MAX_FREQUENCY: f64 = 20000.0;
 
