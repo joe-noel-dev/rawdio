@@ -55,7 +55,9 @@ impl Processor {
             let mut audio_buffer =
                 BorrowedAudioBuffer::slice_frames(output_buffer, offset, num_frames);
 
-            self.graph.process(&mut audio_buffer, &current_time);
+            let start_time = current_time.incremented_by_samples(offset, self.sample_rate);
+
+            self.graph.process(&mut audio_buffer, &start_time);
 
             offset += num_frames;
         }

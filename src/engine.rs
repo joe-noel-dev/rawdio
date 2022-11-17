@@ -10,24 +10,6 @@ pub struct Engine {
     sample_rate: usize,
     timestamp: Arc<AtomicI64>,
     command_tx: CommandQueue,
-    realtime_processor: Option<Processor>,
-}
-
-impl Engine {
-    pub fn new(sample_rate: usize) -> Self {
-        let (command_tx, command_rx) = mpsc::create();
-        let timestamp = Arc::new(AtomicI64::new(0));
-        Self {
-            sample_rate,
-            timestamp: timestamp.clone(),
-            command_tx,
-            realtime_processor: Some(Processor::new(
-                sample_rate,
-                command_rx,
-                Arc::clone(&timestamp),
-            )),
-        }
-    }
 }
 
 impl Context for Engine {
@@ -43,13 +25,6 @@ impl Context for Engine {
         Timestamp::from_raw_i64(self.timestamp.load(std::sync::atomic::Ordering::Acquire))
     }
 
-    fn get_audio_process(&mut self) -> Box<dyn AudioProcess + Send> {
-        let mut other = None;
-        std::mem::swap(&mut self.realtime_processor, &mut other);
-        assert!(other.is_some());
-        Box::new(other.unwrap())
-    }
-
     fn get_sample_rate(&self) -> usize {
         self.sample_rate
     }
@@ -59,6 +34,20 @@ impl Context for Engine {
     }
 }
 
-pub fn create_context(sample_rate: usize) -> Box<dyn Context> {
-    Box::new(Engine::new(sample_rate))
+pub fn create_engine(sample_rate: usize) -> (Box<dyn Context>, Box<dyn AudioProcess + Send>) {
+    let (command_tx, command_rx) = mpsc::create();
+    let timestamp = Arc::new(AtomicI64::new(0));
+    let processor = Box::new(Processor::new(
+        sample_rate,
+        command_rx,
+        Arc::clone(&timestamp),
+    ));
+
+    let engine = Box::new(Engine {
+        sample_rate,
+        timestamp,
+        command_tx,
+    });
+
+    (engine, processor)
 }
