@@ -92,13 +92,12 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
     }
 
     pub fn remove_edge(&mut self, from_node_id: Id, to_node_id: Id) -> Option<EdgeData> {
-        // TODO: Fixup connections
-
         let id = self.find_edge_between_nodes(from_node_id, to_node_id);
 
         if let Some(id) = id {
             if let Some((_, edge)) = self.edges.remove_entry(&id) {
-                if let Some(next_in_edge_id) = edge.next_in {}
+                replace_connections(self, Direction::Outgoing, id, edge.next_out);
+                replace_connections(self, Direction::Incoming, id, edge.next_in);
 
                 return Some(edge.edge_data);
             }
@@ -174,6 +173,68 @@ impl<'a, EdgeData> Iterator for EdgeIterator<'a, EdgeData> {
 
         None
     }
+}
+
+fn replace_edge_connections<N, E>(
+    graph: &mut Graph<N, E>,
+    direction: Direction,
+    find_edge_id: Id,
+    replace_edge_id: Option<Id>,
+) {
+    for (_, edge) in graph.edges.iter_mut() {
+        match direction {
+            Direction::Outgoing => {
+                if let Some(next_out) = edge.next_out {
+                    if next_out == find_edge_id {
+                        edge.next_out = replace_edge_id;
+                    }
+                }
+            }
+            Direction::Incoming => {
+                if let Some(next_in) = edge.next_in {
+                    if next_in == find_edge_id {
+                        edge.next_in = replace_edge_id;
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn replace_node_connections<N, E>(
+    graph: &mut Graph<N, E>,
+    direction: Direction,
+    find_edge_id: Id,
+    replace_edge_id: Option<Id>,
+) {
+    for (_, node) in graph.nodes.iter_mut() {
+        match direction {
+            Direction::Outgoing => {
+                if let Some(outgoing) = node.outgoing {
+                    if outgoing == find_edge_id {
+                        node.outgoing = replace_edge_id;
+                    }
+                }
+            }
+            Direction::Incoming => {
+                if let Some(incoming) = node.incoming {
+                    if incoming == find_edge_id {
+                        node.incoming = replace_edge_id;
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn replace_connections<N, E>(
+    graph: &mut Graph<N, E>,
+    direction: Direction,
+    find_edge_id: Id,
+    replace_edge_id: Option<Id>,
+) {
+    replace_edge_connections(graph, direction, find_edge_id, replace_edge_id);
+    replace_node_connections(graph, direction, find_edge_id, replace_edge_id);
 }
 
 impl<'a, EdgeData> EdgeIterator<'a, EdgeData> {
@@ -349,5 +410,30 @@ mod tests {
         let connected_nodes: Vec<Id> = graph.node_iter(node_a_id, Direction::Outgoing).collect();
         assert_eq!(connected_nodes.len(), 1);
         assert_eq!(connected_nodes[0], node_c_id);
+    }
+
+    #[test]
+    fn fixes_incoming_connections() {
+        let mut graph = Graph::with_capacity(3, 3);
+
+        // A    B
+        //  \  /
+        //    C
+
+        let node_a_id = add_node(&mut graph, ());
+        let node_b_id = add_node(&mut graph, ());
+        let node_c_id = add_node(&mut graph, ());
+
+        graph.add_edge(node_a_id, node_c_id, ());
+        graph.add_edge(node_b_id, node_c_id, ());
+
+        let connected_nodes = graph.node_iter(node_c_id, Direction::Incoming).count();
+        assert_eq!(connected_nodes, 2);
+
+        graph.remove_edge(node_a_id, node_c_id);
+
+        let connected_nodes: Vec<Id> = graph.node_iter(node_c_id, Direction::Incoming).collect();
+        assert_eq!(connected_nodes.len(), 1);
+        assert_eq!(connected_nodes[0], node_b_id);
     }
 }
