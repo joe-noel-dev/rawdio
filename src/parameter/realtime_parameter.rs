@@ -55,7 +55,7 @@ impl RealtimeAudioParameter {
         let (previous_change, next_change) = self.get_next_parameter_change_after(time);
 
         if let Some(next_change) = next_change {
-            return Self::get_next_value(previous_change, next_change, time);
+            return interpolate_value(previous_change, next_change, time);
         }
 
         previous_change.value
@@ -85,28 +85,6 @@ impl RealtimeAudioParameter {
         (previous_change, next_change)
     }
 
-    fn get_next_value(
-        previous_change: ParameterChange,
-        next_change: ParameterChange,
-        time: &Timestamp,
-    ) -> f64 {
-        match next_change.method {
-            ValueChangeMethod::Immediate => {
-                if next_change.end_time <= *time {
-                    next_change.value
-                } else {
-                    previous_change.value
-                }
-            }
-            ValueChangeMethod::Linear => {
-                let a = (next_change.value - previous_change.value)
-                    / (next_change.end_time.get_seconds() - previous_change.end_time.get_seconds());
-                let b = previous_change.value - a * previous_change.end_time.get_seconds();
-                a * time.get_seconds() + b
-            }
-        }
-    }
-
     pub fn set_value(&mut self, value: f64) {
         self.value.store(value, Ordering::Release)
     }
@@ -116,6 +94,28 @@ impl RealtimeAudioParameter {
 
         self.parameter_changes
             .sort_by(|a, b| a.end_time.partial_cmp(&b.end_time).unwrap());
+    }
+}
+
+fn interpolate_value(
+    previous_change: ParameterChange,
+    next_change: ParameterChange,
+    time: &Timestamp,
+) -> f64 {
+    match next_change.method {
+        ValueChangeMethod::Immediate => {
+            if next_change.end_time <= *time {
+                next_change.value
+            } else {
+                previous_change.value
+            }
+        }
+        ValueChangeMethod::Linear => {
+            let a = (next_change.value - previous_change.value)
+                / (next_change.end_time.get_seconds() - previous_change.end_time.get_seconds());
+            let b = previous_change.value - a * previous_change.end_time.get_seconds();
+            a * time.get_seconds() + b
+        }
     }
 }
 

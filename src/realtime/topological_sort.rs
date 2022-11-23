@@ -64,6 +64,15 @@ mod tests {
 
     use super::*;
 
+    pub fn add_node<NodeData, EdgeData>(
+        graph: &mut Graph<NodeData, EdgeData>,
+        node_data: NodeData,
+    ) -> Id {
+        let id = Id::generate();
+        graph.add_node_with_id(id, node_data);
+        id
+    }
+
     #[test]
     fn sorts_graph_into_order() {
         //         C
@@ -74,11 +83,11 @@ mod tests {
 
         let mut graph = Graph::with_capacity(5, 5);
 
-        let a_id = graph._add_node(String::from("A"));
-        let b_id = graph._add_node(String::from("B"));
-        let c_id = graph._add_node(String::from("C"));
-        let d_id = graph._add_node(String::from("D"));
-        let e_id = graph._add_node(String::from("E"));
+        let a_id = add_node(&mut graph, String::from("A"));
+        let b_id = add_node(&mut graph, String::from("B"));
+        let c_id = add_node(&mut graph, String::from("C"));
+        let d_id = add_node(&mut graph, String::from("D"));
+        let e_id = add_node(&mut graph, String::from("E"));
 
         graph.add_edge(a_id, b_id, ());
         graph.add_edge(b_id, c_id, ());
