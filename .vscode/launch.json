@@ -7,13 +7,9 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Run tests",
+      "name": "Cargo test",
       "cargo": {
-        "args": ["test", "--no-run", "--lib", "--package=rust-audio-engine"],
-        "filter": {
-          "name": "rust-audio-engine",
-          "kind": "lib"
-        }
+        "args": ["test", "--no-run", "--lib"]
       },
       "sourceLanguages": ["rust"],
       "args": [],
