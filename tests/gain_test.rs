@@ -1,6 +1,6 @@
 use approx::assert_relative_eq;
 use rust_audio_engine::{
-    create_engine, AudioBuffer, AudioProcess, Context, Gain, Oscillator, OwnedAudioBuffer,
+    create_engine, AudioBuffer, AudioProcess, Context, Gain, Level, Oscillator, OwnedAudioBuffer,
     SampleLocation, Timestamp,
 };
 
@@ -127,4 +127,20 @@ fn test_gain_envelope() {
         let expected_value = if time < 1.0 { time } else { 2.0 - time };
         assert_relative_eq!(expected_value as f32, value, epsilon = 0.05);
     }
+}
+
+#[test]
+fn test_peak() {
+    let mut fixture = Fixture::default();
+
+    let gain = 0.5;
+
+    fixture.gain.gain.set_value_at_time(gain, Timestamp::zero());
+
+    let output_buffer = fixture.process_seconds(2.0);
+    let output_samples = output_buffer.get_data(SampleLocation::origin());
+
+    let max_value = output_samples.iter().fold(0.0_f32, |a, b| a.max(*b));
+    let max_relative = Level::from_db(1.0).as_db() as f32;
+    assert_relative_eq!(max_value, gain as f32, max_relative = max_relative);
 }
