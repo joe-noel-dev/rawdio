@@ -84,29 +84,37 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
         edge_id
     }
 
-    pub fn remove_edge(&mut self, from_node_id: Id, to_node_id: Id) {
-        // TODO: Fixup connections
-
-        let id = self
-            .edges
+    fn find_edge_between_nodes(&self, from_node_id: Id, to_node_id: Id) -> Option<Id> {
+        self.edges
             .iter()
             .find(|(_, edge)| edge.from_node_id == from_node_id && edge.to_node_id == to_node_id)
-            .map(|(id, _)| *id);
-
-        if let Some(id) = id {
-            self.edges.remove(&id);
-        }
+            .map(|(id, _)| *id)
     }
 
-    pub fn _add_node(&mut self, node_data: NodeData) -> Id {
-        let id = Id::generate();
-        self.add_node_with_id(id, node_data);
-        id
+    pub fn remove_edge(&mut self, from_node_id: Id, to_node_id: Id) -> Option<EdgeData> {
+        // TODO: Fixup connections
+
+        let id = self.find_edge_between_nodes(from_node_id, to_node_id);
+
+        if let Some(id) = id {
+            if let Some((_, edge)) = self.edges.remove_entry(&id) {
+                if let Some(next_in_edge_id) = edge.next_in {}
+
+                return Some(edge.edge_data);
+            }
+        }
+
+        None
     }
 
     pub fn remove_node(&mut self, id: Id) -> Option<NodeData> {
-        // TODO: Remove associated connections
-        self.nodes.remove(&id).map(|node| node.node_data)
+        if let Some((_, node)) = self.nodes.remove_entry(&id) {
+            assert!(node.incoming.is_none());
+            assert!(node.outgoing.is_none());
+            return Some(node.node_data);
+        }
+
+        None
     }
 
     pub fn get_node_mut(&mut self, id: Id) -> Option<&mut NodeData> {
@@ -125,10 +133,6 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
     pub fn is_connected_to(&self, from_node_id: Id, to_node_id: Id) -> bool {
         NodeIterator::new(from_node_id, Direction::Outgoing, &self.nodes, &self.edges)
             .any(|id| id == to_node_id)
-    }
-
-    fn _edge_iter(&self, edge_id: Id, direction: Direction) -> EdgeIterator<EdgeData> {
-        EdgeIterator::new(edge_id, direction, &self.edges)
     }
 
     pub fn node_iter(&self, node_id: Id, direction: Direction) -> NodeIterator<NodeData, EdgeData> {
@@ -246,20 +250,34 @@ mod tests {
 
     use super::*;
 
+    pub fn add_node<NodeData, EdgeData>(
+        graph: &mut Graph<NodeData, EdgeData>,
+        node_data: NodeData,
+    ) -> Id {
+        let id = Id::generate();
+        graph.add_node_with_id(id, node_data);
+        id
+    }
+
     #[test]
     fn iterate_edges() {
         let mut graph = Graph::with_capacity(5, 5);
 
-        let node_a_id = graph._add_node(());
-        let node_b_id = graph._add_node(());
-        let node_c_id = graph._add_node(());
-        let node_d_id = graph._add_node(());
+        //    A
+        //  / | \
+        // B  C  D
+
+        let node_a_id = add_node(&mut graph, ());
+        let node_b_id = add_node(&mut graph, ());
+        let node_c_id = add_node(&mut graph, ());
+        let node_d_id = add_node(&mut graph, ());
 
         let a_to_b_id = graph.add_edge(node_a_id, node_b_id, ());
         let a_to_c_id = graph.add_edge(node_a_id, node_c_id, ());
         let a_to_d_id = graph.add_edge(node_a_id, node_d_id, ());
 
-        let iterated_edges: Vec<Id> = graph._edge_iter(a_to_b_id, Direction::Outgoing).collect();
+        let iterated_edges: Vec<Id> =
+            EdgeIterator::new(a_to_b_id, Direction::Outgoing, &graph.edges).collect();
 
         assert_eq!(iterated_edges.len(), 2);
         assert_eq!(iterated_edges[0], a_to_c_id);
@@ -270,10 +288,10 @@ mod tests {
     fn iterate_outgoing_nodes() {
         let mut graph = Graph::with_capacity(5, 5);
 
-        let node_a_id = graph._add_node(());
-        let node_b_id = graph._add_node(());
-        let node_c_id = graph._add_node(());
-        let node_d_id = graph._add_node(());
+        let node_a_id = add_node(&mut graph, ());
+        let node_b_id = add_node(&mut graph, ());
+        let node_c_id = add_node(&mut graph, ());
+        let node_d_id = add_node(&mut graph, ());
 
         graph.add_edge(node_a_id, node_b_id, ());
         graph.add_edge(node_a_id, node_c_id, ());
@@ -291,10 +309,10 @@ mod tests {
     fn iterate_incoming_nodes() {
         let mut graph = Graph::with_capacity(5, 5);
 
-        let node_a_id = graph._add_node(());
-        let node_b_id = graph._add_node(());
-        let node_c_id = graph._add_node(());
-        let node_d_id = graph._add_node(());
+        let node_a_id = add_node(&mut graph, ());
+        let node_b_id = add_node(&mut graph, ());
+        let node_c_id = add_node(&mut graph, ());
+        let node_d_id = add_node(&mut graph, ());
 
         graph.add_edge(node_b_id, node_a_id, ());
         graph.add_edge(node_c_id, node_a_id, ());
@@ -306,5 +324,30 @@ mod tests {
         assert!(connected_nodes.contains(&node_b_id));
         assert!(connected_nodes.contains(&node_c_id));
         assert!(connected_nodes.contains(&node_d_id));
+    }
+
+    #[test]
+    fn fixes_outgoing_connections() {
+        let mut graph = Graph::with_capacity(3, 3);
+
+        //    A
+        //  /   \
+        // B     C
+
+        let node_a_id = add_node(&mut graph, ());
+        let node_b_id = add_node(&mut graph, ());
+        let node_c_id = add_node(&mut graph, ());
+
+        graph.add_edge(node_a_id, node_b_id, ());
+        graph.add_edge(node_a_id, node_c_id, ());
+
+        let connected_nodes = graph.node_iter(node_a_id, Direction::Outgoing).count();
+        assert_eq!(connected_nodes, 2);
+
+        graph.remove_edge(node_a_id, node_b_id);
+
+        let connected_nodes: Vec<Id> = graph.node_iter(node_a_id, Direction::Outgoing).collect();
+        assert_eq!(connected_nodes.len(), 1);
+        assert_eq!(connected_nodes[0], node_c_id);
     }
 }
