@@ -4,7 +4,7 @@ use crate::{
     commands::{command::ParameterChangeRequest, Id},
     graph::{BufferPool, Connection, Dsp, Endpoint, EndpointType},
     timestamp::Timestamp,
-    AudioBuffer, BorrowedAudioBuffer, SampleLocation,
+    AudioBuffer, BorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation,
 };
 
 use super::{
@@ -175,7 +175,7 @@ fn mix_in_endpoint(
     num_frames: usize,
     mix_behaviour: MixBehaviour,
 ) {
-    if let Some(buffer) = buffer_pool.get_assigned_buffer(endpoint) {
+    if let Some(buffer) = buffer_pool.get_buffer(endpoint) {
         let sample_location = SampleLocation::new(0, 0);
 
         match mix_behaviour {
@@ -195,7 +195,7 @@ fn mix_in_endpoint(
             ),
         }
 
-        buffer_pool.return_buffer_with_assignment(buffer, endpoint);
+        buffer_pool.return_buffer(buffer, endpoint);
     }
 }
 
@@ -224,6 +224,76 @@ fn copy_output_from_dependencies(
     }
 }
 
+fn prepare_n_input_node(
+    buffer_pool: &mut BufferPool,
+    graph: &mut Graph<Box<Dsp>, Connection>,
+    dsp_id: Id,
+    num_frames: usize,
+    num_channels: usize,
+) -> (OwnedAudioBuffer, Endpoint) {
+    let input_endpoint = Endpoint::new(dsp_id, EndpointType::Input);
+    let mut node_input_buffer = buffer_pool
+        .get_buffer(input_endpoint)
+        .expect("Ran out of buffers in pool");
+
+    copy_output_from_dependencies(
+        buffer_pool,
+        graph,
+        dsp_id,
+        &mut node_input_buffer,
+        num_channels,
+        num_frames,
+    );
+
+    (node_input_buffer, input_endpoint)
+}
+
+fn prepare_zero_input_node(
+    buffer_pool: &mut BufferPool,
+    dsp_id: Id,
+) -> (OwnedAudioBuffer, Endpoint) {
+    let input_endpoint = Endpoint::new(dsp_id, EndpointType::Input);
+
+    (
+        buffer_pool
+            .get_buffer(input_endpoint)
+            .expect("Ran out of buffers in pool"),
+        input_endpoint,
+    )
+}
+
+fn prepare_single_input_node(
+    buffer_pool: &mut BufferPool,
+    graph: &mut Graph<Box<Dsp>, Connection>,
+    dsp_id: Id,
+) -> (OwnedAudioBuffer, Endpoint) {
+    let input_endpoint = Endpoint::new(
+        graph.node_iter(dsp_id, Direction::Incoming).next().unwrap(),
+        EndpointType::Output,
+    );
+
+    (
+        buffer_pool
+            .get_buffer(input_endpoint)
+            .expect("Ran out of buffers in pool"),
+        input_endpoint,
+    )
+}
+
+fn prepare_input(
+    buffer_pool: &mut BufferPool,
+    graph: &mut Graph<Box<Dsp>, Connection>,
+    dsp_id: Id,
+    num_frames: usize,
+    num_channels: usize,
+) -> (OwnedAudioBuffer, Endpoint) {
+    match graph.num_connections(dsp_id, Direction::Incoming) {
+        0 => prepare_zero_input_node(buffer_pool, dsp_id),
+        1 => prepare_single_input_node(buffer_pool, graph, dsp_id),
+        _ => prepare_n_input_node(buffer_pool, graph, dsp_id, num_frames, num_channels),
+    }
+}
+
 fn process_dsp(
     buffer_pool: &mut BufferPool,
     graph: &mut Graph<Box<Dsp>, Connection>,
@@ -235,21 +305,11 @@ fn process_dsp(
     let output_endpoint = Endpoint::new(dsp_id, EndpointType::Output);
 
     let mut node_output_buffer = buffer_pool
-        .get_unassigned_buffer()
+        .get_buffer(output_endpoint)
         .expect("Ran out of buffers in pool");
 
-    let mut node_input_buffer = buffer_pool
-        .get_unassigned_buffer()
-        .expect("Ran out of buffers in pool");
-
-    copy_output_from_dependencies(
-        buffer_pool,
-        graph,
-        dsp_id,
-        &mut node_input_buffer,
-        num_channels,
-        num_frames,
-    );
+    let (mut node_input_buffer, input_endpoint) =
+        prepare_input(buffer_pool, graph, dsp_id, num_frames, num_channels);
 
     if let Some(dsp) = graph.get_node_mut(dsp_id) {
         let mut node_output_buffer_slice = BorrowedAudioBuffer::slice(
@@ -270,8 +330,12 @@ fn process_dsp(
         );
     };
 
-    buffer_pool.return_buffer(node_input_buffer);
-    buffer_pool.return_buffer_with_assignment(node_output_buffer, output_endpoint);
+    buffer_pool.return_buffer(node_input_buffer, input_endpoint);
+    buffer_pool.return_buffer(node_output_buffer, output_endpoint);
+
+    if input_endpoint.endpoint_type == EndpointType::Input {
+        buffer_pool.clear_assignment(input_endpoint);
+    }
 }
 
 #[cfg(test)]
