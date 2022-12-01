@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{graph::endpoint::Endpoint, AudioBuffer, OwnedAudioBuffer};
+use crate::{graph::endpoint::Endpoint, OwnedAudioBuffer};
 
 pub struct BufferPool {
     assigned_buffers: HashMap<Endpoint, OwnedAudioBuffer>,
@@ -24,28 +24,28 @@ impl BufferPool {
         }
     }
 
-    pub fn get_unassigned_buffer(&mut self) -> Option<OwnedAudioBuffer> {
+    pub fn get_buffer(&mut self, for_endpoint: Endpoint) -> Option<OwnedAudioBuffer> {
+        if let Some(assigned_buffer) = self.assigned_buffers.remove(&for_endpoint) {
+            return Some(assigned_buffer);
+        }
+
         self.free_buffers.pop()
     }
 
-    pub fn get_assigned_buffer(&mut self, for_endpoint: Endpoint) -> Option<OwnedAudioBuffer> {
-        self.assigned_buffers.remove(&for_endpoint)
+    pub fn clear_assignment(&mut self, endpoint: Endpoint) {
+        if let Some(buffer) = self.assigned_buffers.remove(&endpoint) {
+            self.free_buffers.push(buffer);
+        }
     }
 
-    pub fn return_buffer(&mut self, mut buffer: OwnedAudioBuffer) {
-        buffer.clear();
-        self.free_buffers.push(buffer)
-    }
-
-    pub fn return_buffer_with_assignment(&mut self, buffer: OwnedAudioBuffer, endpoint: Endpoint) {
+    pub fn return_buffer(&mut self, buffer: OwnedAudioBuffer, endpoint: Endpoint) {
         self.assigned_buffers.insert(endpoint, buffer);
     }
 
     pub fn clear_assignments(&mut self) {
         while !self.assigned_buffers.is_empty() {
             let endpoint = *self.assigned_buffers.keys().next().unwrap();
-            let buffer = self.assigned_buffers.remove(&endpoint).unwrap();
-            self.return_buffer(buffer);
+            self.clear_assignment(endpoint);
         }
     }
 

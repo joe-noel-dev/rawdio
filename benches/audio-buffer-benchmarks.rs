@@ -2,7 +2,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rust_audio_engine::{AudioBuffer, OwnedAudioBuffer, SampleLocation};
 
 fn read_and_write_interleaved() {
-    let num_frames = 1_000_000;
+    let num_frames = 1024;
     let num_channels = 2;
     let sample_rate = 44_100;
 
@@ -14,16 +14,15 @@ fn read_and_write_interleaved() {
         }
     }
 
-    let mut _total = 0.0;
     for frame in 0..buffer.num_frames() {
         for channel in 0..buffer.num_channels() {
-            _total += buffer.get_sample(SampleLocation::new(channel, frame));
+            black_box(buffer.get_sample(SampleLocation::new(channel, frame)));
         }
     }
 }
 
 fn read_and_write_non_interleaved() {
-    let num_frames = 1_000_000;
+    let num_frames = 1024;
     let num_channels = 2;
     let sample_rate = 44_100;
 
@@ -35,10 +34,9 @@ fn read_and_write_non_interleaved() {
         }
     }
 
-    let mut _total = 0.0;
     for channel in 0..buffer.num_channels() {
         for frame in 0..buffer.num_frames() {
-            _total += buffer.get_sample(SampleLocation::new(channel, frame));
+            black_box(buffer.get_sample(SampleLocation::new(channel, frame)));
         }
     }
 }
