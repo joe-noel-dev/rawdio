@@ -14,30 +14,27 @@ impl GainProcessor {
     }
 }
 
+use itertools::izip;
+
 impl DspProcessor for GainProcessor {
     fn process_audio(
         &mut self,
         input_buffer: &dyn AudioBuffer,
         output_buffer: &mut dyn AudioBuffer,
-        start_time: &Timestamp,
+        _start_time: &Timestamp,
         parameters: &DspParameters,
     ) {
-        let sample_rate = output_buffer.sample_rate();
-
         let gain_parameter = match parameters.get(&self.gain_id) {
             Some(param) => param,
             None => return,
         };
 
-        for (frame, (output, input)) in output_buffer
-            .get_data_mut(SampleLocation::origin())
-            .iter_mut()
-            .zip(input_buffer.get_data(SampleLocation::origin()))
-            .enumerate()
-        {
-            let frame_time = start_time.incremented_by_samples(frame, sample_rate);
-            let gain = gain_parameter.get_value_at_time(&frame_time);
-            *output = *input * (gain as f32);
+        for (output, input, gain) in izip!(
+            output_buffer.get_data_mut(SampleLocation::origin()),
+            input_buffer.get_data(SampleLocation::origin()),
+            gain_parameter.get_values()
+        ) {
+            *output = *input * (*gain as f32);
         }
     }
 }

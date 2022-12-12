@@ -19,22 +19,21 @@ impl DspProcessor for PanProcessor {
         &mut self,
         input_buffer: &dyn AudioBuffer,
         output_buffer: &mut dyn AudioBuffer,
-        start_time: &Timestamp,
+        _start_time: &Timestamp,
         parameters: &DspParameters,
     ) {
         assert_eq!(input_buffer.num_channels(), 2);
         assert_eq!(output_buffer.num_channels(), 2);
-
-        let sample_rate = output_buffer.sample_rate();
 
         let pan_parameter = match parameters.get(&self.pan_id) {
             Some(param) => param,
             None => return,
         };
 
-        for frame in 0..output_buffer.num_frames() {
-            let frame_time = start_time.incremented_by_samples(frame, sample_rate);
-            let pan = pan_parameter.get_value_at_time(&frame_time);
+        let pan_values = pan_parameter.get_values();
+
+        (0..output_buffer.num_frames()).for_each(|frame| {
+            let pan = pan_values[frame];
 
             let l_gain = (1.0 - pan).min(1.0);
             let r_gain = (1.0 + pan).min(1.0);
@@ -50,6 +49,6 @@ impl DspProcessor for PanProcessor {
 
             output_buffer.set_sample(l_location, l_value);
             output_buffer.set_sample(r_location, r_value);
-        }
+        });
     }
 }
