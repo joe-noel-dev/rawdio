@@ -1,4 +1,7 @@
-use crate::{commands::Id, graph::DspParameters, CommandQueue, Node, OwnedAudioBuffer, Timestamp};
+use crate::{
+    commands::Id, dsp::Channel, graph::DspParameters, CommandQueue, Node, OwnedAudioBuffer,
+    Timestamp,
+};
 
 use super::{
     event::SamplerEvent,
@@ -14,7 +17,7 @@ impl SamplerNode {
     pub fn new(command_queue: CommandQueue, sample_rate: usize, sample: OwnedAudioBuffer) -> Self {
         let id = Id::generate();
 
-        let (event_transmitter, event_receiver) = lockfree::channel::spsc::create();
+        let (event_transmitter, event_receiver) = Channel::create();
 
         let input_count = 0;
         let output_count = 2;

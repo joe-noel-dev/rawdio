@@ -83,6 +83,20 @@
       },
       "args": [],
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "adsr: Debug",
+      "cargo": {
+        "args": ["build", "--example=adsr", "--package=rust-audio-engine"],
+        "filter": {
+          "name": "adsr",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
     }
   ]
 }
