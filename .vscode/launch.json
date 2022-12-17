@@ -18,6 +18,17 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "gain_test",
+      "cargo": {
+        "args": ["test", "--no-run", "--test=gain_test"]
+      },
+      "sourceLanguages": ["rust"],
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "oscillator: Debug",
       "cargo": {
         "args": [

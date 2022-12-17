@@ -71,7 +71,7 @@ impl Dsp {
         assert_eq!(output_buffer.num_channels(), self.output_count);
 
         for (_, parameter) in self.parameters.iter_mut() {
-            parameter.prepare_value_buffer(
+            parameter.process(
                 start_time,
                 output_buffer.num_frames(),
                 output_buffer.sample_rate(),

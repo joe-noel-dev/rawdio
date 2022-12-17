@@ -108,7 +108,9 @@ fn create_normalised_envelope(output_buffer: &[f32], sample_rate: usize) -> Vec<
 fn test_gain_envelope() {
     let mut fixture = Fixture::default();
 
-    for (gain, time_in_seconds) in [(0.0, 0.0), (1.0, 1.0), (0.0, 2.0)] {
+    fixture.gain.gain.set_value_at_time(0.0, Timestamp::zero());
+
+    for (gain, time_in_seconds) in [(1.0, 1.0), (0.0, 2.0)] {
         fixture
             .gain
             .gain

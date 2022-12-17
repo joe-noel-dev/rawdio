@@ -90,6 +90,30 @@ mod tests {
 
     use super::*;
 
+    fn get_parameter_values(
+        parameter: &mut RealtimeAudioParameter,
+        start_time: Timestamp,
+        end_time: Timestamp,
+        sample_rate: usize,
+    ) -> Vec<f64> {
+        let mut values = Vec::new();
+
+        let start_sample = start_time.get_samples(sample_rate).ceil() as usize;
+        let end_sample = end_time.get_samples(sample_rate).ceil() as usize;
+        let frame_size = 512;
+
+        for frame in (start_sample..end_sample).step_by(frame_size) {
+            let frame_end_sample = (frame + frame_size).min(end_sample);
+            let current_time = start_time.incremented_by_samples(frame, sample_rate);
+
+            parameter.process(&current_time, frame_end_sample - frame, sample_rate);
+
+            values.extend_from_slice(parameter.get_values());
+        }
+
+        values
+    }
+
     #[test]
     fn immediate_change() {
         let value = ParameterValue::new(AtomicF64::new(6.0));
@@ -102,21 +126,24 @@ mod tests {
             method: ValueChangeMethod::Immediate,
         });
 
-        let mut current_time = Timestamp::default();
-        while current_time <= Timestamp::from_seconds(2.0) {
+        let sample_rate = 44_100;
+        let values = get_parameter_values(
+            &mut realtime_parameter,
+            Timestamp::zero(),
+            Timestamp::from_seconds(2.0),
+            sample_rate,
+        );
+
+        for (frame_index, value) in values.iter().enumerate() {
+            let current_time = Timestamp::from_samples(frame_index as f64, sample_rate);
+
             let expected_value = if current_time.get_seconds() < 1.0 {
                 6.0
             } else {
                 7.0
             };
 
-            assert_relative_eq!(
-                realtime_parameter.calculate_value_at_time(&current_time),
-                expected_value,
-                epsilon = 1e-6
-            );
-
-            current_time = current_time.incremented_by_samples(1, 44_100);
+            assert_relative_eq!(*value, expected_value, epsilon = 1e-6);
         }
     }
 
@@ -132,21 +159,24 @@ mod tests {
             method: ValueChangeMethod::Linear,
         });
 
-        let mut current_time = Timestamp::default();
-        while current_time <= Timestamp::from_seconds(20.0) {
+        let sample_rate = 44_100;
+        let values = get_parameter_values(
+            &mut realtime_parameter,
+            Timestamp::zero(),
+            Timestamp::from_seconds(20.0),
+            sample_rate,
+        );
+
+        for (frame_index, value) in values.iter().enumerate() {
+            let current_time = Timestamp::zero().incremented_by_samples(frame_index, sample_rate);
+
             let expected_value = if current_time <= end_time {
                 current_time.get_seconds() + 5.0
             } else {
                 10.0
             };
 
-            assert_relative_eq!(
-                realtime_parameter.calculate_value_at_time(&current_time),
-                expected_value,
-                epsilon = 1e-6
-            );
-
-            current_time = current_time.incremented_by_samples(1, 44_100);
+            assert_relative_eq!(*value, expected_value, epsilon = 1e-3);
         }
     }
 
@@ -192,27 +222,31 @@ mod tests {
             method: ValueChangeMethod::Linear,
         });
 
-        let mut current_time = Timestamp::default();
-        while current_time <= Timestamp::from_seconds(5.0) {
-            let current_seconds = current_time.get_seconds();
-            let expected_value = if (0.0..=1.0).contains(&current_seconds)
-                || (2.0..=3.0).contains(&current_seconds)
-                || (4.0..=5.0).contains(&current_seconds)
+        let sample_rate = 44_100;
+
+        let values = get_parameter_values(
+            &mut realtime_parameter,
+            Timestamp::zero(),
+            Timestamp::from_seconds(6.0),
+            sample_rate,
+        );
+
+        for (frame_index, value) in values.iter().enumerate() {
+            let current_seconds =
+                Timestamp::from_samples(frame_index as f64, sample_rate).get_seconds();
+
+            let expected = if (0.0..1.0).contains(&current_seconds)
+                || (2.0..3.0).contains(&current_seconds)
+                || (4.0..5.0).contains(&current_seconds)
             {
                 current_seconds % 1.0
+            } else if current_seconds >= 5.0 {
+                1.0
             } else {
                 1.0 - current_seconds % 1.0
             };
 
-            assert_relative_eq!(
-                realtime_parameter.calculate_value_at_time(&current_time),
-                expected_value,
-                epsilon = 1e-6
-            );
-
-            current_time = current_time.incremented_by_samples(1, 44_100);
-
-            realtime_parameter.calculate_value_at_time(&current_time);
+            assert_relative_eq!(*value, expected, epsilon = 1e-3);
         }
     }
 }
