@@ -102,8 +102,8 @@ impl SamplerDspProcess {
         let first_loop_length = loop_end - self.start_position_in_sample;
         let subsequent_loop_length = loop_end - loop_start;
 
-        let sample_position = first_loop_length.get_samples(self.sample_rate)
-            + subsequent_loop_length.get_samples(self.sample_rate) * self.completed_loops as f64;
+        let sample_position = first_loop_length.as_samples(self.sample_rate)
+            + subsequent_loop_length.as_samples(self.sample_rate) * self.completed_loops as f64;
 
         Timestamp::from_samples(sample_position, self.sample_rate)
     }
@@ -141,7 +141,7 @@ impl SamplerDspProcess {
             let num_samples_remaining_in_frame = output_buffer.num_frames() - frame_position;
 
             let render_interval = self.get_render_interval(num_samples_remaining_in_frame);
-            let render_interval = render_interval.get_samples(self.sample_rate).round() as usize;
+            let render_interval = render_interval.as_samples(self.sample_rate).round() as usize;
 
             let num_frames_to_render =
                 std::cmp::min(render_interval, num_samples_remaining_in_frame);
@@ -190,7 +190,7 @@ impl SamplerDspProcess {
             let event_time = std::cmp::max(next_event.time, *current_frame_position);
             let position_in_frame = event_time - *frame_start_time;
             (
-                position_in_frame.get_samples(self.sample_rate).floor() as usize,
+                position_in_frame.as_samples(self.sample_rate).floor() as usize,
                 Some(next_event),
             )
         } else {
@@ -250,7 +250,7 @@ impl SamplerDspProcess {
     }
 
     fn assign_voice(&mut self, start_position: Timestamp) {
-        let sample_position = start_position.get_samples(self.sample_rate).round() as usize;
+        let sample_position = start_position.as_samples(self.sample_rate).round() as usize;
 
         if let Some(current_position) = self.get_active_voice_position() {
             if current_position == sample_position {

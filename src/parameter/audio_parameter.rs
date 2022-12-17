@@ -113,8 +113,8 @@ mod tests {
     ) -> Vec<f64> {
         let mut values = Vec::new();
 
-        let start_sample = start_time.get_samples(sample_rate).ceil() as usize;
-        let end_sample = end_time.get_samples(sample_rate).ceil() as usize;
+        let start_sample = start_time.as_samples(sample_rate).ceil() as usize;
+        let end_sample = end_time.as_samples(sample_rate).ceil() as usize;
         let frame_size = 512;
 
         for frame in (start_sample..end_sample).step_by(frame_size) {
@@ -152,7 +152,7 @@ mod tests {
         for (frame_index, value) in values.iter().enumerate() {
             let current_time = Timestamp::from_samples(frame_index as f64, sample_rate);
 
-            let expected_value = if current_time.get_seconds() < 1.0 {
+            let expected_value = if current_time.as_seconds() < 1.0 {
                 6.0
             } else {
                 7.0
@@ -186,7 +186,7 @@ mod tests {
             let current_time = Timestamp::zero().incremented_by_samples(frame_index, sample_rate);
 
             let expected_value = if current_time <= end_time {
-                current_time.get_seconds() + 5.0
+                current_time.as_seconds() + 5.0
             } else {
                 10.0
             };
@@ -248,7 +248,7 @@ mod tests {
 
         for (frame_index, value) in values.iter().enumerate() {
             let current_seconds =
-                Timestamp::from_samples(frame_index as f64, sample_rate).get_seconds();
+                Timestamp::from_samples(frame_index as f64, sample_rate).as_seconds();
 
             let expected = if (0.0..1.0).contains(&current_seconds)
                 || (2.0..3.0).contains(&current_seconds)

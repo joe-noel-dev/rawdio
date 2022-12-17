@@ -125,7 +125,7 @@ fn test_gain_envelope() {
     );
 
     for (frame, value) in envelope.iter().enumerate() {
-        let time = Timestamp::from_samples(frame as f64, fixture.sample_rate).get_seconds();
+        let time = Timestamp::from_samples(frame as f64, fixture.sample_rate).as_seconds();
         let expected_value = if time < 1.0 { time } else { 2.0 - time };
         assert_relative_eq!(expected_value as f32, value, epsilon = 0.05);
     }
