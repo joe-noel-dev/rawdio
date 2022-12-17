@@ -10,6 +10,7 @@ mod realtime;
 mod timestamp;
 mod utility;
 
+pub type Adsr = dsp::Adsr;
 pub type AudioParameter = parameter::AudioParameter;
 pub type BorrowedAudioBuffer<'a> = buffer::BorrowedAudioBuffer<'a>;
 pub type Command = commands::Command;
@@ -20,8 +21,8 @@ pub type OwnedAudioBuffer = buffer::OwnedAudioBuffer;
 pub type Pan = dsp::Pan;
 pub type SampleLocation = buffer::SampleLocation;
 pub type Sampler = dsp::Sampler;
-pub type Timestamp = timestamp::Timestamp;
 pub type Splitter = dsp::Splitter;
+pub type Timestamp = timestamp::Timestamp;
 
 pub type CommandQueue = lockfree::channel::mpsc::Sender<Command>;
 

@@ -71,7 +71,7 @@ impl DspProcessor for OscillatorProcessor {
         &mut self,
         _input_buffer: &dyn AudioBuffer,
         output_buffer: &mut dyn AudioBuffer,
-        start_time: &Timestamp,
+        _start_time: &Timestamp,
         parameters: &DspParameters,
     ) {
         let sample_rate = output_buffer.sample_rate();
@@ -89,12 +89,15 @@ impl DspProcessor for OscillatorProcessor {
         let num_frames = output_buffer.num_frames();
         let num_channels = output_buffer.num_channels();
 
+        let frequency_values = frequency.get_values();
+        let gain_values = gain.get_values();
+
         for frame in 0..num_frames {
-            let frame_time = start_time.incremented_by_samples(frame, sample_rate);
-            let frequency = frequency.get_value_at_time(&frame_time);
-            let gain = gain.get_value_at_time(&frame_time);
+            let frequency = frequency_values[frame];
+            let gain = gain_values[frame];
 
             self.increment_phase(frequency, sample_rate);
+
             let value = gain * self.get_value();
 
             for channel in 0..num_channels {

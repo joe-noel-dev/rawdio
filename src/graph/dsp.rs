@@ -71,7 +71,11 @@ impl Dsp {
         assert_eq!(output_buffer.num_channels(), self.output_count);
 
         for (_, parameter) in self.parameters.iter_mut() {
-            parameter.set_current_time(*start_time);
+            parameter.process(
+                start_time,
+                output_buffer.num_frames(),
+                output_buffer.sample_rate(),
+            );
         }
 
         self.processor

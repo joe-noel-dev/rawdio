@@ -18,6 +18,17 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "gain_test",
+      "cargo": {
+        "args": ["test", "--no-run", "--test=gain_test"]
+      },
+      "sourceLanguages": ["rust"],
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "oscillator: Debug",
       "cargo": {
         "args": [
@@ -78,6 +89,20 @@
         "args": ["build", "--example=pan", "--package=rust-audio-engine"],
         "filter": {
           "name": "pan",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "adsr: Debug",
+      "cargo": {
+        "args": ["build", "--example=adsr", "--package=rust-audio-engine"],
+        "filter": {
+          "name": "adsr",
           "kind": "example"
         }
       },

@@ -6,15 +6,18 @@ use super::{
 
 use std::sync::atomic::Ordering;
 
+const MAXIMUM_FRAME_COUNT: usize = 512;
+const MAXIMUM_PENDING_PARAMETER_CHANGES: usize = 16;
+
 pub struct RealtimeAudioParameter {
     parameter_id: Id,
     value: ParameterValue,
     parameter_changes: Vec<ParameterChange>,
-    last_value: f64,
-    last_change: Timestamp,
-}
+    value_buffer: [f64; MAXIMUM_FRAME_COUNT],
 
-const MAXIMUM_PENDING_PARAMETER_CHANGES: usize = 16;
+    increment: f64,
+    current_change: ParameterChange,
+}
 
 impl RealtimeAudioParameter {
     pub fn new(parameter_id: Id, value: ParameterValue) -> Self {
@@ -24,8 +27,13 @@ impl RealtimeAudioParameter {
             parameter_id,
             value,
             parameter_changes: Vec::with_capacity(MAXIMUM_PENDING_PARAMETER_CHANGES),
-            last_change: Timestamp::default(),
-            last_value: initial_value,
+            value_buffer: [0.0; MAXIMUM_FRAME_COUNT],
+            increment: 0.0,
+            current_change: ParameterChange {
+                value: initial_value,
+                end_time: Timestamp::zero(),
+                method: ValueChangeMethod::Immediate,
+            },
         }
     }
 
@@ -37,52 +45,57 @@ impl RealtimeAudioParameter {
         self.value.load(Ordering::Acquire)
     }
 
-    pub fn set_current_time(&mut self, time: Timestamp) {
-        for param_change in self.parameter_changes.iter() {
-            if param_change.end_time <= time {
-                self.last_change = param_change.end_time;
-                self.last_value = param_change.value;
-            }
-        }
-
-        self.set_value(self.get_value_at_time(&time));
-
+    fn remove_expired_changes(&mut self, time: &Timestamp) {
         self.parameter_changes
-            .retain(|param_change| param_change.end_time > time);
+            .retain(|param_change| param_change.end_time >= *time);
     }
 
-    pub fn get_value_at_time(&self, time: &Timestamp) -> f64 {
-        let (previous_change, next_change) = self.get_next_parameter_change_after(time);
+    pub fn process(&mut self, time: &Timestamp, frame_count: usize, sample_rate: usize) {
+        assert!(frame_count <= self.value_buffer.len());
 
-        if let Some(next_change) = next_change {
-            return interpolate_value(previous_change, next_change, time);
+        self.remove_expired_changes(time);
+
+        let mut value = self.get_value();
+        for frame in 0..frame_count {
+            let frame_time = time.incremented_by_samples(frame, sample_rate);
+
+            value = self.process_next_change(&frame_time, sample_rate, value);
+            self.value_buffer[frame] = value;
         }
 
-        previous_change.value
+        self.set_value(value);
     }
 
-    fn get_next_parameter_change_after(
-        &self,
-        time: &Timestamp,
-    ) -> (ParameterChange, Option<ParameterChange>) {
-        let mut previous_change = ParameterChange {
-            value: self.last_value,
-            end_time: self.last_change,
-            method: ValueChangeMethod::Immediate,
-        };
+    fn process_next_change(&mut self, time: &Timestamp, sample_rate: usize, value: f64) -> f64 {
+        if let Some(next_event) = self.parameter_changes.first() {
+            match next_event.method {
+                ValueChangeMethod::Immediate => {
+                    if next_event.end_time <= *time {
+                        self.increment = 0.0;
+                        self.current_change = self.parameter_changes.remove(0);
+                    }
+                }
+                ValueChangeMethod::Linear => {
+                    if self.current_change.end_time <= *time {
+                        let increment_per_second = (next_event.value - value)
+                            / (next_event.end_time.get_seconds() - time.get_seconds());
 
-        let mut next_change: Option<ParameterChange> = None;
-
-        for change in self.parameter_changes.iter() {
-            if change.end_time <= *time {
-                previous_change = *change;
-            } else {
-                next_change = Some(*change);
-                break;
-            }
+                        self.increment = increment_per_second / sample_rate as f64;
+                        self.current_change = self.parameter_changes.remove(0);
+                    }
+                }
+            };
         }
 
-        (previous_change, next_change)
+        if self.current_change.end_time <= *time {
+            return self.current_change.value;
+        }
+
+        value + self.increment
+    }
+
+    pub fn get_values(&self) -> &[f64] {
+        &self.value_buffer
     }
 
     pub fn set_value(&mut self, value: f64) {
@@ -97,33 +110,34 @@ impl RealtimeAudioParameter {
     }
 }
 
-fn interpolate_value(
-    previous_change: ParameterChange,
-    next_change: ParameterChange,
-    time: &Timestamp,
-) -> f64 {
-    match next_change.method {
-        ValueChangeMethod::Immediate => {
-            if next_change.end_time <= *time {
-                next_change.value
-            } else {
-                previous_change.value
-            }
-        }
-        ValueChangeMethod::Linear => {
-            let a = (next_change.value - previous_change.value)
-                / (next_change.end_time.get_seconds() - previous_change.end_time.get_seconds());
-            let b = previous_change.value - a * previous_change.end_time.get_seconds();
-            a * time.get_seconds() + b
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
     use atomic_float::AtomicF64;
+
+    fn process_parameter_values(
+        parameter: &mut RealtimeAudioParameter,
+        from_time: Timestamp,
+        to_time: Timestamp,
+        sample_rate: usize,
+    ) -> Vec<f64> {
+        let mut values = Vec::new();
+
+        let start_sample = from_time.get_samples(sample_rate).ceil() as usize;
+        let end_sample = to_time.get_samples(sample_rate).ceil() as usize;
+
+        for frame in (start_sample..end_sample).step_by(MAXIMUM_FRAME_COUNT) {
+            let frame_end_sample = (frame + MAXIMUM_FRAME_COUNT).min(end_sample);
+            let current_time = from_time.incremented_by_samples(frame, sample_rate);
+
+            parameter.process(&current_time, frame_end_sample - frame, sample_rate);
+
+            values.extend_from_slice(parameter.get_values());
+        }
+
+        values
+    }
 
     #[test]
     fn immediate_parameter_changes() {
@@ -149,12 +163,29 @@ mod tests {
             method: ValueChangeMethod::Immediate,
         });
 
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(0.9)), 0.0);
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(1.0)), 1.0);
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(1.9)), 1.0);
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(2.0)), 2.0);
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(2.9)), 2.0);
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(3.0)), 3.0);
+        let sample_rate = 48_000;
+        let max_time = 3.5;
+        let values = process_parameter_values(
+            &mut param,
+            Timestamp::zero(),
+            Timestamp::from_seconds(max_time),
+            sample_rate,
+        );
+
+        let get_value_at_time = |time: f64| {
+            let offset = Timestamp::from_seconds(time)
+                .get_samples(sample_rate)
+                .ceil() as usize;
+            assert!(offset < values.len());
+            values[offset]
+        };
+
+        assert_relative_eq!(get_value_at_time(0.9), 0.0);
+        assert_relative_eq!(get_value_at_time(1.0), 1.0);
+        assert_relative_eq!(get_value_at_time(1.9), 1.0);
+        assert_relative_eq!(get_value_at_time(2.0), 2.0);
+        assert_relative_eq!(get_value_at_time(2.9), 2.0);
+        assert_relative_eq!(get_value_at_time(3.0), 3.0);
     }
 
     #[test]
@@ -181,11 +212,26 @@ mod tests {
             method: ValueChangeMethod::Linear,
         });
 
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(0.5)), 0.5);
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(1.0)), 1.0);
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(1.5)), 1.5);
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(2.0)), 2.0);
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(2.5)), 2.5);
-        assert_relative_eq!(param.get_value_at_time(&Timestamp::from_seconds(3.0)), 3.0);
+        let sample_rate = 48_000;
+        let values = process_parameter_values(
+            &mut param,
+            Timestamp::zero(),
+            Timestamp::from_seconds(3.5),
+            sample_rate,
+        );
+
+        let get_value_at_time = |time: f64| {
+            let offset = Timestamp::from_seconds(time)
+                .get_samples(sample_rate)
+                .ceil() as usize;
+            values[offset]
+        };
+
+        assert_relative_eq!(get_value_at_time(0.5), 0.5, epsilon = 1e-3);
+        assert_relative_eq!(get_value_at_time(1.0), 1.0, epsilon = 1e-3);
+        assert_relative_eq!(get_value_at_time(1.5), 1.5, epsilon = 1e-3);
+        assert_relative_eq!(get_value_at_time(2.0), 2.0, epsilon = 1e-3);
+        assert_relative_eq!(get_value_at_time(2.5), 2.5, epsilon = 1e-3);
+        assert_relative_eq!(get_value_at_time(3.0), 3.0, epsilon = 1e-3);
     }
 }

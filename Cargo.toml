@@ -4,22 +4,23 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-lockfree = "0.5.1"
 atomic_float = "0.1.0"
-lazy_static = "1.4.0"
 fixed = "1.11.0"
+itertools = "0.10.5"
+lazy_static = "1.4.0"
+lockfree = "0.5.1"
 
 [dev-dependencies]
 anyhow = "1.0.51"
 approx = "0.5.0"
 cpal = "0.14.1"
+criterion = "0.4"
 futures = "0.3.17"
 futures-channel = "0.3.17"
 futures-util = "0.3.17"
 hound = "3.4.0"
 rand = "0.8.5"
 structopt = "0.3.26"
-criterion = "0.4"
 
 [[bench]]
 name = "audio-buffer-benchmarks"
