@@ -68,8 +68,8 @@ impl AudioParameter {
             }));
     }
 
-    pub fn linear_ramp_to_value(&mut self, mut value: f64, end_time: Timestamp) {
-        value = value.clamp(self.minimum_value, self.maximum_value);
+    pub fn linear_ramp_to_value(&mut self, value: f64, end_time: Timestamp) {
+        let value = value.clamp(self.minimum_value, self.maximum_value);
         let _ = self
             .command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {
@@ -79,6 +79,21 @@ impl AudioParameter {
                     value,
                     end_time,
                     method: ValueChangeMethod::Linear,
+                },
+            }));
+    }
+
+    pub fn exponential_ramp_to_value(&mut self, value: f64, end_time: Timestamp) {
+        let value = value.clamp(self.minimum_value, self.maximum_value);
+        let _ = self
+            .command_queue
+            .send(Command::ParameterValueChange(ParameterChangeRequest {
+                dsp_id: self.dsp_id,
+                parameter_id: self.parameter_id,
+                change: ParameterChange {
+                    value,
+                    end_time,
+                    method: ValueChangeMethod::Exponential,
                 },
             }));
     }

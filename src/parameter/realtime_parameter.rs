@@ -16,6 +16,7 @@ pub struct RealtimeAudioParameter {
     value_buffer: [f64; MAXIMUM_FRAME_COUNT],
 
     increment: f64,
+    coefficient: f64,
     current_change: ParameterChange,
 }
 
@@ -29,6 +30,7 @@ impl RealtimeAudioParameter {
             parameter_changes: Vec::with_capacity(MAXIMUM_PENDING_PARAMETER_CHANGES),
             value_buffer: [0.0; MAXIMUM_FRAME_COUNT],
             increment: 0.0,
+            coefficient: 1.0,
             current_change: ParameterChange {
                 value: initial_value,
                 end_time: Timestamp::zero(),
@@ -72,15 +74,35 @@ impl RealtimeAudioParameter {
                 ValueChangeMethod::Immediate => {
                     if next_event.end_time <= *time {
                         self.increment = 0.0;
+                        self.coefficient = 1.0;
                         self.current_change = self.parameter_changes.remove(0);
                     }
                 }
                 ValueChangeMethod::Linear => {
                     if self.current_change.end_time <= *time {
-                        let increment_per_second = (next_event.value - value)
-                            / (next_event.end_time.get_seconds() - time.get_seconds());
+                        let duration = next_event.end_time.get_seconds() - time.get_seconds();
+                        let delta = next_event.value - value;
+                        let increment_per_second = delta / duration;
 
                         self.increment = increment_per_second / sample_rate as f64;
+                        self.coefficient = 1.0;
+                        self.current_change = self.parameter_changes.remove(0);
+                    }
+                }
+                ValueChangeMethod::Exponential => {
+                    if self.current_change.end_time <= *time {
+                        assert_ne!(next_event.value, 0.0);
+                        assert_ne!(value, 0.0);
+
+                        let ratio = next_event.value / value;
+
+                        let sample_duration = sample_rate as f64
+                            * next_event.end_time.get_seconds()
+                            - time.get_seconds();
+
+                        self.increment = 0.0;
+                        self.coefficient = (ratio.ln() / sample_duration).exp();
+
                         self.current_change = self.parameter_changes.remove(0);
                     }
                 }
@@ -91,7 +113,8 @@ impl RealtimeAudioParameter {
             return self.current_change.value;
         }
 
-        value + self.increment
+        let next_value = value * self.coefficient;
+        next_value + self.increment
     }
 
     pub fn get_values(&self) -> &[f64] {
@@ -233,5 +256,41 @@ mod tests {
         assert_relative_eq!(get_value_at_time(2.0), 2.0, epsilon = 1e-3);
         assert_relative_eq!(get_value_at_time(2.5), 2.5, epsilon = 1e-3);
         assert_relative_eq!(get_value_at_time(3.0), 3.0, epsilon = 1e-3);
+    }
+
+    #[test]
+    fn exponential_ramps() {
+        let id = Id::generate();
+        let initial_value = 2.0;
+        let value = ParameterValue::new(AtomicF64::new(initial_value));
+        let mut param = RealtimeAudioParameter::new(id, value);
+
+        let ramp_duration = Timestamp::from_seconds(1.0);
+
+        param.add_parameter_change(ParameterChange {
+            value: 2.0 * initial_value,
+            end_time: ramp_duration,
+            method: ValueChangeMethod::Exponential,
+        });
+
+        let sample_rate = 96_000;
+
+        let values = process_parameter_values(
+            &mut param,
+            Timestamp::zero(),
+            ramp_duration.incremented_by_seconds(0.1),
+            sample_rate,
+        );
+
+        let get_value_at_time = |time: f64| {
+            let offset = Timestamp::from_seconds(time)
+                .get_samples(sample_rate)
+                .ceil() as usize;
+            values[offset]
+        };
+
+        assert_relative_eq!(get_value_at_time(0.0), 2.0, epsilon = 1e-3);
+        assert_relative_eq!(get_value_at_time(0.5), 2.0 * 1.414, epsilon = 1e-3);
+        assert_relative_eq!(get_value_at_time(1.0), 4.0, epsilon = 1e-3);
     }
 }
