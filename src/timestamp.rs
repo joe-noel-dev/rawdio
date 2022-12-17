@@ -68,11 +68,11 @@ impl Timestamp {
         }
     }
 
-    pub fn get_seconds(&self) -> f64 {
+    pub fn as_seconds(&self) -> f64 {
         self.seconds.to_num()
     }
 
-    pub fn get_samples(&self, sample_rate: usize) -> f64 {
+    pub fn as_samples(&self, sample_rate: usize) -> f64 {
         self.seconds.to_num::<f64>() * sample_rate as f64
     }
 
@@ -105,6 +105,6 @@ mod tests {
         let sample_rate = 44_100;
         let before = Timestamp::default();
         let after = before.incremented_by_samples(sample_rate, sample_rate);
-        assert_relative_eq!(after.get_seconds() - before.get_seconds(), 1.0);
+        assert_relative_eq!(after.as_seconds() - before.as_seconds(), 1.0);
     }
 }

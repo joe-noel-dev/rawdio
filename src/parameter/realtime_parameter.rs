@@ -80,7 +80,7 @@ impl RealtimeAudioParameter {
                 }
                 ValueChangeMethod::Linear => {
                     if self.current_change.end_time <= *time {
-                        let duration = next_event.end_time.get_seconds() - time.get_seconds();
+                        let duration = next_event.end_time.as_seconds() - time.as_seconds();
                         let delta = next_event.value - value;
                         let increment_per_second = delta / duration;
 
@@ -96,9 +96,8 @@ impl RealtimeAudioParameter {
 
                         let ratio = next_event.value / value;
 
-                        let sample_duration = sample_rate as f64
-                            * next_event.end_time.get_seconds()
-                            - time.get_seconds();
+                        let sample_duration = sample_rate as f64 * next_event.end_time.as_seconds()
+                            - time.as_seconds();
 
                         self.increment = 0.0;
                         self.coefficient = (ratio.ln() / sample_duration).exp();
@@ -147,8 +146,8 @@ mod tests {
     ) -> Vec<f64> {
         let mut values = Vec::new();
 
-        let start_sample = from_time.get_samples(sample_rate).ceil() as usize;
-        let end_sample = to_time.get_samples(sample_rate).ceil() as usize;
+        let start_sample = from_time.as_samples(sample_rate).ceil() as usize;
+        let end_sample = to_time.as_samples(sample_rate).ceil() as usize;
 
         for frame in (start_sample..end_sample).step_by(MAXIMUM_FRAME_COUNT) {
             let frame_end_sample = (frame + MAXIMUM_FRAME_COUNT).min(end_sample);
@@ -196,9 +195,7 @@ mod tests {
         );
 
         let get_value_at_time = |time: f64| {
-            let offset = Timestamp::from_seconds(time)
-                .get_samples(sample_rate)
-                .ceil() as usize;
+            let offset = Timestamp::from_seconds(time).as_samples(sample_rate).ceil() as usize;
             assert!(offset < values.len());
             values[offset]
         };
@@ -244,9 +241,7 @@ mod tests {
         );
 
         let get_value_at_time = |time: f64| {
-            let offset = Timestamp::from_seconds(time)
-                .get_samples(sample_rate)
-                .ceil() as usize;
+            let offset = Timestamp::from_seconds(time).as_samples(sample_rate).ceil() as usize;
             values[offset]
         };
 
@@ -283,9 +278,7 @@ mod tests {
         );
 
         let get_value_at_time = |time: f64| {
-            let offset = Timestamp::from_seconds(time)
-                .get_samples(sample_rate)
-                .ceil() as usize;
+            let offset = Timestamp::from_seconds(time).as_samples(sample_rate).ceil() as usize;
             values[offset]
         };
 
