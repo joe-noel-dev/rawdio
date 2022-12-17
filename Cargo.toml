@@ -23,5 +23,5 @@ rand = "0.8.5"
 structopt = "0.3.26"
 
 [[bench]]
-name = "audio-buffer-benchmarks"
+name = "benchmarks_main"
 harness = false
