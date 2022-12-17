@@ -4,6 +4,7 @@ use crate::Timestamp;
 pub enum ValueChangeMethod {
     Immediate,
     Linear,
+    Exponential,
 }
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]

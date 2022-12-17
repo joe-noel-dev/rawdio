@@ -39,6 +39,10 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
             .set_value_at_time(level.as_gain(), Timestamp::zero());
 
         oscillator
+            .frequency
+            .exponential_ramp_to_value(4.0 * frequency, Timestamp::from_seconds(4.0));
+
+        oscillator
     })
 }
 
