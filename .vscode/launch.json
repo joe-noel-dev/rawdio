@@ -29,6 +29,17 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "pan_test",
+      "cargo": {
+        "args": ["test", "--no-run", "--test=pan_test"]
+      },
+      "sourceLanguages": ["rust"],
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "oscillator: Debug",
       "cargo": {
         "args": [

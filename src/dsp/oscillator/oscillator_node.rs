@@ -14,6 +14,7 @@ const MIN_GAIN: f64 = f64::NEG_INFINITY;
 const MAX_GAIN: f64 = f64::INFINITY;
 const MIN_FREQUENCY: f64 = 20.0;
 const MAX_FREQUENCY: f64 = 20000.0;
+const DEFAULT_GAIN: f64 = 1.0;
 
 impl OscillatorNode {
     pub fn new(command_queue: CommandQueue, frequency: f64, output_count: usize) -> Self {
@@ -28,7 +29,7 @@ impl OscillatorNode {
         );
 
         let (gain, realtime_gain) =
-            AudioParameter::new(id, 1.0, MIN_GAIN, MAX_GAIN, command_queue.clone());
+            AudioParameter::new(id, DEFAULT_GAIN, MIN_GAIN, MAX_GAIN, command_queue.clone());
 
         let parameters = HashMap::from([
             (realtime_frequency.get_id(), realtime_frequency),
