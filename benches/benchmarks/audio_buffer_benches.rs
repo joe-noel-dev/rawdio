@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{black_box, criterion_group, Criterion};
 use rust_audio_engine::{AudioBuffer, OwnedAudioBuffer, SampleLocation};
 
 fn read_and_write_interleaved() {
@@ -61,7 +61,9 @@ fn add_from() {
     black_box(buffer2);
 }
 
-fn benchmark(c: &mut Criterion) {
+fn audio_buffer_benchmarks(c: &mut Criterion) {
+    c.benchmark_group("AudioBuffer");
+
     c.bench_function("read and write interleaved", |b| {
         b.iter(read_and_write_interleaved)
     });
@@ -73,6 +75,4 @@ fn benchmark(c: &mut Criterion) {
     c.bench_function("add_from", |b| b.iter(add_from));
 }
 
-criterion_group!(benches, benchmark);
-
-criterion_main!(benches);
+criterion_group!(benches, audio_buffer_benchmarks);
