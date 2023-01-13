@@ -16,7 +16,7 @@ fn print_output_devices(host: &Host) {
             Err(_) => return,
         };
 
-        println!("{}", device_name);
+        println!("{device_name}");
     });
     println!();
 }
@@ -76,7 +76,7 @@ impl AudioCallback {
                         data.len() / config.channels() as usize,
                     );
                 },
-                move |err| eprintln!("Stream error: {:?}", err),
+                move |err| eprintln!("Stream error: {err:?}"),
             )
             .expect("Couldn't create output stream");
 
