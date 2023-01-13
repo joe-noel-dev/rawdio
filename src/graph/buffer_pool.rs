@@ -1,14 +1,17 @@
 use std::collections::HashMap;
 
-use crate::{graph::endpoint::Endpoint, OwnedAudioBuffer};
+use crate::OwnedAudioBuffer;
 
-pub struct BufferPool {
-    assigned_buffers: HashMap<Endpoint, OwnedAudioBuffer>,
+pub struct BufferPool<Identifier> {
+    assigned_buffers: HashMap<Identifier, OwnedAudioBuffer>,
     free_buffers: Vec<OwnedAudioBuffer>,
     num_buffers: usize,
 }
 
-impl BufferPool {
+impl<Identifier> BufferPool<Identifier>
+where
+    Identifier: std::cmp::Eq + std::hash::Hash + Copy,
+{
     pub fn with_capacity(
         num_buffers: usize,
         num_frames: usize,
@@ -24,28 +27,28 @@ impl BufferPool {
         }
     }
 
-    pub fn get_buffer(&mut self, for_endpoint: Endpoint) -> Option<OwnedAudioBuffer> {
-        if let Some(assigned_buffer) = self.assigned_buffers.remove(&for_endpoint) {
+    pub fn get_buffer(&mut self, id: &Identifier) -> Option<OwnedAudioBuffer> {
+        if let Some(assigned_buffer) = self.assigned_buffers.remove(id) {
             return Some(assigned_buffer);
         }
 
         self.free_buffers.pop()
     }
 
-    pub fn clear_assignment(&mut self, endpoint: Endpoint) {
-        if let Some(buffer) = self.assigned_buffers.remove(&endpoint) {
+    pub fn clear_assignment(&mut self, id: &Identifier) {
+        if let Some(buffer) = self.assigned_buffers.remove(id) {
             self.free_buffers.push(buffer);
         }
     }
 
-    pub fn return_buffer(&mut self, buffer: OwnedAudioBuffer, endpoint: Endpoint) {
-        self.assigned_buffers.insert(endpoint, buffer);
+    pub fn return_buffer(&mut self, buffer: OwnedAudioBuffer, id: &Identifier) {
+        self.assigned_buffers.insert(*id, buffer);
     }
 
     pub fn clear_assignments(&mut self) {
         while !self.assigned_buffers.is_empty() {
-            let endpoint = *self.assigned_buffers.keys().next().unwrap();
-            self.clear_assignment(endpoint);
+            let id = *self.assigned_buffers.keys().next().unwrap();
+            self.clear_assignment(&id);
         }
     }
 

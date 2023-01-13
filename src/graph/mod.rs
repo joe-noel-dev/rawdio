@@ -5,7 +5,7 @@ mod dsp_parameters;
 mod endpoint;
 mod node;
 
-pub type BufferPool = buffer_pool::BufferPool;
+pub type BufferPool<Identifier> = buffer_pool::BufferPool<Identifier>;
 pub type Connection = connection::Connection;
 pub type Dsp = dsp::Dsp;
 pub type Endpoint = endpoint::Endpoint;

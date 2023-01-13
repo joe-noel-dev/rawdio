@@ -19,7 +19,7 @@ pub struct DspGraph {
     output_endpoint: Option<Endpoint>,
     garbage_collection_tx: Sender<GarbageCollectionCommand>,
     graph_needs_sort: bool,
-    buffer_pool: BufferPool,
+    buffer_pool: BufferPool<Endpoint>,
     maximum_number_of_channels: usize,
     maximum_number_of_frames: usize,
 }
@@ -75,7 +75,7 @@ impl DspGraph {
         if let Some(output_endpoint) = self.output_endpoint {
             mix_in_endpoint(
                 &mut self.buffer_pool,
-                output_endpoint,
+                &output_endpoint,
                 output_buffer,
                 num_channels,
                 num_frames,
@@ -144,7 +144,7 @@ impl DspGraph {
 
 fn process_dsps(
     ids_to_process: &[Id],
-    buffer_pool: &mut BufferPool,
+    buffer_pool: &mut BufferPool<Endpoint>,
     graph: &mut Graph<Box<Dsp>, Connection>,
     num_frames: usize,
     num_channels: usize,
@@ -168,8 +168,8 @@ enum MixBehaviour {
 }
 
 fn mix_in_endpoint(
-    buffer_pool: &mut BufferPool,
-    endpoint: Endpoint,
+    buffer_pool: &mut BufferPool<Endpoint>,
+    endpoint: &Endpoint,
     output_buffer: &mut dyn AudioBuffer,
     num_channels: usize,
     num_frames: usize,
@@ -200,7 +200,7 @@ fn mix_in_endpoint(
 }
 
 fn copy_output_from_dependencies(
-    buffer_pool: &mut BufferPool,
+    buffer_pool: &mut BufferPool<Endpoint>,
     graph: &Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
     destination_buffer: &mut dyn AudioBuffer,
@@ -213,7 +213,7 @@ fn copy_output_from_dependencies(
         let endpoint = Endpoint::new(connected_node_id, EndpointType::Output);
         mix_in_endpoint(
             buffer_pool,
-            endpoint,
+            &endpoint,
             destination_buffer,
             num_channels,
             num_frames,
@@ -225,7 +225,7 @@ fn copy_output_from_dependencies(
 }
 
 fn prepare_n_input_node(
-    buffer_pool: &mut BufferPool,
+    buffer_pool: &mut BufferPool<Endpoint>,
     graph: &mut Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
     num_frames: usize,
@@ -233,7 +233,7 @@ fn prepare_n_input_node(
 ) -> (OwnedAudioBuffer, Endpoint) {
     let input_endpoint = Endpoint::new(dsp_id, EndpointType::Input);
     let mut node_input_buffer = buffer_pool
-        .get_buffer(input_endpoint)
+        .get_buffer(&input_endpoint)
         .expect("Ran out of buffers in pool");
 
     copy_output_from_dependencies(
@@ -249,21 +249,21 @@ fn prepare_n_input_node(
 }
 
 fn prepare_zero_input_node(
-    buffer_pool: &mut BufferPool,
+    buffer_pool: &mut BufferPool<Endpoint>,
     dsp_id: Id,
 ) -> (OwnedAudioBuffer, Endpoint) {
     let input_endpoint = Endpoint::new(dsp_id, EndpointType::Input);
 
     (
         buffer_pool
-            .get_buffer(input_endpoint)
+            .get_buffer(&input_endpoint)
             .expect("Ran out of buffers in pool"),
         input_endpoint,
     )
 }
 
 fn prepare_single_input_node(
-    buffer_pool: &mut BufferPool,
+    buffer_pool: &mut BufferPool<Endpoint>,
     graph: &mut Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
 ) -> (OwnedAudioBuffer, Endpoint) {
@@ -274,14 +274,14 @@ fn prepare_single_input_node(
 
     (
         buffer_pool
-            .get_buffer(input_endpoint)
+            .get_buffer(&input_endpoint)
             .expect("Ran out of buffers in pool"),
         input_endpoint,
     )
 }
 
 fn prepare_input(
-    buffer_pool: &mut BufferPool,
+    buffer_pool: &mut BufferPool<Endpoint>,
     graph: &mut Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
     num_frames: usize,
@@ -295,7 +295,7 @@ fn prepare_input(
 }
 
 fn process_dsp(
-    buffer_pool: &mut BufferPool,
+    buffer_pool: &mut BufferPool<Endpoint>,
     graph: &mut Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
     num_frames: usize,
@@ -305,7 +305,7 @@ fn process_dsp(
     let output_endpoint = Endpoint::new(dsp_id, EndpointType::Output);
 
     let mut node_output_buffer = buffer_pool
-        .get_buffer(output_endpoint)
+        .get_buffer(&output_endpoint)
         .expect("Ran out of buffers in pool");
 
     let (mut node_input_buffer, input_endpoint) =
@@ -330,11 +330,11 @@ fn process_dsp(
         );
     };
 
-    buffer_pool.return_buffer(node_input_buffer, input_endpoint);
-    buffer_pool.return_buffer(node_output_buffer, output_endpoint);
+    buffer_pool.return_buffer(node_input_buffer, &input_endpoint);
+    buffer_pool.return_buffer(node_output_buffer, &output_endpoint);
 
     if input_endpoint.endpoint_type == EndpointType::Input {
-        buffer_pool.clear_assignment(input_endpoint);
+        buffer_pool.clear_assignment(&input_endpoint);
     }
 }
 
