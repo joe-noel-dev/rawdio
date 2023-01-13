@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use itertools::Itertools;
-use rust_audio_engine::{
+use rawdio::{
     create_engine, AudioBuffer, AudioProcess, Context, Oscillator, OwnedAudioBuffer, Pan,
     SampleLocation, Timestamp,
 };

@@ -1,5 +1,5 @@
 use criterion::{criterion_group, Criterion};
-use rust_audio_engine::{create_engine, Gain, OwnedAudioBuffer, Timestamp};
+use rawdio::{create_engine, Gain, OwnedAudioBuffer, Timestamp};
 
 fn gain_benchmarks(c: &mut Criterion) {
     c.benchmark_group("Gain");

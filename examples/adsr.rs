@@ -3,9 +3,7 @@ use std::{
     time::{self, Duration},
 };
 
-use rust_audio_engine::{
-    create_engine, Adsr, Context, Gain, Level, Oscillator, Splitter, Timestamp,
-};
+use rawdio::{create_engine, Adsr, Context, Gain, Level, Oscillator, Splitter, Timestamp};
 
 use crate::audio_callback::AudioCallback;
 

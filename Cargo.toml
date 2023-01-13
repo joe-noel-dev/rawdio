@@ -1,5 +1,5 @@
 [package]
-name = "rust-audio-engine"
+name = "rawdio"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, Criterion};
-use rust_audio_engine::{AudioBuffer, OwnedAudioBuffer, SampleLocation};
+use rawdio::{AudioBuffer, OwnedAudioBuffer, SampleLocation};
 
 fn read_and_write_interleaved() {
     let num_frames = 1024;

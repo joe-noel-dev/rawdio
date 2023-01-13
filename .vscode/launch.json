@@ -42,11 +42,7 @@
       "request": "launch",
       "name": "oscillator: Debug",
       "cargo": {
-        "args": [
-          "build",
-          "--example=oscillator",
-          "--package=rust-audio-engine"
-        ],
+        "args": ["build", "--example=oscillator", "--package=rawdio"],
         "filter": {
           "name": "oscillator",
           "kind": "example"
@@ -60,11 +56,7 @@
       "request": "launch",
       "name": "file_render: debug",
       "cargo": {
-        "args": [
-          "build",
-          "--example=file_render",
-          "--package=rust-audio-engine"
-        ],
+        "args": ["build", "--example=file_render", "--package=rawdio"],
         "filter": {
           "name": "file_render",
           "kind": "example"
@@ -82,7 +74,7 @@
           "test",
           "--no-run",
           "--example=oscillator",
-          "--package=rust-audio-engine"
+          "--package=rawdio"
         ],
         "filter": {
           "name": "oscillator",
@@ -97,7 +89,7 @@
       "request": "launch",
       "name": "pan: Debug",
       "cargo": {
-        "args": ["build", "--example=pan", "--package=rust-audio-engine"],
+        "args": ["build", "--example=pan", "--package=rawdio"],
         "filter": {
           "name": "pan",
           "kind": "example"
@@ -111,7 +103,7 @@
       "request": "launch",
       "name": "adsr: Debug",
       "cargo": {
-        "args": ["build", "--example=adsr", "--package=rust-audio-engine"],
+        "args": ["build", "--example=adsr", "--package=rawdio"],
         "filter": {
           "name": "adsr",
           "kind": "example"
