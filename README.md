@@ -11,7 +11,7 @@ This is an audio engine, inspired by the Web Audio API.
 1. Create a context
 
     ```rust
-    use rust_audio_engine::{create_context, Level, Oscillator, Node};
+    use rawdio::{create_context, Level, Oscillator, Node};
     let sample_rate = 44100;
     let mut context = create_context(sample_rate);
     ```

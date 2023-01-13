@@ -1,5 +1,5 @@
 use approx::assert_relative_eq;
-use rust_audio_engine::{
+use rawdio::{
     create_engine, AudioBuffer, AudioProcess, Context, Gain, Level, Oscillator, OwnedAudioBuffer,
     SampleLocation, Timestamp,
 };
