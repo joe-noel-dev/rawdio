@@ -7,9 +7,9 @@ use crate::{
 };
 
 use super::{
-    event::{SampleEventType, SamplerEvent},
-    fade::Fade,
-    voice::Voice,
+    sampler_event::{SampleEventType, SamplerEvent},
+    sampler_fade::Fade,
+    sampler_voice::Voice,
 };
 
 pub type EventReceiver = Channel::Receiver<SamplerEvent>;

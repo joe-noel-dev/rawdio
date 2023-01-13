@@ -1,6 +1,6 @@
 use std::{thread, time};
 
-use rawdio::{create_engine, Context, Gain, Level, Oscillator, Splitter, Timestamp};
+use rawdio::{create_engine, Context, Gain, Level, Mixer, Oscillator, Timestamp};
 
 use crate::audio_callback::AudioCallback;
 
@@ -14,10 +14,10 @@ fn main() {
 
     let mut oscillators = create_oscillators(context.as_ref());
     let mut gain = create_gain(context.as_ref());
-    let mut splitter = create_splitter(context.as_ref());
+    let mut mixer = create_mixer(context.as_ref());
 
     schedule_gain_changes(&mut gain);
-    make_connections(&mut oscillators, &mut gain, &mut splitter);
+    make_connections(&mut oscillators, &mut gain, &mut mixer);
 
     run(context.as_mut());
 }
@@ -46,14 +46,8 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
     })
 }
 
-fn create_splitter(context: &dyn Context) -> Splitter {
-    let splitter_input_channel_count = 1;
-    let splitter_output_channel_count = 2;
-    Splitter::new(
-        context.get_command_queue(),
-        splitter_input_channel_count,
-        splitter_output_channel_count,
-    )
+fn create_mixer(context: &dyn Context) -> Mixer {
+    Mixer::mono_to_stereo_splitter(context.get_command_queue())
 }
 
 fn create_gain(context: &dyn Context) -> Gain {
@@ -71,14 +65,14 @@ fn schedule_gain_changes(gain: &mut Gain) {
         .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
 }
 
-fn make_connections(oscillators: &mut [Oscillator], gain: &mut Gain, splitter: &mut Splitter) {
+fn make_connections(oscillators: &mut [Oscillator], gain: &mut Gain, mixer: &mut Mixer) {
     for oscillator in oscillators {
         oscillator.node.connect_to(&gain.node);
     }
 
-    gain.node.connect_to(&splitter.node);
+    gain.node.connect_to(&mixer.node);
 
-    splitter.node.connect_to_output();
+    mixer.node.connect_to_output();
 }
 
 fn run(context: &mut dyn Context) {

@@ -3,7 +3,7 @@ use std::{
     time::{self, Duration},
 };
 
-use rawdio::{create_engine, Adsr, Context, Gain, Level, Oscillator, Splitter, Timestamp};
+use rawdio::{create_engine, Adsr, Context, Gain, Level, Mixer, Oscillator, Timestamp};
 
 use crate::audio_callback::AudioCallback;
 
@@ -46,14 +46,8 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
     })
 }
 
-fn create_splitter(context: &dyn Context) -> Splitter {
-    let splitter_input_channel_count = 1;
-    let splitter_output_channel_count = 2;
-    Splitter::new(
-        context.get_command_queue(),
-        splitter_input_channel_count,
-        splitter_output_channel_count,
-    )
+fn create_splitter(context: &dyn Context) -> Mixer {
+    Mixer::mono_to_stereo_splitter(context.get_command_queue())
 }
 
 fn create_gain(context: &dyn Context) -> Gain {
@@ -95,7 +89,7 @@ fn make_connections(
     oscillators: &mut [Oscillator],
     adsr: &mut Adsr,
     gain: &mut Gain,
-    splitter: &mut Splitter,
+    splitter: &mut Mixer,
 ) {
     for oscillator in oscillators {
         oscillator.node.connect_to(&adsr.node);

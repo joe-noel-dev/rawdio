@@ -1,6 +1,6 @@
 use crate::{AudioBuffer, SampleLocation};
 
-use super::fade::Fade;
+use super::sampler_fade::Fade;
 
 use std::cmp::min;
 

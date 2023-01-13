@@ -6,6 +6,14 @@ pub struct Level {
 }
 
 impl Level {
+    pub fn unity() -> Self {
+        Level::from_gain(1.0)
+    }
+
+    pub fn zero() -> Self {
+        Level::from_gain(0.0)
+    }
+
     pub fn from_db(level_in_db: f64) -> Self {
         if level_in_db <= MINUS_INFINITY_DECIBELS {
             Self { gain: 0.0 }
