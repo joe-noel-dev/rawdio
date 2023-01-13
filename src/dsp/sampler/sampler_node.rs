@@ -4,7 +4,7 @@ use crate::{
 };
 
 use super::{
-    event::SamplerEvent,
+    sampler_event::SamplerEvent,
     sampler_processor::{EventTransmitter, SamplerDspProcess},
 };
 
