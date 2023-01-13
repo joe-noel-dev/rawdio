@@ -41,15 +41,17 @@ impl Fade {
 
 #[cfg(test)]
 mod tests {
+    use approx::assert_relative_eq;
+
     use super::*;
 
     #[test]
     fn starts_and_end() {
         let fade = Fade::new(Duration::from_millis(100), 44100);
         let length = fade.len();
-        assert!((fade.value(0) - 0.0).abs() < 1e-3);
-        assert!((fade.value(length / 2) - 0.5).abs() < 1e-3);
-        assert!((fade.value(length - 1) - 1.0).abs() < 1e-3);
+        assert_relative_eq!(fade.value(0), 0.0);
+        assert_relative_eq!(fade.value(length / 2), 0.5);
+        assert_relative_eq!(fade.value(length - 1), 1.0);
     }
 
     #[test]
