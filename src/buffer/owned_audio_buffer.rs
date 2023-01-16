@@ -16,6 +16,12 @@ impl OwnedAudioBuffer {
             sample_rate,
         }
     }
+
+    fn get_sample_location_bounds(&self, sample_location: &SampleLocation) -> (usize, usize) {
+        let start = sample_location.channel * self.num_frames + sample_location.frame;
+        let end = (sample_location.channel + 1) * self.num_frames;
+        (start, end)
+    }
 }
 
 impl AudioBuffer for OwnedAudioBuffer {
@@ -32,14 +38,12 @@ impl AudioBuffer for OwnedAudioBuffer {
     }
 
     fn get_data(&self, sample_location: SampleLocation) -> &[f32] {
-        let start = sample_location.channel * self.num_frames + sample_location.frame;
-        let end = (sample_location.channel + 1) * self.num_frames;
+        let (start, end) = self.get_sample_location_bounds(&sample_location);
         &self.data[start..end]
     }
 
     fn get_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32] {
-        let start = sample_location.channel * self.num_frames + sample_location.frame;
-        let end = (sample_location.channel + 1) * self.num_frames;
+        let (start, end) = self.get_sample_location_bounds(&sample_location);
         &mut self.data[start..end]
     }
 }
