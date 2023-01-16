@@ -16,7 +16,7 @@ where
         }
     }
 
-    pub fn take(&mut self, id: &Identifier) -> Option<OwnedAudioBuffer> {
+    pub fn remove(&mut self, id: &Identifier) -> Option<OwnedAudioBuffer> {
         self.assigned_buffers.remove(id)
     }
 
@@ -28,7 +28,14 @@ where
         self.assigned_buffers.is_empty()
     }
 
-    pub fn get_next_id(&mut self) -> Option<Identifier> {
-        self.assigned_buffers.keys().next().copied()
+    pub fn remove_next(&mut self) -> Option<(Identifier, OwnedAudioBuffer)> {
+        let id = match self.assigned_buffers.keys().next() {
+            Some(id) => *id,
+            None => return None,
+        };
+
+        let buffer = self.remove(&id).expect("Buffer not found");
+
+        Some((id, buffer))
     }
 }

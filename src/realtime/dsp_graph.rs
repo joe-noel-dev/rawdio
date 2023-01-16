@@ -21,8 +21,8 @@ pub struct DspGraph {
     graph_needs_sort: bool,
     free_buffer_pool: BufferPool,
     assigned_buffer_pool: AssignedBufferPool<Endpoint>,
-    maximum_number_of_channels: usize,
-    maximum_number_of_frames: usize,
+    maximum_channel_count: usize,
+    maximum_frame_count: usize,
 }
 
 static MAXIMUM_BUFFER_COUNT: usize = 128;
@@ -31,8 +31,8 @@ static MAXIMUM_GRAPH_EDGE_COUNT: usize = 512;
 
 impl DspGraph {
     pub fn new(
-        maximum_number_of_frames: usize,
-        maximum_number_of_channels: usize,
+        maximum_frame_count: usize,
+        maximum_channel_count: usize,
         sample_rate: usize,
     ) -> Self {
         let (garbage_collection_tx, garbage_collection_rx) = spsc::create();
@@ -44,24 +44,21 @@ impl DspGraph {
             graph_needs_sort: false,
             output_endpoint: None,
             garbage_collection_tx,
-            free_buffer_pool: BufferPool::with_capacity(
+            free_buffer_pool: BufferPool::new(
                 MAXIMUM_BUFFER_COUNT,
-                maximum_number_of_frames,
-                maximum_number_of_channels,
+                maximum_frame_count,
+                maximum_channel_count,
                 sample_rate,
             ),
             assigned_buffer_pool: AssignedBufferPool::with_capacity(MAXIMUM_BUFFER_COUNT),
-            maximum_number_of_channels,
-            maximum_number_of_frames,
+            maximum_channel_count,
+            maximum_frame_count,
         }
     }
 
     pub fn process(&mut self, output_buffer: &mut dyn AudioBuffer, start_time: &Timestamp) {
-        let num_channels = std::cmp::min(
-            output_buffer.num_channels(),
-            self.maximum_number_of_channels,
-        );
-        let num_frames = std::cmp::min(output_buffer.num_frames(), self.maximum_number_of_frames);
+        let num_channels = std::cmp::min(output_buffer.num_channels(), self.maximum_channel_count);
+        let num_frames = std::cmp::min(output_buffer.num_frames(), self.maximum_frame_count);
 
         self.sort_graph();
 
@@ -86,11 +83,7 @@ impl DspGraph {
             );
         }
 
-        while let Some(endpoint) = self.assigned_buffer_pool.get_next_id() {
-            let buffer = self
-                .assigned_buffer_pool
-                .take(&endpoint)
-                .expect("Missing buffer in pool");
+        while let Some((_, buffer)) = self.assigned_buffer_pool.remove_next() {
             self.free_buffer_pool.add(buffer);
         }
 
@@ -187,7 +180,7 @@ fn mix_in_endpoint(
     num_frames: usize,
     mix_behaviour: MixBehaviour,
 ) {
-    if let Some(buffer) = assigned_buffer_pool.take(endpoint) {
+    if let Some(buffer) = assigned_buffer_pool.remove(endpoint) {
         let sample_location = SampleLocation::new(0, 0);
 
         match mix_behaviour {
@@ -241,10 +234,10 @@ fn get_buffer_with_endpoint(
     free_buffer_pool: &mut BufferPool,
     assigned_buffer_pool: &mut AssignedBufferPool<Endpoint>,
 ) -> OwnedAudioBuffer {
-    match assigned_buffer_pool.take(endpoint) {
+    match assigned_buffer_pool.remove(endpoint) {
         Some(buffer) => buffer,
         None => free_buffer_pool
-            .take()
+            .remove()
             .expect("No buffers available for processing"),
     }
 }

@@ -5,7 +5,7 @@ pub struct BufferPool {
 }
 
 impl BufferPool {
-    pub fn with_capacity(
+    pub fn new(
         num_buffers: usize,
         num_frames: usize,
         num_channels: usize,
@@ -18,7 +18,7 @@ impl BufferPool {
         }
     }
 
-    pub fn take(&mut self) -> Option<OwnedAudioBuffer> {
+    pub fn remove(&mut self) -> Option<OwnedAudioBuffer> {
         self.free_buffers.pop()
     }
 
