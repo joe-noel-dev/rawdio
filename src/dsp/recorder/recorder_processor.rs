@@ -1,5 +1,6 @@
 use crate::{
     buffer::BufferPool,
+    dsp::utility::EventProcessor,
     graph::{DspParameters, DspProcessor},
     AudioBuffer, OwnedAudioBuffer, SampleLocation, Timestamp,
 };
@@ -11,9 +12,8 @@ use super::{
 
 pub struct RecorderProcessor {
     sample_rate: usize,
-    event_receiver: RecorderEventReceiver,
     notification_transmitter: RecorderNotificationTransmitter,
-    pending_events: Vec<RecorderEvent>,
+    event_processor: EventProcessor<RecorderEvent>,
     buffer_pool: BufferPool,
     current_buffer: OwnedAudioBuffer,
     current_position_in_buffer: usize,
@@ -33,58 +33,17 @@ impl RecorderProcessor {
     ) -> Self {
         Self {
             sample_rate,
-            event_receiver,
+            event_processor: EventProcessor::with_capacity(
+                MAX_PENDING_EVENTS,
+                event_receiver,
+                sample_rate,
+                |event| event.time,
+            ),
             notification_transmitter,
-            pending_events: Vec::with_capacity(MAX_PENDING_EVENTS),
             buffer_pool: BufferPool::new(BUFFER_COUNT, BUFFER_SIZE, channel_count, sample_rate),
             current_buffer: OwnedAudioBuffer::new(BUFFER_SIZE, channel_count, sample_rate),
             current_position_in_buffer: 0,
             recording: false,
-        }
-    }
-
-    fn process_events(&mut self) {
-        let mut sort_required = false;
-
-        while let Ok(event) = self.event_receiver.recv() {
-            self.pending_events.push(event);
-            sort_required = true;
-        }
-
-        if sort_required {
-            self.pending_events
-                .sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap())
-        }
-    }
-
-    fn next_event_before(&mut self, end_time: &Timestamp) -> Option<RecorderEvent> {
-        if let Some(next_event) = self.pending_events.first() {
-            if next_event.time < *end_time {
-                return Some(self.pending_events.remove(0));
-            }
-        }
-
-        None
-    }
-
-    fn next_event_position(
-        &mut self,
-        frame_start_time: &Timestamp,
-        current_frame_position: &Timestamp,
-        frame_count: usize,
-    ) -> (usize, Option<RecorderEvent>) {
-        let frame_end_time = frame_start_time.incremented_by_samples(frame_count, self.sample_rate);
-
-        if let Some(next_event) = self.next_event_before(&frame_end_time) {
-            let event_time = std::cmp::max(next_event.time, *current_frame_position);
-            let position_in_frame = event_time - *frame_start_time;
-
-            (
-                position_in_frame.as_samples(self.sample_rate).floor() as usize,
-                Some(next_event),
-            )
-        } else {
-            (frame_count, None)
         }
     }
 
@@ -188,14 +147,17 @@ impl DspProcessor for RecorderProcessor {
         start_time: &Timestamp,
         _parameters: &DspParameters,
     ) {
-        self.process_events();
+        self.event_processor.process_events();
 
         let mut current_time = *start_time;
         let mut position = 0;
 
         while position < input_buffer.frame_count() {
-            let (end_frame, event) =
-                self.next_event_position(start_time, &current_time, input_buffer.frame_count());
+            let (end_frame, event) = self.event_processor.next_event(
+                start_time,
+                &current_time,
+                input_buffer.frame_count(),
+            );
 
             debug_assert!(end_frame <= input_buffer.frame_count());
 

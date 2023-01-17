@@ -5,6 +5,7 @@ mod oscillator;
 mod pan;
 mod recorder;
 mod sampler;
+mod utility;
 
 pub type Gain = gain::GainNode;
 pub type Oscillator = oscillator::OscillatorNode;

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-    dsp::Channel,
+    dsp::{utility::EventProcessor, Channel},
     graph::{DspParameters, DspProcessor},
     AudioBuffer, MutableBorrowedAudioBuffer, OwnedAudioBuffer, Timestamp,
 };
@@ -20,8 +20,7 @@ pub struct SamplerDspProcess {
     voices: Vec<Voice>,
     active_voice: Option<usize>,
     buffer: OwnedAudioBuffer,
-    event_receiver: EventReceiver,
-    pending_events: Vec<SamplerEvent>,
+    event_processor: EventProcessor<SamplerEvent>,
     sample_rate: usize,
 
     loop_points: Option<(Timestamp, Timestamp)>,
@@ -45,14 +44,17 @@ impl DspProcessor for SamplerDspProcess {
     ) {
         debug_assert_eq!(self.sample_rate, output_buffer.sample_rate());
 
-        self.read_events();
+        self.event_processor.process_events();
 
         let mut current_time = *start_time;
         let mut position = 0;
 
         while position < output_buffer.frame_count() {
-            let (end_frame, event) =
-                self.next_event_position(start_time, &current_time, output_buffer.frame_count());
+            let (end_frame, event) = self.event_processor.next_event(
+                start_time,
+                &current_time,
+                output_buffer.frame_count(),
+            );
 
             debug_assert!(end_frame <= output_buffer.frame_count());
             let num_frames = end_frame - position;
@@ -82,8 +84,12 @@ impl SamplerDspProcess {
             voices: (0..NUM_VOICES).map(|_| Voice::default()).collect(),
             active_voice: None,
             buffer,
-            event_receiver,
-            pending_events: Vec::with_capacity(MAX_PENDING_EVENTS),
+            event_processor: EventProcessor::with_capacity(
+                MAX_PENDING_EVENTS,
+                event_receiver,
+                sample_rate,
+                |event| event.time,
+            ),
             loop_points: None,
             position: Timestamp::zero(),
             start_position_in_sample: Timestamp::zero(),
@@ -178,37 +184,6 @@ impl SamplerDspProcess {
             .for_each(|voice| voice.render(output_buffer, sample, fade));
     }
 
-    fn next_event_position(
-        &mut self,
-        frame_start_time: &Timestamp,
-        current_frame_position: &Timestamp,
-        number_of_frames: usize,
-    ) -> (usize, Option<SamplerEvent>) {
-        let frame_end_time =
-            frame_start_time.incremented_by_samples(number_of_frames, self.sample_rate);
-
-        if let Some(next_event) = self.next_event_before(&frame_end_time) {
-            let event_time = std::cmp::max(next_event.time, *current_frame_position);
-            let position_in_frame = event_time - *frame_start_time;
-            (
-                position_in_frame.as_samples(self.sample_rate).floor() as usize,
-                Some(next_event),
-            )
-        } else {
-            (number_of_frames, None)
-        }
-    }
-
-    fn next_event_before(&mut self, end_time: &Timestamp) -> Option<SamplerEvent> {
-        if let Some(next_event) = self.pending_events.first() {
-            if next_event.time < *end_time {
-                return Some(self.pending_events.remove(0));
-            }
-        }
-
-        None
-    }
-
     fn process_event(&mut self, event: &SamplerEvent) {
         match event.event_type {
             SampleEventType::Start(position_in_sample) => {
@@ -232,22 +207,8 @@ impl SamplerDspProcess {
     }
 
     fn cancel_all(&mut self) {
-        self.pending_events.clear();
+        self.event_processor.cancel_all_pending_events();
         self.stop();
-    }
-
-    fn read_events(&mut self) {
-        let mut sort_required = false;
-
-        while let Ok(event) = self.event_receiver.recv() {
-            self.pending_events.push(event);
-            sort_required = true;
-        }
-
-        if sort_required {
-            self.pending_events
-                .sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap())
-        }
     }
 
     fn assign_voice(&mut self, start_position: Timestamp) {
