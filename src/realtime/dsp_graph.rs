@@ -57,8 +57,8 @@ impl DspGraph {
     }
 
     pub fn process(&mut self, output_buffer: &mut dyn AudioBuffer, start_time: &Timestamp) {
-        let num_channels = std::cmp::min(output_buffer.num_channels(), self.maximum_channel_count);
-        let num_frames = std::cmp::min(output_buffer.num_frames(), self.maximum_frame_count);
+        let num_channels = std::cmp::min(output_buffer.channel_count(), self.maximum_channel_count);
+        let num_frames = std::cmp::min(output_buffer.frame_count(), self.maximum_frame_count);
 
         self.sort_graph();
 
@@ -407,8 +407,8 @@ mod tests {
                 input_buffer,
                 SampleLocation::origin(),
                 SampleLocation::origin(),
-                output_buffer.num_channels(),
-                output_buffer.num_frames(),
+                output_buffer.channel_count(),
+                output_buffer.frame_count(),
             );
 
             output_buffer.set_sample(self.location_to_write, self.value_to_write);

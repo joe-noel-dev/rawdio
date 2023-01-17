@@ -20,7 +20,7 @@ impl SamplerNode {
         let (event_transmitter, event_receiver) = Channel::create();
 
         let input_count = 0;
-        let output_count = sample.num_channels();
+        let output_count = sample.channel_count();
 
         let processor = Box::new(SamplerDspProcess::new(sample_rate, sample, event_receiver));
 

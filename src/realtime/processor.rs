@@ -46,9 +46,9 @@ impl Processor {
 
         let current_time = Timestamp::from_raw_i64(self.current_time.load(Ordering::Acquire));
 
-        while offset < output_buffer.num_frames() {
+        while offset < output_buffer.frame_count() {
             let num_frames = std::cmp::min(
-                output_buffer.num_frames() - offset,
+                output_buffer.frame_count() - offset,
                 self.get_maximum_number_of_frames(),
             );
 
@@ -74,7 +74,7 @@ impl AudioProcess for Processor {
             return;
         }
 
-        let num_frames = output_buffer.num_frames();
+        let num_frames = output_buffer.frame_count();
         self.process_graph(output_buffer);
         self.update_position(num_frames);
     }

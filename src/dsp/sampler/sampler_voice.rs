@@ -57,7 +57,7 @@ impl Voice {
 
         let mut destination_offset = 0;
 
-        while destination_offset < output.num_frames() {
+        while destination_offset < output.frame_count() {
             match self.phase {
                 Phase::Stopped => break,
                 Phase::FadingIn(fade_position) => {
@@ -84,8 +84,8 @@ impl Voice {
                 Phase::Playing => {
                     self.render_playing(output, destination_offset, sample);
 
-                    self.position += output.num_frames() - destination_offset;
-                    destination_offset = output.num_frames();
+                    self.position += output.frame_count() - destination_offset;
+                    destination_offset = output.frame_count();
                 }
                 Phase::FadingOut(fade_position) => {
                     let num_frames = self.render_fade(
@@ -117,15 +117,15 @@ impl Voice {
         destination_offset: usize,
         source: &dyn AudioBuffer,
     ) {
-        let num_channels = min(source.num_channels(), output.num_channels());
+        let num_channels = min(source.channel_count(), output.channel_count());
 
-        if self.position >= source.num_frames() {
+        if self.position >= source.frame_count() {
             return;
         }
 
         let num_frames = std::cmp::min(
-            output.num_frames() - destination_offset,
-            source.num_frames() - self.position,
+            output.frame_count() - destination_offset,
+            source.frame_count() - self.position,
         );
 
         let source_location = SampleLocation::new(0, self.position);
@@ -149,15 +149,15 @@ impl Voice {
         fade_position: usize,
         fade_in: bool,
     ) -> usize {
-        let num_channels = min(source.num_channels(), output.num_channels());
+        let num_channels = min(source.channel_count(), output.channel_count());
 
         let num_frames = std::cmp::min(
             fade.len() - fade_position,
-            output.num_frames() - destination_offset,
+            output.frame_count() - destination_offset,
         );
 
         for frame in 0..num_frames {
-            if frame + self.position >= source.num_frames() {
+            if frame + self.position >= source.frame_count() {
                 break;
             }
 

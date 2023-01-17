@@ -8,14 +8,14 @@ fn read_and_write_interleaved() {
 
     let mut buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
 
-    for frame in 0..buffer.num_frames() {
-        for channel in 0..buffer.num_channels() {
+    for frame in 0..buffer.frame_count() {
+        for channel in 0..buffer.channel_count() {
             buffer.set_sample(SampleLocation::new(channel, frame), 0.0);
         }
     }
 
-    for frame in 0..buffer.num_frames() {
-        for channel in 0..buffer.num_channels() {
+    for frame in 0..buffer.frame_count() {
+        for channel in 0..buffer.channel_count() {
             black_box(buffer.get_sample(SampleLocation::new(channel, frame)));
         }
     }
@@ -28,14 +28,14 @@ fn read_and_write_non_interleaved() {
 
     let mut buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
 
-    for channel in 0..buffer.num_channels() {
-        for frame in 0..buffer.num_frames() {
+    for channel in 0..buffer.channel_count() {
+        for frame in 0..buffer.frame_count() {
             buffer.set_sample(SampleLocation::new(channel, frame), 0.0);
         }
     }
 
-    for channel in 0..buffer.num_channels() {
-        for frame in 0..buffer.num_frames() {
+    for channel in 0..buffer.channel_count() {
+        for frame in 0..buffer.frame_count() {
             black_box(buffer.get_sample(SampleLocation::new(channel, frame)));
         }
     }

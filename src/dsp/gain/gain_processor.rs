@@ -29,7 +29,8 @@ impl DspProcessor for GainProcessor {
             None => return,
         };
 
-        let num_channels = std::cmp::min(output_buffer.num_channels(), input_buffer.num_channels());
+        let num_channels =
+            std::cmp::min(output_buffer.channel_count(), input_buffer.channel_count());
 
         for channel in 0..num_channels {
             for (output, input, gain) in izip!(

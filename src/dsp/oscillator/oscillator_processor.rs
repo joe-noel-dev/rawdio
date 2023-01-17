@@ -86,8 +86,8 @@ impl DspProcessor for OscillatorProcessor {
             None => return,
         };
 
-        let num_frames = output_buffer.num_frames();
-        let num_channels = output_buffer.num_channels();
+        let num_frames = output_buffer.frame_count();
+        let num_channels = output_buffer.channel_count();
 
         let frequency_values = frequency.get_values();
         let gain_values = gain.get_values();

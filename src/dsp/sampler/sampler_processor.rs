@@ -50,11 +50,11 @@ impl DspProcessor for SamplerDspProcess {
         let mut current_time = *start_time;
         let mut position = 0;
 
-        while position < output_buffer.num_frames() {
+        while position < output_buffer.frame_count() {
             let (end_frame, event) =
-                self.next_event_position(start_time, &current_time, output_buffer.num_frames());
+                self.next_event_position(start_time, &current_time, output_buffer.frame_count());
 
-            debug_assert!(end_frame <= output_buffer.num_frames());
+            debug_assert!(end_frame <= output_buffer.frame_count());
             let num_frames = end_frame - position;
 
             let mut slice = BorrowedAudioBuffer::slice_frames(output_buffer, position, num_frames);
@@ -95,7 +95,7 @@ impl SamplerDspProcess {
         let (loop_start, loop_end) = match self.loop_points {
             Some(loop_points) => loop_points,
             None => {
-                return Timestamp::from_samples(self.buffer.num_frames() as f64, self.sample_rate)
+                return Timestamp::from_samples(self.buffer.frame_count() as f64, self.sample_rate)
             }
         };
 
@@ -137,8 +137,8 @@ impl SamplerDspProcess {
     fn process_sample(&mut self, output_buffer: &mut dyn AudioBuffer) {
         let mut frame_position = 0;
 
-        while frame_position < output_buffer.num_frames() {
-            let num_samples_remaining_in_frame = output_buffer.num_frames() - frame_position;
+        while frame_position < output_buffer.frame_count() {
+            let num_samples_remaining_in_frame = output_buffer.frame_count() - frame_position;
 
             let render_interval = self.get_render_interval(num_samples_remaining_in_frame);
             let render_interval = render_interval.as_samples(self.sample_rate).round() as usize;
