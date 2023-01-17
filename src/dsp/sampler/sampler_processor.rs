@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     dsp::Channel,
     graph::{DspParameters, DspProcessor},
-    AudioBuffer, BorrowedAudioBuffer, OwnedAudioBuffer, Timestamp,
+    AudioBuffer, MutableBorrowedAudioBuffer, OwnedAudioBuffer, Timestamp,
 };
 
 use super::{
@@ -33,7 +33,7 @@ pub struct SamplerDspProcess {
 
 const NUM_VOICES: usize = 2;
 const FADE_LENGTH: Duration = Duration::from_millis(50);
-const MAX_PENDING_EVENTS: usize = 10;
+const MAX_PENDING_EVENTS: usize = 16;
 
 impl DspProcessor for SamplerDspProcess {
     fn process_audio(
@@ -57,7 +57,8 @@ impl DspProcessor for SamplerDspProcess {
             debug_assert!(end_frame <= output_buffer.frame_count());
             let num_frames = end_frame - position;
 
-            let mut slice = BorrowedAudioBuffer::slice_frames(output_buffer, position, num_frames);
+            let mut slice =
+                MutableBorrowedAudioBuffer::slice_frames(output_buffer, position, num_frames);
             self.process_sample(&mut slice);
 
             position += num_frames;
@@ -155,7 +156,7 @@ impl SamplerDspProcess {
                 break;
             }
 
-            self.process_voices(&mut BorrowedAudioBuffer::slice_frames(
+            self.process_voices(&mut MutableBorrowedAudioBuffer::slice_frames(
                 output_buffer,
                 frame_position,
                 num_frames_to_render,

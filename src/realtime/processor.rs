@@ -2,7 +2,7 @@ use std::sync::{atomic::AtomicI64, atomic::Ordering, Arc};
 
 use crate::{
     audio_process::AudioProcess, commands::command::Command, timestamp::Timestamp, AudioBuffer,
-    BorrowedAudioBuffer,
+    MutableBorrowedAudioBuffer,
 };
 use lockfree::channel::mpsc::Receiver;
 
@@ -53,7 +53,7 @@ impl Processor {
             );
 
             let mut audio_buffer =
-                BorrowedAudioBuffer::slice_frames(output_buffer, offset, num_frames);
+                MutableBorrowedAudioBuffer::slice_frames(output_buffer, offset, num_frames);
 
             let start_time = current_time.incremented_by_samples(offset, self.sample_rate);
 

@@ -3,6 +3,7 @@ mod gain;
 mod mixer;
 mod oscillator;
 mod pan;
+mod recorder;
 mod sampler;
 
 pub type Gain = gain::GainNode;
@@ -11,5 +12,6 @@ pub type Pan = pan::PanNode;
 pub type Sampler = sampler::SamplerNode;
 pub type Adsr = adsr::AdsrNode;
 pub type Mixer = mixer::MixerNode;
+pub type Recorder = recorder::RecorderNode;
 
 use lockfree::channel::spsc as Channel;

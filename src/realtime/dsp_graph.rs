@@ -1,8 +1,9 @@
 use lockfree::channel::{spsc, spsc::Sender};
 
 use crate::{
+    buffer::{BufferPool, MutableBorrowedAudioBuffer},
     commands::{command::ParameterChangeRequest, Id},
-    graph::{AssignedBufferPool, BufferPool, Connection, Dsp, Endpoint, EndpointType},
+    graph::{AssignedBufferPool, Connection, Dsp, Endpoint, EndpointType},
     timestamp::Timestamp,
     AudioBuffer, BorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation,
 };
@@ -343,7 +344,7 @@ fn process_dsp(
     );
 
     if let Some(dsp) = graph.get_node_mut(dsp_id) {
-        let mut node_output_buffer_slice = BorrowedAudioBuffer::slice(
+        let mut node_output_buffer_slice = MutableBorrowedAudioBuffer::slice(
             &mut node_output_buffer,
             0,
             num_frames,
