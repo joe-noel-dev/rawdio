@@ -60,6 +60,12 @@ pub trait AudioBuffer {
         }
     }
 
+    fn channel_is_silent(&self, channel: usize) -> bool {
+        let location = SampleLocation::new(channel, 0);
+        let data = self.get_data(location);
+        data.iter().all(|sample| *sample == 0.0_f32)
+    }
+
     fn get_data(&self, sample_location: SampleLocation) -> &[f32];
 
     fn get_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32];

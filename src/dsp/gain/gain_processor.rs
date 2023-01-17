@@ -29,12 +29,16 @@ impl DspProcessor for GainProcessor {
             None => return,
         };
 
-        for (output, input, gain) in izip!(
-            output_buffer.get_data_mut(SampleLocation::origin()),
-            input_buffer.get_data(SampleLocation::origin()),
-            gain_parameter.get_values()
-        ) {
-            *output = *input * (*gain as f32);
+        let num_channels = std::cmp::min(output_buffer.num_channels(), input_buffer.num_channels());
+
+        for channel in 0..num_channels {
+            for (output, input, gain) in izip!(
+                output_buffer.get_data_mut(SampleLocation::new(channel, 0)),
+                input_buffer.get_data(SampleLocation::new(channel, 0)),
+                gain_parameter.get_values()
+            ) {
+                *output = *input * (*gain as f32);
+            }
         }
     }
 }

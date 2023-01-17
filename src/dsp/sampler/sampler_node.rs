@@ -1,6 +1,6 @@
 use crate::{
-    commands::Id, dsp::Channel, graph::DspParameters, CommandQueue, Node, OwnedAudioBuffer,
-    Timestamp,
+    commands::Id, dsp::Channel, graph::DspParameters, AudioBuffer, CommandQueue, Node,
+    OwnedAudioBuffer, Timestamp,
 };
 
 use super::{
@@ -20,7 +20,7 @@ impl SamplerNode {
         let (event_transmitter, event_receiver) = Channel::create();
 
         let input_count = 0;
-        let output_count = 2;
+        let output_count = sample.num_channels();
 
         let processor = Box::new(SamplerDspProcess::new(sample_rate, sample, event_receiver));
 
