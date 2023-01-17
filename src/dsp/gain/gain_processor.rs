@@ -33,8 +33,8 @@ impl DspProcessor for GainProcessor {
 
         for channel in 0..num_channels {
             for (output, input, gain) in izip!(
-                output_buffer.get_data_mut(SampleLocation::new(channel, 0)),
-                input_buffer.get_data(SampleLocation::new(channel, 0)),
+                output_buffer.get_channel_data_mut(SampleLocation::new(channel, 0)),
+                input_buffer.get_channel_data(SampleLocation::new(channel, 0)),
                 gain_parameter.get_values()
             ) {
                 *output = *input * (*gain as f32);

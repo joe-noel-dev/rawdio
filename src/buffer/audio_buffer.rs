@@ -50,7 +50,7 @@ pub trait AudioBuffer {
     }
 
     fn fill_channel_with_value(&mut self, channel: usize, value: f32) {
-        let data = self.get_data_mut(SampleLocation::new(channel, 0));
+        let data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
         data.fill(value);
     }
 
@@ -62,16 +62,16 @@ pub trait AudioBuffer {
 
     fn channel_is_silent(&self, channel: usize) -> bool {
         let location = SampleLocation::new(channel, 0);
-        let data = self.get_data(location);
+        let data = self.get_channel_data(location);
         data.iter().all(|sample| *sample == 0.0_f32)
     }
 
-    fn get_data(&self, sample_location: SampleLocation) -> &[f32];
+    fn get_channel_data(&self, sample_location: SampleLocation) -> &[f32];
 
-    fn get_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32];
+    fn get_channel_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32];
 
     fn set_sample(&mut self, sample_location: SampleLocation, value: f32) {
-        let data = self.get_data_mut(sample_location);
+        let data = self.get_channel_data_mut(sample_location);
         data[0] = value;
     }
 
@@ -81,7 +81,7 @@ pub trait AudioBuffer {
     }
 
     fn get_sample(&self, sample_location: SampleLocation) -> f32 {
-        let data = self.get_data(sample_location);
+        let data = self.get_channel_data(sample_location);
         data[0]
     }
 
@@ -94,10 +94,11 @@ pub trait AudioBuffer {
         num_frames: usize,
     ) {
         for channel in 0..num_channels {
-            let source = source_buffer.get_data(source_location.offset_channels(channel));
+            let source = source_buffer.get_channel_data(source_location.offset_channels(channel));
             let source = &source[0..num_frames];
 
-            let destination = self.get_data_mut(destination_location.offset_channels(channel));
+            let destination =
+                self.get_channel_data_mut(destination_location.offset_channels(channel));
             let destination = &mut destination[0..num_frames];
 
             for (source_value, destination_value) in source.iter().zip(destination.iter_mut()) {
@@ -115,10 +116,11 @@ pub trait AudioBuffer {
         num_frames: usize,
     ) {
         for channel in 0..num_channels {
-            let source = source_buffer.get_data(source_location.offset_channels(channel));
+            let source = source_buffer.get_channel_data(source_location.offset_channels(channel));
             let source = &source[0..num_frames];
 
-            let destination = self.get_data_mut(destination_location.offset_channels(channel));
+            let destination =
+                self.get_channel_data_mut(destination_location.offset_channels(channel));
             let destination = &mut destination[0..num_frames];
 
             destination.copy_from_slice(source);

@@ -57,7 +57,7 @@ impl Default for Fixture {
 }
 
 fn get_energy_of_channel(audio_buffer: &dyn AudioBuffer, channel_index: usize) -> f64 {
-    let data = audio_buffer.get_data(SampleLocation::new(channel_index, 0));
+    let data = audio_buffer.get_channel_data(SampleLocation::new(channel_index, 0));
     data.iter().fold(0.0_f64, |total_energy, sample| {
         total_energy + (*sample).powf(2.0) as f64
     })

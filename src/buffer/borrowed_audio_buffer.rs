@@ -62,8 +62,8 @@ impl<'a> AudioBuffer for BorrowedAudioBuffer<'a> {
         self.buffer.sample_rate()
     }
 
-    fn get_data(&self, sample_location: SampleLocation) -> &[f32] {
-        let data = self.buffer.get_data(
+    fn get_channel_data(&self, sample_location: SampleLocation) -> &[f32] {
+        let data = self.buffer.get_channel_data(
             sample_location
                 .offset_frames(self.frame_offset)
                 .offset_channels(self.channel_offset),
@@ -72,8 +72,8 @@ impl<'a> AudioBuffer for BorrowedAudioBuffer<'a> {
         &data[0..end]
     }
 
-    fn get_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32] {
-        let data = self.buffer.get_data_mut(
+    fn get_channel_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32] {
+        let data = self.buffer.get_channel_data_mut(
             sample_location
                 .offset_frames(self.frame_offset)
                 .offset_channels(self.channel_offset),

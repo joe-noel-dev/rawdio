@@ -42,8 +42,8 @@ impl DspProcessor for MixerProcessor {
                 let output_location = SampleLocation::origin().with_channel(output_channel);
                 let input_location = SampleLocation::origin().with_channel(input_channel);
 
-                let output = output_buffer.get_data_mut(output_location);
-                let input = input_buffer.get_data(input_location);
+                let output = output_buffer.get_channel_data_mut(output_location);
+                let input = input_buffer.get_channel_data(input_location);
 
                 for (output_sample, input_sample) in output.iter_mut().zip(input.iter()) {
                     *output_sample = *input_sample * gain.as_gain() as f32;
