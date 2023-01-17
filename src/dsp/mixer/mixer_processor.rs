@@ -35,8 +35,8 @@ impl DspProcessor for MixerProcessor {
     ) {
         self.process_events();
 
-        for output_channel in 0..output_buffer.num_channels() {
-            for input_channel in 0..input_buffer.num_channels() {
+        for output_channel in 0..output_buffer.channel_count() {
+            for input_channel in 0..input_buffer.channel_count() {
                 let gain = self.gain_matrix.get_level(input_channel, output_channel);
 
                 let output_location = SampleLocation::origin().with_channel(output_channel);

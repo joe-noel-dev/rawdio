@@ -67,13 +67,13 @@ impl Dsp {
         output_buffer: &mut dyn AudioBuffer,
         start_time: &Timestamp,
     ) {
-        assert_eq!(input_buffer.num_channels(), self.input_count);
-        assert_eq!(output_buffer.num_channels(), self.output_count);
+        assert_eq!(input_buffer.channel_count(), self.input_count);
+        assert_eq!(output_buffer.channel_count(), self.output_count);
 
         for (_, parameter) in self.parameters.iter_mut() {
             parameter.process(
                 start_time,
-                output_buffer.num_frames(),
+                output_buffer.frame_count(),
                 output_buffer.sample_rate(),
             );
         }

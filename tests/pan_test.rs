@@ -70,7 +70,7 @@ fn process_with_pan(pan: f64) -> Vec<f64> {
 
     let audio = fixture.process(Duration::from_secs_f64(1.0));
 
-    (0..audio.num_channels())
+    (0..audio.channel_count())
         .map(|channel| get_energy_of_channel(&audio, channel))
         .collect()
 }

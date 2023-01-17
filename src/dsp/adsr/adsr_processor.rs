@@ -82,14 +82,14 @@ impl DspProcessor for AdsrProcessor {
     ) {
         self.read_events();
 
-        for frame in 0..output_buffer.num_frames() {
+        for frame in 0..output_buffer.frame_count() {
             self.process_events(
                 start_time.incremented_by_samples(frame, output_buffer.sample_rate()),
             );
 
             let envelope = self.envelope.process();
 
-            for channel in 0..output_buffer.num_channels() {
+            for channel in 0..output_buffer.channel_count() {
                 let location = SampleLocation::new(channel, frame);
                 let sample = input_buffer.get_sample(location);
                 let sample = sample * envelope as f32;

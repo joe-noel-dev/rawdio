@@ -2,35 +2,35 @@ use crate::{AudioBuffer, SampleLocation};
 
 pub struct OwnedAudioBuffer {
     data: Vec<f32>,
-    num_channels: usize,
-    num_frames: usize,
+    channel_count: usize,
+    frame_count: usize,
     sample_rate: usize,
 }
 
 impl OwnedAudioBuffer {
-    pub fn new(num_frames: usize, num_channels: usize, sample_rate: usize) -> Self {
+    pub fn new(frame_count: usize, channel_count: usize, sample_rate: usize) -> Self {
         Self {
-            data: vec![0.0; num_frames * num_channels],
-            num_channels,
-            num_frames,
+            data: vec![0.0; frame_count * channel_count],
+            channel_count,
+            frame_count,
             sample_rate,
         }
     }
 
     fn get_sample_location_bounds(&self, sample_location: &SampleLocation) -> (usize, usize) {
-        let start = sample_location.channel * self.num_frames + sample_location.frame;
-        let end = (sample_location.channel + 1) * self.num_frames;
+        let start = sample_location.channel * self.frame_count + sample_location.frame;
+        let end = (sample_location.channel + 1) * self.frame_count;
         (start, end)
     }
 }
 
 impl AudioBuffer for OwnedAudioBuffer {
-    fn num_channels(&self) -> usize {
-        self.num_channels
+    fn channel_count(&self) -> usize {
+        self.channel_count
     }
 
-    fn num_frames(&self) -> usize {
-        self.num_frames
+    fn frame_count(&self) -> usize {
+        self.frame_count
     }
 
     fn sample_rate(&self) -> usize {
@@ -60,15 +60,15 @@ mod tests {
     }
 
     fn fill_with_noise(buffer: &mut dyn AudioBuffer) {
-        for channel in 0..buffer.num_channels() {
-            for frame in 0..buffer.num_frames() {
+        for channel in 0..buffer.channel_count() {
+            for frame in 0..buffer.frame_count() {
                 buffer.set_sample(SampleLocation::new(channel, frame), random_sample());
             }
         }
     }
 
     fn is_empty(buffer: &dyn AudioBuffer) -> bool {
-        for channel in 0..buffer.num_channels() {
+        for channel in 0..buffer.channel_count() {
             let data = buffer.get_channel_data(SampleLocation::new(channel, 0));
             if !data.iter().all(|value| value.abs() < 1e-6) {
                 return false;

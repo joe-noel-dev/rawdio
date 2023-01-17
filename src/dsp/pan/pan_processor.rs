@@ -22,8 +22,8 @@ impl DspProcessor for PanProcessor {
         _start_time: &Timestamp,
         parameters: &DspParameters,
     ) {
-        assert_eq!(input_buffer.num_channels(), 2);
-        assert_eq!(output_buffer.num_channels(), 2);
+        assert_eq!(input_buffer.channel_count(), 2);
+        assert_eq!(output_buffer.channel_count(), 2);
 
         let pan_parameter = match parameters.get(&self.pan_id) {
             Some(param) => param,
@@ -32,7 +32,7 @@ impl DspProcessor for PanProcessor {
 
         let pan_values = pan_parameter.get_values();
 
-        (0..output_buffer.num_frames()).for_each(|frame| {
+        (0..output_buffer.frame_count()).for_each(|frame| {
             let pan = pan_values[frame];
 
             let l_gain = (1.0 - pan).min(1.0);

@@ -27,7 +27,7 @@ fn play_file(file_to_play: &str) {
     let _audio_callack = AudioCallback::new(audio_process, sample_rate);
 
     let length_in_seconds = sample.length_in_seconds().ceil() as u64;
-    let length_in_samples = sample.num_frames();
+    let length_in_samples = sample.frame_count();
     let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, sample);
 
     let channel_count = 2;

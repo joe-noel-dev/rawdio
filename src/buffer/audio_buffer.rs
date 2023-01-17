@@ -7,8 +7,8 @@ pub trait AudioBuffer {
         num_channels: usize,
         num_frames: usize,
     ) {
-        for frame in 0..num_frames.min(self.num_frames()) {
-            for channel in 0..num_channels.min(self.num_channels()) {
+        for frame in 0..num_frames.min(self.frame_count()) {
+            for channel in 0..num_channels.min(self.channel_count()) {
                 let offset = frame * num_channels + channel;
                 let sample_value = interleaved_data[offset];
                 let location = SampleLocation::new(channel, frame);
@@ -25,8 +25,8 @@ pub trait AudioBuffer {
     ) {
         assert!(num_channels * num_frames <= interleaved_data.len());
 
-        for frame in 0..num_frames.min(self.num_frames()) {
-            for channel in 0..num_channels.min(self.num_channels()) {
+        for frame in 0..num_frames.min(self.frame_count()) {
+            for channel in 0..num_channels.min(self.channel_count()) {
                 let location = SampleLocation::new(channel, frame);
                 let sample_value = self.get_sample(location);
                 let offset = frame * num_channels + channel;
@@ -35,14 +35,14 @@ pub trait AudioBuffer {
         }
     }
 
-    fn num_channels(&self) -> usize;
+    fn channel_count(&self) -> usize;
 
-    fn num_frames(&self) -> usize;
+    fn frame_count(&self) -> usize;
 
     fn sample_rate(&self) -> usize;
 
     fn length_in_seconds(&self) -> f64 {
-        self.num_frames() as f64 / self.sample_rate() as f64
+        self.frame_count() as f64 / self.sample_rate() as f64
     }
 
     fn clear(&mut self) {
@@ -55,7 +55,7 @@ pub trait AudioBuffer {
     }
 
     fn fill_with_value(&mut self, value: f32) {
-        for channel in 0..self.num_channels() {
+        for channel in 0..self.channel_count() {
             self.fill_channel_with_value(channel, value);
         }
     }
@@ -131,8 +131,8 @@ pub trait AudioBuffer {
         FrameIterator {
             channel: 0,
             frame: 0,
-            num_channels: self.num_channels(),
-            num_frames: self.num_frames(),
+            channel_count: self.channel_count(),
+            frame_count: self.frame_count(),
         }
     }
 }
@@ -140,15 +140,15 @@ pub trait AudioBuffer {
 pub struct FrameIterator {
     channel: usize,
     frame: usize,
-    num_channels: usize,
-    num_frames: usize,
+    channel_count: usize,
+    frame_count: usize,
 }
 
 impl Iterator for FrameIterator {
     type Item = SampleLocation;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let location = if self.channel < self.num_channels && self.frame < self.num_frames {
+        let location = if self.channel < self.channel_count && self.frame < self.frame_count {
             Some(SampleLocation::new(self.channel, self.frame))
         } else {
             None
@@ -156,7 +156,7 @@ impl Iterator for FrameIterator {
 
         self.frame += 1;
 
-        if self.frame >= self.num_frames {
+        if self.frame >= self.frame_count {
             self.channel += 1;
             self.frame = 0;
         }
