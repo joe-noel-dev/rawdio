@@ -1,4 +1,4 @@
-use crate::OwnedAudioBuffer;
+use crate::{AudioBuffer, OwnedAudioBuffer};
 
 pub struct BufferPool {
     free_buffers: Vec<OwnedAudioBuffer>,
@@ -22,7 +22,8 @@ impl BufferPool {
         self.free_buffers.pop()
     }
 
-    pub fn add(&mut self, buffer: OwnedAudioBuffer) {
+    pub fn add(&mut self, mut buffer: OwnedAudioBuffer) {
+        buffer.clear();
         self.free_buffers.push(buffer);
     }
 }

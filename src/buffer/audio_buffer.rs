@@ -7,8 +7,8 @@ pub trait AudioBuffer {
         num_channels: usize,
         num_frames: usize,
     ) {
-        for frame in 0..num_frames {
-            for channel in 0..num_channels {
+        for frame in 0..num_frames.min(self.num_frames()) {
+            for channel in 0..num_channels.min(self.num_channels()) {
                 let offset = frame * num_channels + channel;
                 let sample_value = interleaved_data[offset];
                 let location = SampleLocation::new(channel, frame);
@@ -25,8 +25,8 @@ pub trait AudioBuffer {
     ) {
         assert!(num_channels * num_frames <= interleaved_data.len());
 
-        for frame in 0..num_frames {
-            for channel in 0..num_channels {
+        for frame in 0..num_frames.min(self.num_frames()) {
+            for channel in 0..num_channels.min(self.num_channels()) {
                 let location = SampleLocation::new(channel, frame);
                 let sample_value = self.get_sample(location);
                 let offset = frame * num_channels + channel;
@@ -58,6 +58,12 @@ pub trait AudioBuffer {
         for channel in 0..self.num_channels() {
             self.fill_channel_with_value(channel, value);
         }
+    }
+
+    fn channel_is_silent(&self, channel: usize) -> bool {
+        let location = SampleLocation::new(channel, 0);
+        let data = self.get_data(location);
+        data.iter().all(|sample| *sample == 0.0_f32)
     }
 
     fn get_data(&self, sample_location: SampleLocation) -> &[f32];
@@ -146,11 +152,11 @@ impl Iterator for FrameIterator {
             None
         };
 
-        self.channel += 1;
+        self.frame += 1;
 
-        if self.channel >= self.num_channels {
-            self.frame += 1;
-            self.channel = 0;
+        if self.frame >= self.num_frames {
+            self.channel += 1;
+            self.frame = 0;
         }
 
         location

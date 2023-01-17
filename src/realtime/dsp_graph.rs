@@ -181,7 +181,7 @@ fn mix_in_endpoint(
     mix_behaviour: MixBehaviour,
 ) {
     if let Some(buffer) = assigned_buffer_pool.remove(endpoint) {
-        let sample_location = SampleLocation::new(0, 0);
+        let sample_location = SampleLocation::origin();
 
         match mix_behaviour {
             MixBehaviour::Overwrite => output_buffer.copy_from(
@@ -405,8 +405,8 @@ mod tests {
         ) {
             output_buffer.add_from(
                 input_buffer,
-                SampleLocation::new(0, 0),
-                SampleLocation::new(0, 0),
+                SampleLocation::origin(),
+                SampleLocation::origin(),
                 output_buffer.num_channels(),
                 output_buffer.num_frames(),
             );
@@ -492,7 +492,7 @@ mod tests {
 
     #[test]
     fn doesnt_write_too_many_channels() {
-        let dsp = make_dsp(0.0, SampleLocation::new(0, 0));
+        let dsp = make_dsp(0.0, SampleLocation::origin());
         let dsp_id = dsp.get_id();
         let sample_rate = 44100;
         let maximum_number_of_channels = 2;
@@ -513,7 +513,7 @@ mod tests {
 
     #[test]
     fn doesnt_write_too_many_frames() {
-        let dsp = make_dsp(0.0, SampleLocation::new(0, 0));
+        let dsp = make_dsp(0.0, SampleLocation::origin());
         let dsp_id = dsp.get_id();
         let sample_rate = 44100;
         let maximum_number_of_frames = 512;

@@ -55,7 +55,7 @@ fn play_file(file_to_play: &str) {
 }
 
 fn read_file_into_buffer(file_path: &str) -> (OwnedAudioBuffer, usize) {
-    let mut reader = hound::WavReader::open(file_path).unwrap();
+    let mut reader = hound::WavReader::open(file_path).expect("Unable to open file for reading");
     let file_specification = reader.spec();
     let num_channels = file_specification.channels as usize;
     let sample_rate = file_specification.sample_rate as usize;
@@ -68,11 +68,11 @@ fn read_file_into_buffer(file_path: &str) -> (OwnedAudioBuffer, usize) {
 
     for (position, sample) in reader.samples::<i32>().enumerate() {
         if let Ok(sample) = sample {
-            for channel in 0..file_specification.channels {
-                let frame = position / num_channels;
-                let sample = (sample as f64 / max_value as f64) as f32;
-                output_buffer.set_sample(SampleLocation::new(channel as usize, frame), sample);
-            }
+            let frame = position / num_channels;
+            let channel = position % num_channels;
+            let sample_location = SampleLocation::new(channel as usize, frame);
+            let sample = (sample as f64 / max_value as f64) as f32;
+            output_buffer.set_sample(sample_location, sample);
         }
     }
 
