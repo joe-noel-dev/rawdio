@@ -21,12 +21,9 @@ impl Fixture {
         self.audio_process.process(&mut output_buffer);
         output_buffer
     }
-}
 
-impl Default for Fixture {
-    fn default() -> Self {
+    fn new(channel_count: usize) -> Self {
         let sample_rate = 44100;
-        let channel_count = 1;
         let oscillator_frequency = 1_000.0;
 
         let (mut context, process) = create_engine(sample_rate);
@@ -52,6 +49,13 @@ impl Default for Fixture {
             gain,
             _oscillator: oscillator,
         }
+    }
+}
+
+impl Default for Fixture {
+    fn default() -> Self {
+        let channel_count = 1;
+        Self::new(channel_count)
     }
 }
 
@@ -145,4 +149,16 @@ fn test_peak() {
     let max_value = output_samples.iter().fold(0.0_f32, |a, b| a.max(*b));
     let max_relative = Level::from_db(0.1).as_gain() as f32;
     assert_relative_eq!(max_value, gain as f32, max_relative = max_relative);
+}
+
+#[test]
+fn test_multichannel_gain() {
+    let channel_count = 2;
+    let mut fixture = Fixture::new(channel_count);
+
+    let output_buffer = fixture.process_seconds(1.0);
+
+    for channel in 0..channel_count {
+        assert!(!output_buffer.channel_is_silent(channel));
+    }
 }
