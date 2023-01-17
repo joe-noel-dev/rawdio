@@ -124,7 +124,7 @@ fn test_gain_envelope() {
     let output_buffer = fixture.process_seconds(2.0);
 
     let envelope = create_normalised_envelope(
-        output_buffer.get_data(SampleLocation::origin()),
+        output_buffer.get_channel_data(SampleLocation::origin()),
         fixture.sample_rate,
     );
 
@@ -144,7 +144,7 @@ fn test_peak() {
     fixture.gain.gain.set_value_at_time(gain, Timestamp::zero());
 
     let output_buffer = fixture.process_seconds(2.0);
-    let output_samples = output_buffer.get_data(SampleLocation::origin());
+    let output_samples = output_buffer.get_channel_data(SampleLocation::origin());
 
     let max_value = output_samples.iter().fold(0.0_f32, |a, b| a.max(*b));
     let max_relative = Level::from_db(0.1).as_gain() as f32;

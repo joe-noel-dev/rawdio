@@ -37,12 +37,12 @@ impl AudioBuffer for OwnedAudioBuffer {
         self.sample_rate
     }
 
-    fn get_data(&self, sample_location: SampleLocation) -> &[f32] {
+    fn get_channel_data(&self, sample_location: SampleLocation) -> &[f32] {
         let (start, end) = self.get_sample_location_bounds(&sample_location);
         &self.data[start..end]
     }
 
-    fn get_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32] {
+    fn get_channel_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32] {
         let (start, end) = self.get_sample_location_bounds(&sample_location);
         &mut self.data[start..end]
     }
@@ -69,7 +69,7 @@ mod tests {
 
     fn is_empty(buffer: &dyn AudioBuffer) -> bool {
         for channel in 0..buffer.num_channels() {
-            let data = buffer.get_data(SampleLocation::new(channel, 0));
+            let data = buffer.get_channel_data(SampleLocation::new(channel, 0));
             if !data.iter().all(|value| value.abs() < 1e-6) {
                 return false;
             }
