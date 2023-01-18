@@ -1,5 +1,7 @@
-pub(crate) mod command;
+mod command;
 mod id;
+mod parameter_change_request;
 
-pub(crate) type Id = id::Id;
-pub(crate) type Command = command::Command;
+pub type Id = id::Id;
+pub type Command = command::Command;
+pub type ParameterChangeRequest = parameter_change_request::ParameterChangeRequest;

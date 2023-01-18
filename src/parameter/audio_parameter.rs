@@ -1,5 +1,5 @@
 use crate::{
-    commands::{command::ParameterChangeRequest, Command, Id},
+    commands::{Command, Id, ParameterChangeRequest},
     timestamp::Timestamp,
     CommandQueue,
 };

@@ -2,7 +2,7 @@ use lockfree::channel::{spsc, spsc::Sender};
 
 use crate::{
     buffer::{BufferPool, MutableBorrowedAudioBuffer},
-    commands::{command::ParameterChangeRequest, Id},
+    commands::{Id, ParameterChangeRequest},
     graph::{AssignedBufferPool, Connection, Dsp, Endpoint, EndpointType},
     timestamp::Timestamp,
     AudioBuffer, BorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation,

@@ -1,7 +1,7 @@
 use std::sync::{atomic::AtomicI64, atomic::Ordering, Arc};
 
 use crate::{
-    audio_process::AudioProcess, commands::command::Command, timestamp::Timestamp, AudioBuffer,
+    audio_process::AudioProcess, commands::Command, timestamp::Timestamp, AudioBuffer,
     MutableBorrowedAudioBuffer,
 };
 use lockfree::channel::mpsc::Receiver;
