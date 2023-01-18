@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    commands::Id, dsp::Channel, BorrowedAudioBuffer, CommandQueue, Node, OwnedAudioBuffer,
-    Timestamp,
+    commands::Id, context::NotifierStatus, dsp::Channel, BorrowedAudioBuffer, Context, Node,
+    OwnedAudioBuffer, Timestamp,
 };
 
 use super::{
@@ -20,7 +20,11 @@ pub struct RecorderNode {
 }
 
 impl RecorderNode {
-    pub fn new(command_queue: CommandQueue, channel_count: usize, sample_rate: usize) -> Self {
+    pub fn new(
+        context: &mut dyn Context,
+        channel_count: usize,
+        sample_rate: usize,
+    ) -> Rc<RefCell<Self>> {
         let id = Id::generate();
 
         let parameters = HashMap::new();
@@ -39,20 +43,33 @@ impl RecorderNode {
 
         let node = Node::new(
             id,
-            command_queue,
+            context.get_command_queue(),
             channel_count,
             output_count,
             processor,
             parameters,
         );
 
-        Self {
+        let recorder = Rc::new(RefCell::new(Self {
             node,
             event_transmitter,
             notification_receiver,
             current_recording: None,
             is_recording: false,
-        }
+        }));
+
+        let weak_recorder = Rc::downgrade(&recorder);
+
+        context.add_notifier(Box::new(move || {
+            if let Some(recorder) = weak_recorder.upgrade() {
+                recorder.borrow_mut().process_notifications();
+                return NotifierStatus::Continue;
+            }
+
+            NotifierStatus::Remove
+        }));
+
+        recorder
     }
 
     pub fn record_now(&mut self) {
@@ -67,19 +84,6 @@ impl RecorderNode {
         let _ = self
             .event_transmitter
             .send(RecorderEvent::stop_at_time(time));
-    }
-
-    pub fn process_notifications(&mut self) {
-        while let Ok(event) = self.notification_receiver.recv() {
-            match event {
-                RecorderNotification::Start => self.is_recording = true,
-                RecorderNotification::Data(buffer, samples_used) => {
-                    self.append_buffer(&buffer, samples_used);
-                    self.return_buffer(buffer);
-                }
-                RecorderNotification::Stop => self.is_recording = false,
-            }
-        }
     }
 
     pub fn is_recording(&self) -> bool {
@@ -102,5 +106,18 @@ impl RecorderNode {
         let _ = self
             .event_transmitter
             .send(RecorderEvent::return_buffer(buffer));
+    }
+
+    fn process_notifications(&mut self) {
+        while let Ok(event) = self.notification_receiver.recv() {
+            match event {
+                RecorderNotification::Start => self.is_recording = true,
+                RecorderNotification::Data(buffer, samples_used) => {
+                    self.append_buffer(&buffer, samples_used);
+                    self.return_buffer(buffer);
+                }
+                RecorderNotification::Stop => self.is_recording = false,
+            }
+        }
     }
 }

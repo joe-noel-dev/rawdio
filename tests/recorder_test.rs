@@ -32,16 +32,18 @@ fn record_sampler(
     let (mut context, mut process) = create_engine(sample_rate);
 
     let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, buffer.clone());
-    let mut recorder = Recorder::new(context.get_command_queue(), channel_count, sample_rate);
+    let recorder = Recorder::new(context.as_mut(), channel_count, sample_rate);
 
-    sampler.node.connect_to(&recorder.node);
+    sampler.node.connect_to(&recorder.borrow_mut().node);
 
     sampler.start_now();
-    recorder.record_now();
-    recorder.stop_record_at_time(Timestamp::from_samples(
-        (buffer.frame_count() + 1) as f64,
-        sample_rate,
-    ));
+    recorder.borrow_mut().record_now();
+    recorder
+        .borrow_mut()
+        .stop_record_at_time(Timestamp::from_samples(
+            (buffer.frame_count() + 1) as f64,
+            sample_rate,
+        ));
 
     let mut output_buffer =
         OwnedAudioBuffer::new(2 * buffer.frame_count(), channel_count, sample_rate);
@@ -50,15 +52,17 @@ fn record_sampler(
     process.process(&mut output_buffer);
     sampler.stop_now();
 
-    // FIXME: Who's responsible for calling this?
-    recorder.process_notifications();
+    context.process_notifications();
 
     context.stop();
 
-    recorder
+    let recording = recorder
+        .borrow_mut()
         .get_recording()
         .expect("No recording was made")
-        .clone()
+        .clone();
+
+    recording
 }
 
 fn has_identical_data(buffer_1: &dyn AudioBuffer, buffer_2: &dyn AudioBuffer) -> bool {
