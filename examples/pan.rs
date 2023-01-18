@@ -2,7 +2,7 @@ use std::{thread, time};
 
 use rawdio::{create_engine, Context, Level, Oscillator, Pan, Timestamp};
 
-use crate::audio_callback::AudioCallback;
+use audio_callback::AudioCallback;
 
 #[path = "./lib/audio_callback.rs"]
 mod audio_callback;
