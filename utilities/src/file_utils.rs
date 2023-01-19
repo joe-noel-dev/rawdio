@@ -2,7 +2,32 @@ use rawdio::{
     AudioBuffer, AudioProcess, MutableBorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation,
 };
 
-pub fn render_buffer_to_file(buffer: &dyn AudioBuffer, output_file: &str) {
+pub fn read_file_into_buffer(file_path: &str) -> (OwnedAudioBuffer, usize) {
+    let mut reader = hound::WavReader::open(file_path).expect("Unable to open file for reading");
+    let file_specification = reader.spec();
+    let num_channels = file_specification.channels as usize;
+    let sample_rate = file_specification.sample_rate as usize;
+    let num_samples = reader.len() as usize;
+    let num_frames = num_samples / num_channels;
+
+    let mut output_buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+
+    let max_value = 2_i32.pow(file_specification.bits_per_sample as u32 - 1) - 1;
+
+    for (position, sample) in reader.samples::<i32>().enumerate() {
+        if let Ok(sample) = sample {
+            let frame = position / num_channels;
+            let channel = position % num_channels;
+            let sample_location = SampleLocation::new(channel as usize, frame);
+            let sample = (sample as f64 / max_value as f64) as f32;
+            output_buffer.set_sample(sample_location, sample);
+        }
+    }
+
+    (output_buffer, sample_rate)
+}
+
+pub fn write_buffer_into_file(buffer: OwnedAudioBuffer, output_file: &str) {
     let bits_per_sample = 24;
     let max_value = 2_i32.pow(bits_per_sample - 1) - 1;
 
@@ -27,7 +52,7 @@ pub fn render_buffer_to_file(buffer: &dyn AudioBuffer, output_file: &str) {
 pub fn render_audio_process_to_file(
     sample_rate: usize,
     output_file: &str,
-    audio_process: &mut dyn AudioProcess,
+    mut audio_process: Box<dyn AudioProcess>,
 ) {
     let bits_per_sample = 24;
     let max_value = 2_i32.pow(bits_per_sample - 1) - 1;
@@ -48,7 +73,7 @@ pub fn render_audio_process_to_file(
             frames_this_time,
             position,
             &mut audio_buffer,
-            audio_process,
+            audio_process.as_mut(),
             max_value,
             &mut writer,
         );

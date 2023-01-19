@@ -1,5 +1,5 @@
 use crate::{
-    commands::{Command, Id, ParameterChangeRequest},
+    commands::{CancelChangeRequest, Command, Id, ParameterChangeRequest},
     timestamp::Timestamp,
     CommandQueue,
 };
@@ -95,6 +95,26 @@ impl AudioParameter {
                     end_time,
                     method: ValueChangeMethod::Exponential,
                 },
+            }));
+    }
+
+    pub fn cancel_scheduled_changes(&mut self) {
+        let _ = self
+            .command_queue
+            .send(Command::CancelParamaterChanges(CancelChangeRequest {
+                dsp_id: self.dsp_id,
+                parameter_id: self.parameter_id,
+                end_time: None,
+            }));
+    }
+
+    pub fn cancel_scheduled_changes_ending_after(&mut self, end_time: Timestamp) {
+        let _ = self
+            .command_queue
+            .send(Command::CancelParamaterChanges(CancelChangeRequest {
+                dsp_id: self.dsp_id,
+                parameter_id: self.parameter_id,
+                end_time: Some(end_time),
             }));
     }
 }
@@ -259,6 +279,30 @@ mod tests {
             };
 
             assert_relative_eq!(*value, expected, epsilon = 1e-3);
+        }
+    }
+
+    #[test]
+    fn cancel_scheduled_changes() {
+        let mut fixture = Fixture::new(2.0);
+
+        fixture
+            .realtime_parameter
+            .add_parameter_change(ParameterChange {
+                value: 5.0,
+                end_time: Timestamp::from_seconds(1.0),
+                method: ValueChangeMethod::Immediate,
+            });
+
+        fixture.realtime_parameter.cancel_scheduled_changes();
+
+        let start_time = Timestamp::zero();
+        let end_time = Timestamp::from_seconds(2.0);
+        let sample_rate = 48_000;
+        let values = fixture.get_parameter_values(start_time, end_time, sample_rate);
+
+        for value in values {
+            assert_relative_eq!(value, 2.0);
         }
     }
 }

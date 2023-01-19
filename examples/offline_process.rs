@@ -1,14 +1,13 @@
-use file_utils::render_audio_process_to_file;
+extern crate utilities;
+
 use rawdio::{create_engine, Context, Gain, Oscillator, Pan, Timestamp};
 use structopt::StructOpt;
+use utilities::render_audio_process_to_file;
 
 #[derive(Debug, StructOpt)]
 struct Options {
     output_file: String,
 }
-
-#[path = "./lib/file_utils.rs"]
-mod file_utils;
 
 fn main() {
     let options = Options::from_args();
@@ -17,7 +16,7 @@ fn main() {
 
 fn render_file(output_file: &str) {
     let sample_rate = 44100;
-    let (mut context, mut audio_process) = create_engine(sample_rate);
+    let (mut context, audio_process) = create_engine(sample_rate);
 
     let mut oscillators = create_oscillators(context.as_ref());
     let mut gain = create_gain(context.as_ref());
@@ -27,7 +26,7 @@ fn render_file(output_file: &str) {
 
     context.start();
 
-    render_audio_process_to_file(sample_rate, output_file, audio_process.as_mut());
+    render_audio_process_to_file(sample_rate, output_file, audio_process);
     context.stop();
 }
 

@@ -2,7 +2,7 @@ use lockfree::channel::{spsc, spsc::Sender};
 
 use crate::{
     buffer::{BufferPool, MutableBorrowedAudioBuffer},
-    commands::{Id, ParameterChangeRequest},
+    commands::{CancelChangeRequest, Id, ParameterChangeRequest},
     graph::{AssignedBufferPool, Connection, Dsp, Endpoint, EndpointType},
     timestamp::Timestamp,
     AudioBuffer, BorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation,
@@ -121,6 +121,12 @@ impl DspGraph {
     pub fn request_parameter_change(&mut self, change_request: ParameterChangeRequest) {
         if let Some(dsp) = self.graph.get_node_mut(change_request.dsp_id) {
             dsp.request_parameter_change(change_request);
+        }
+    }
+
+    pub fn cancel_parameter_changes(&mut self, change_request: CancelChangeRequest) {
+        if let Some(dsp) = self.graph.get_node_mut(change_request.dsp_id) {
+            dsp.cancel_parameter_changes(change_request);
         }
     }
 

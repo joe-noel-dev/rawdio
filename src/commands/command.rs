@@ -1,6 +1,6 @@
 use crate::graph::{Connection, Dsp, Endpoint};
 
-use super::{id::Id, ParameterChangeRequest};
+use super::{id::Id, parameter_change_request::CancelChangeRequest, ParameterChangeRequest};
 
 pub enum Command {
     Start,
@@ -9,6 +9,7 @@ pub enum Command {
     AddDsp(Box<Dsp>),
     RemoveDsp(Id),
 
+    CancelParamaterChanges(CancelChangeRequest),
     ParameterValueChange(ParameterChangeRequest),
 
     AddConnection(Connection),

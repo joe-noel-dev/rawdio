@@ -130,6 +130,15 @@ impl RealtimeAudioParameter {
         self.parameter_changes
             .sort_by(|a, b| a.end_time.partial_cmp(&b.end_time).unwrap());
     }
+
+    pub fn cancel_scheduled_changes_ending_after(&mut self, time: &Timestamp) {
+        self.parameter_changes
+            .retain(|change| change.end_time >= *time);
+    }
+
+    pub fn cancel_scheduled_changes(&mut self) {
+        self.parameter_changes.clear();
+    }
 }
 
 #[cfg(test)]

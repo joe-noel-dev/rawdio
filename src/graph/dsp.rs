@@ -1,5 +1,5 @@
 use crate::{
-    commands::{Command, Id, ParameterChangeRequest},
+    commands::{CancelChangeRequest, Command, Id, ParameterChangeRequest},
     timestamp::Timestamp,
     AudioBuffer, CommandQueue,
 };
@@ -85,6 +85,16 @@ impl Dsp {
     pub fn request_parameter_change(&mut self, parameter_change: ParameterChangeRequest) {
         if let Some(parameter) = self.parameters.get_mut(&parameter_change.parameter_id) {
             parameter.add_parameter_change(parameter_change.change)
+        }
+    }
+
+    pub fn cancel_parameter_changes(&mut self, change_request: CancelChangeRequest) {
+        if let Some(parameter) = self.parameters.get_mut(&change_request.parameter_id) {
+            if let Some(end_time) = change_request.end_time {
+                parameter.cancel_scheduled_changes_ending_after(&end_time);
+            } else {
+                parameter.cancel_scheduled_changes();
+            }
         }
     }
 }

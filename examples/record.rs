@@ -1,15 +1,10 @@
 use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 
-use audio_callback::AudioCallback;
-use file_utils::render_buffer_to_file;
-use rawdio::{create_engine, Context, Gain, Level, Mixer, Oscillator, Recorder, Timestamp};
+use rawdio::{
+    create_engine, Context, Gain, Level, Mixer, Oscillator, OwnedAudioBuffer, Recorder, Timestamp,
+};
 use structopt::StructOpt;
-
-#[path = "./lib/audio_callback.rs"]
-mod audio_callback;
-
-#[path = "./lib/file_utils.rs"]
-mod file_utils;
+use utilities::{write_buffer_into_file, AudioCallback};
 
 #[derive(Debug, StructOpt)]
 struct Options {
@@ -42,8 +37,9 @@ fn main() {
 
     {
         let mut recorder = recorder.borrow_mut();
-        let recording = recorder.get_recording().expect("No recording was made");
-        render_buffer_to_file(recording, output_file);
+        let recording =
+            OwnedAudioBuffer::from_buffer(recorder.get_recording().expect("No recording was made"));
+        write_buffer_into_file(recording, output_file);
     }
 }
 

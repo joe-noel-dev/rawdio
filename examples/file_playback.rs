@@ -1,14 +1,9 @@
 use std::{thread, time};
 
-use rawdio::{
-    create_engine, AudioBuffer, Gain, Level, OwnedAudioBuffer, SampleLocation, Sampler, Timestamp,
-};
+use rawdio::{create_engine, AudioBuffer, Gain, Level, Sampler, Timestamp};
 use structopt::StructOpt;
 
-use audio_callback::AudioCallback;
-
-#[path = "./lib/audio_callback.rs"]
-mod audio_callback;
+use utilities::{read_file_into_buffer, AudioCallback};
 
 #[derive(Debug, StructOpt)]
 struct Options {
@@ -52,29 +47,4 @@ fn play_file(file_to_play: &str) {
     context.stop();
 
     thread::sleep(time::Duration::from_secs(1));
-}
-
-fn read_file_into_buffer(file_path: &str) -> (OwnedAudioBuffer, usize) {
-    let mut reader = hound::WavReader::open(file_path).expect("Unable to open file for reading");
-    let file_specification = reader.spec();
-    let num_channels = file_specification.channels as usize;
-    let sample_rate = file_specification.sample_rate as usize;
-    let num_samples = reader.len() as usize;
-    let num_frames = num_samples / num_channels;
-
-    let mut output_buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
-
-    let max_value = 2_i32.pow(file_specification.bits_per_sample as u32 - 1) - 1;
-
-    for (position, sample) in reader.samples::<i32>().enumerate() {
-        if let Ok(sample) = sample {
-            let frame = position / num_channels;
-            let channel = position % num_channels;
-            let sample_location = SampleLocation::new(channel as usize, frame);
-            let sample = (sample as f64 / max_value as f64) as f32;
-            output_buffer.set_sample(sample_location, sample);
-        }
-    }
-
-    (output_buffer, sample_rate)
 }
