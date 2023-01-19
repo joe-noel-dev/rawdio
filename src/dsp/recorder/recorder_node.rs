@@ -90,8 +90,8 @@ impl RecorderNode {
         self.is_recording
     }
 
-    pub fn get_recording(&mut self) -> Option<&OwnedAudioBuffer> {
-        self.current_recording.as_ref()
+    pub fn take_recording(&mut self) -> Option<OwnedAudioBuffer> {
+        self.current_recording.take()
     }
 
     fn append_buffer(&mut self, buffer: &OwnedAudioBuffer, samples_used: usize) {

@@ -1,8 +1,6 @@
 use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 
-use rawdio::{
-    create_engine, Context, Gain, Level, Mixer, Oscillator, OwnedAudioBuffer, Recorder, Timestamp,
-};
+use rawdio::{create_engine, Context, Gain, Level, Mixer, Oscillator, Recorder, Timestamp};
 use structopt::StructOpt;
 use utilities::{write_buffer_into_file, AudioCallback};
 
@@ -37,8 +35,7 @@ fn main() {
 
     {
         let mut recorder = recorder.borrow_mut();
-        let recording =
-            OwnedAudioBuffer::from_buffer(recorder.get_recording().expect("No recording was made"));
+        let recording = recorder.take_recording().expect("No recording was made");
         write_buffer_into_file(recording, output_file);
     }
 }
