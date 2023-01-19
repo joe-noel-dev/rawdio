@@ -40,6 +40,17 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "recorder_test",
+      "cargo": {
+        "args": ["test", "--no-run", "--test=recorder_test"]
+      },
+      "sourceLanguages": ["rust"],
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "oscillator: Debug",
       "cargo": {
         "args": ["build", "--example=oscillator", "--package=rawdio"],
@@ -54,9 +65,9 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "file_render: debug",
+      "name": "offline_process: debug",
       "cargo": {
-        "args": ["build", "--example=file_render", "--package=rawdio"],
+        "args": ["build", "--example=offline_process", "--package=rawdio"],
         "filter": {
           "name": "file_render",
           "kind": "example"

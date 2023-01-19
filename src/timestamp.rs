@@ -1,4 +1,4 @@
-use std::ops::Sub;
+use std::{ops::Sub, time::Duration};
 
 type FixedPoint = fixed::types::I32F32;
 
@@ -66,6 +66,10 @@ impl Timestamp {
         Self {
             seconds: FixedPoint::from_num(samples / sample_rate as f64),
         }
+    }
+
+    pub fn from_duration(duration: Duration) -> Self {
+        Self::from_seconds(duration.as_secs_f64())
     }
 
     pub fn as_seconds(&self) -> f64 {

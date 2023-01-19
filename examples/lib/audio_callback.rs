@@ -2,7 +2,7 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Host, SampleFormat, Stream,
 };
-use rawdio::{AudioBuffer, AudioProcess, BorrowedAudioBuffer, OwnedAudioBuffer};
+use rawdio::{AudioBuffer, AudioProcess, MutableBorrowedAudioBuffer, OwnedAudioBuffer};
 
 pub struct AudioCallback {
     _output_stream: Stream,
@@ -64,7 +64,7 @@ impl AudioCallback {
                 move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
                     let num_frames = data.len() / config.channels() as usize;
                     let mut slice =
-                        BorrowedAudioBuffer::slice_frames(&mut audio_buffer, 0, num_frames);
+                        MutableBorrowedAudioBuffer::slice_frames(&mut audio_buffer, 0, num_frames);
 
                     slice.clear();
 

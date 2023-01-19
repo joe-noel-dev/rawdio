@@ -1,7 +1,8 @@
 use std::sync::{atomic::AtomicI64, Arc};
 
 use crate::{
-    audio_process::AudioProcess, realtime::Processor, Command, CommandQueue, Context, Timestamp,
+    audio_process::AudioProcess, context::NotifierStatus, realtime::Processor, Command,
+    CommandQueue, Context, Timestamp,
 };
 
 use lockfree::channel::mpsc;
@@ -10,6 +11,7 @@ pub struct Engine {
     sample_rate: usize,
     timestamp: Arc<AtomicI64>,
     command_tx: CommandQueue,
+    notifiers: Vec<Box<dyn Fn() -> NotifierStatus>>,
 }
 
 impl Context for Engine {
@@ -32,6 +34,15 @@ impl Context for Engine {
     fn get_command_queue(&self) -> CommandQueue {
         self.command_tx.clone()
     }
+
+    fn add_notifier(&mut self, notifier: Box<dyn Fn() -> NotifierStatus>) {
+        self.notifiers.push(notifier);
+    }
+
+    fn process_notifications(&mut self) {
+        self.notifiers
+            .retain(|notifier| (notifier)() == NotifierStatus::Continue);
+    }
 }
 
 pub fn create_engine(sample_rate: usize) -> (Box<dyn Context>, Box<dyn AudioProcess + Send>) {
@@ -47,6 +58,7 @@ pub fn create_engine(sample_rate: usize) -> (Box<dyn Context>, Box<dyn AudioProc
         sample_rate,
         timestamp,
         command_tx,
+        notifiers: Vec::new(),
     });
 
     (engine, processor)

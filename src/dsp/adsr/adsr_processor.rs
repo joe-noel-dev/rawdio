@@ -2,12 +2,15 @@ use super::{
     adsr_envelope::AdsrEnvelope,
     adsr_event::{AdsrEvent, AdsrEventType},
 };
-use crate::{dsp::Channel, graph::DspProcessor, Level, SampleLocation, Timestamp};
+use crate::{
+    dsp::{utility::EventProcessor, Channel},
+    graph::DspProcessor,
+    Level, SampleLocation,
+};
 use std::time::Duration;
 
 pub struct AdsrProcessor {
-    event_receiver: Channel::Receiver<AdsrEvent>,
-    pending_events: Vec<AdsrEvent>,
+    event_processor: EventProcessor<AdsrEvent>,
     envelope: AdsrEnvelope,
 }
 
@@ -16,8 +19,12 @@ const MAX_PENDING_EVENTS: usize = 64;
 impl AdsrProcessor {
     pub fn new(event_receiver: Channel::Receiver<AdsrEvent>, sample_rate: usize) -> Self {
         Self {
-            event_receiver,
-            pending_events: Vec::with_capacity(MAX_PENDING_EVENTS),
+            event_processor: EventProcessor::with_capacity(
+                MAX_PENDING_EVENTS,
+                event_receiver,
+                sample_rate,
+                |event| event.time,
+            ),
             envelope: AdsrEnvelope::new(
                 sample_rate,
                 Duration::ZERO,
@@ -25,20 +32,6 @@ impl AdsrProcessor {
                 Level::from_db(0.0),
                 Duration::ZERO,
             ),
-        }
-    }
-
-    fn read_events(&mut self) {
-        let mut sort_required = false;
-
-        while let Ok(event) = self.event_receiver.recv() {
-            self.pending_events.push(event);
-            sort_required = true;
-        }
-
-        if sort_required {
-            self.pending_events
-                .sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap())
         }
     }
 
@@ -54,22 +47,6 @@ impl AdsrProcessor {
             AdsrEventType::SetRelease(release_time) => self.envelope.set_release_time(release_time),
         }
     }
-
-    fn process_events(&mut self, time: Timestamp) {
-        while let Some(event) = self.next_event_before(time) {
-            self.process_event(event);
-        }
-    }
-
-    fn next_event_before(&mut self, time: Timestamp) -> Option<AdsrEvent> {
-        if let Some(next_event) = self.pending_events.first() {
-            if next_event.time <= time {
-                return Some(self.pending_events.remove(0));
-            }
-        }
-
-        None
-    }
 }
 
 impl DspProcessor for AdsrProcessor {
@@ -80,20 +57,38 @@ impl DspProcessor for AdsrProcessor {
         start_time: &crate::timestamp::Timestamp,
         _parameters: &crate::graph::DspParameters,
     ) {
-        self.read_events();
+        self.event_processor.process_events();
 
-        for frame in 0..output_buffer.frame_count() {
-            self.process_events(
-                start_time.incremented_by_samples(frame, output_buffer.sample_rate()),
+        let mut current_time = *start_time;
+        let mut position = 0;
+
+        while position < output_buffer.frame_count() {
+            let (end_frame, event) = self.event_processor.next_event(
+                start_time,
+                &current_time,
+                output_buffer.frame_count(),
             );
 
-            let envelope = self.envelope.process();
+            let frame_count = end_frame - position;
 
-            for channel in 0..output_buffer.channel_count() {
-                let location = SampleLocation::new(channel, frame);
-                let sample = input_buffer.get_sample(location);
-                let sample = sample * envelope as f32;
-                output_buffer.set_sample(location, sample);
+            for frame in 0..frame_count {
+                let envelope = self.envelope.process();
+
+                for channel in 0..output_buffer.channel_count() {
+                    let location = SampleLocation::new(channel, frame);
+                    let sample = input_buffer.get_sample(location);
+                    let sample = sample * envelope as f32;
+                    output_buffer.set_sample(location, sample);
+                }
+            }
+
+            current_time =
+                current_time.incremented_by_samples(frame_count, output_buffer.sample_rate());
+
+            position += frame_count;
+
+            if let Some(event) = event {
+                self.process_event(event);
             }
         }
     }

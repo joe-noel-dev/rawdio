@@ -13,16 +13,18 @@ mod utility;
 pub type Adsr = dsp::Adsr;
 pub type AudioParameter = parameter::AudioParameter;
 pub type BorrowedAudioBuffer<'a> = buffer::BorrowedAudioBuffer<'a>;
+pub type MutableBorrowedAudioBuffer<'a> = buffer::MutableBorrowedAudioBuffer<'a>;
 pub type Command = commands::Command;
 pub type Gain = dsp::Gain;
 pub type Level = utility::Level;
+pub type Mixer = dsp::Mixer;
 pub type Oscillator = dsp::Oscillator;
 pub type OwnedAudioBuffer = buffer::OwnedAudioBuffer;
 pub type Pan = dsp::Pan;
+pub type Recorder = dsp::Recorder;
 pub type SampleLocation = buffer::SampleLocation;
 pub type Sampler = dsp::Sampler;
 pub type Timestamp = timestamp::Timestamp;
-pub type Mixer = dsp::Mixer;
 
 pub type CommandQueue = lockfree::channel::mpsc::Sender<Command>;
 

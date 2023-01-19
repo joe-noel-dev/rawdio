@@ -1,5 +1,6 @@
 use crate::{AudioBuffer, SampleLocation};
 
+#[derive(Clone)]
 pub struct OwnedAudioBuffer {
     data: Vec<f32>,
     channel_count: usize,
@@ -15,6 +16,53 @@ impl OwnedAudioBuffer {
             frame_count,
             sample_rate,
         }
+    }
+
+    pub fn from_buffer(buffer: &dyn AudioBuffer) -> Self {
+        let mut new_buffer = Self::new(
+            buffer.frame_count(),
+            buffer.channel_count(),
+            buffer.sample_rate(),
+        );
+
+        new_buffer.copy_from(
+            buffer,
+            SampleLocation::origin(),
+            SampleLocation::origin(),
+            buffer.channel_count(),
+            buffer.frame_count(),
+        );
+
+        new_buffer
+    }
+
+    pub fn extended_with_buffer(&self, buffer: &dyn AudioBuffer) -> Self {
+        assert_eq!(buffer.channel_count(), self.channel_count());
+        assert_eq!(buffer.sample_rate(), self.sample_rate());
+
+        let mut new_buffer = Self::new(
+            self.frame_count() + buffer.frame_count(),
+            self.channel_count(),
+            self.sample_rate(),
+        );
+
+        new_buffer.copy_from(
+            self,
+            SampleLocation::origin(),
+            SampleLocation::origin(),
+            self.channel_count(),
+            self.frame_count(),
+        );
+
+        new_buffer.copy_from(
+            buffer,
+            SampleLocation::origin(),
+            SampleLocation::frame(self.frame_count()),
+            buffer.channel_count(),
+            buffer.frame_count(),
+        );
+
+        new_buffer
     }
 
     fn get_sample_location_bounds(&self, sample_location: &SampleLocation) -> (usize, usize) {

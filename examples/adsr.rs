@@ -5,7 +5,7 @@ use std::{
 
 use rawdio::{create_engine, Adsr, Context, Gain, Level, Mixer, Oscillator, Timestamp};
 
-use crate::audio_callback::AudioCallback;
+use audio_callback::AudioCallback;
 
 #[path = "./lib/audio_callback.rs"]
 mod audio_callback;

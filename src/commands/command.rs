@@ -1,15 +1,6 @@
-use crate::{
-    graph::{Connection, Dsp, Endpoint},
-    parameter::ParameterChange,
-};
+use crate::graph::{Connection, Dsp, Endpoint};
 
-use super::id::Id;
-
-pub struct ParameterChangeRequest {
-    pub dsp_id: Id,
-    pub parameter_id: Id,
-    pub change: ParameterChange,
-}
+use super::{id::Id, ParameterChangeRequest};
 
 pub enum Command {
     Start,
