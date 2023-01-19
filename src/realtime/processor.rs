@@ -93,6 +93,9 @@ impl Processor {
                 Command::ParameterValueChange(change_request) => {
                     self.graph.request_parameter_change(change_request)
                 }
+                Command::CancelParamaterChanges(change_request) => {
+                    self.graph.cancel_parameter_changes(change_request)
+                }
 
                 Command::AddConnection(connection) => self.graph.add_connection(connection),
                 Command::RemoveConnection(connection) => self.graph.remove_connection(connection),

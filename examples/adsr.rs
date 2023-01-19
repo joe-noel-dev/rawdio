@@ -5,10 +5,7 @@ use std::{
 
 use rawdio::{create_engine, Adsr, Context, Gain, Level, Mixer, Oscillator, Timestamp};
 
-use audio_callback::AudioCallback;
-
-#[path = "./lib/audio_callback.rs"]
-mod audio_callback;
+use utilities::AudioCallback;
 
 fn main() {
     let sample_rate = 44100;

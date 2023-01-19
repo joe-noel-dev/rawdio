@@ -1,0 +1,9 @@
+[package]
+name = "utilities"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+cpal = "0.14.1"
+hound = "3.4.0" 
+rawdio = { path = ".." }
