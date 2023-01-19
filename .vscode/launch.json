@@ -65,9 +65,9 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "file_render: debug",
+      "name": "offline_process: debug",
       "cargo": {
-        "args": ["build", "--example=file_render", "--package=rawdio"],
+        "args": ["build", "--example=offline_process", "--package=rawdio"],
         "filter": {
           "name": "file_render",
           "kind": "example"
