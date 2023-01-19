@@ -58,9 +58,8 @@ fn record_sampler(
 
     let recording = recorder
         .borrow_mut()
-        .get_recording()
-        .expect("No recording was made")
-        .clone();
+        .take_recording()
+        .expect("No recording was made");
 
     recording
 }
