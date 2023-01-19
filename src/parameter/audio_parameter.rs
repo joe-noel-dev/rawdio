@@ -105,45 +105,62 @@ mod tests {
 
     use super::*;
 
-    fn get_parameter_values(
-        parameter: &mut RealtimeAudioParameter,
-        start_time: Timestamp,
-        end_time: Timestamp,
-        sample_rate: usize,
-    ) -> Vec<f64> {
-        let mut values = Vec::new();
+    struct Fixture {
+        realtime_parameter: RealtimeAudioParameter,
+    }
 
-        let start_sample = start_time.as_samples(sample_rate).ceil() as usize;
-        let end_sample = end_time.as_samples(sample_rate).ceil() as usize;
-        let frame_size = 512;
+    impl Fixture {
+        fn new(initial_value: f64) -> Self {
+            let id = Id::generate();
+            let value = ParameterValue::new(AtomicF64::new(initial_value));
+            let realtime_parameter = RealtimeAudioParameter::new(id, value);
 
-        for frame in (start_sample..end_sample).step_by(frame_size) {
-            let frame_end_sample = (frame + frame_size).min(end_sample);
-            let current_time = start_time.incremented_by_samples(frame, sample_rate);
-
-            parameter.process(&current_time, frame_end_sample - frame, sample_rate);
-
-            values.extend_from_slice(parameter.get_values());
+            Self { realtime_parameter }
         }
 
-        values
+        fn get_parameter_values(
+            &mut self,
+            start_time: Timestamp,
+            end_time: Timestamp,
+            sample_rate: usize,
+        ) -> Vec<f64> {
+            let mut values = Vec::new();
+
+            let start_sample = start_time.as_samples(sample_rate).ceil() as usize;
+            let end_sample = end_time.as_samples(sample_rate).ceil() as usize;
+            let frame_size = 512;
+
+            for frame in (start_sample..end_sample).step_by(frame_size) {
+                let frame_end_sample = (frame + frame_size).min(end_sample);
+                let current_time = start_time.incremented_by_samples(frame, sample_rate);
+
+                self.realtime_parameter.process(
+                    &current_time,
+                    frame_end_sample - frame,
+                    sample_rate,
+                );
+
+                values.extend_from_slice(self.realtime_parameter.get_values());
+            }
+
+            values
+        }
     }
 
     #[test]
     fn immediate_change() {
-        let value = ParameterValue::new(AtomicF64::new(6.0));
-        let parameter_id = Id::generate();
-        let mut realtime_parameter = RealtimeAudioParameter::new(parameter_id, value);
+        let mut fixture = Fixture::new(6.0);
 
-        realtime_parameter.add_parameter_change(ParameterChange {
-            value: 7.0,
-            end_time: Timestamp::from_seconds(1.0),
-            method: ValueChangeMethod::Immediate,
-        });
+        fixture
+            .realtime_parameter
+            .add_parameter_change(ParameterChange {
+                value: 7.0,
+                end_time: Timestamp::from_seconds(1.0),
+                method: ValueChangeMethod::Immediate,
+            });
 
         let sample_rate = 44_100;
-        let values = get_parameter_values(
-            &mut realtime_parameter,
+        let values = fixture.get_parameter_values(
             Timestamp::zero(),
             Timestamp::from_seconds(2.0),
             sample_rate,
@@ -164,19 +181,19 @@ mod tests {
 
     #[test]
     fn linear_ramp() {
-        let value = ParameterValue::new(AtomicF64::new(5.0));
-        let parameter_id = Id::generate();
-        let mut realtime_parameter = RealtimeAudioParameter::new(parameter_id, value);
+        let mut fixture = Fixture::new(5.0);
+
         let end_time = Timestamp::from_seconds(5.0);
-        realtime_parameter.add_parameter_change(ParameterChange {
-            value: 10.0,
-            end_time,
-            method: ValueChangeMethod::Linear,
-        });
+        fixture
+            .realtime_parameter
+            .add_parameter_change(ParameterChange {
+                value: 10.0,
+                end_time,
+                method: ValueChangeMethod::Linear,
+            });
 
         let sample_rate = 44_100;
-        let values = get_parameter_values(
-            &mut realtime_parameter,
+        let values = fixture.get_parameter_values(
             Timestamp::zero(),
             Timestamp::from_seconds(20.0),
             sample_rate,
@@ -197,50 +214,30 @@ mod tests {
 
     #[test]
     fn multiple_ramps() {
-        let value = ParameterValue::new(AtomicF64::new(0.0));
-        let parameter_id = Id::generate();
-        let mut realtime_parameter = RealtimeAudioParameter::new(parameter_id, value);
+        let mut fixture = Fixture::new(0.0);
 
-        realtime_parameter.add_parameter_change(ParameterChange {
-            value: 0.0,
-            end_time: Timestamp::zero(),
-            method: ValueChangeMethod::Immediate,
-        });
+        let changes = [
+            (0.0, Timestamp::zero(), ValueChangeMethod::Immediate),
+            (1.0, Timestamp::from_seconds(1.0), ValueChangeMethod::Linear),
+            (0.0, Timestamp::from_seconds(2.0), ValueChangeMethod::Linear),
+            (1.0, Timestamp::from_seconds(3.0), ValueChangeMethod::Linear),
+            (0.0, Timestamp::from_seconds(4.0), ValueChangeMethod::Linear),
+            (1.0, Timestamp::from_seconds(5.0), ValueChangeMethod::Linear),
+        ];
 
-        realtime_parameter.add_parameter_change(ParameterChange {
-            value: 1.0,
-            end_time: Timestamp::from_seconds(1.0),
-            method: ValueChangeMethod::Linear,
-        });
-
-        realtime_parameter.add_parameter_change(ParameterChange {
-            value: 0.0,
-            end_time: Timestamp::from_seconds(2.0),
-            method: ValueChangeMethod::Linear,
-        });
-
-        realtime_parameter.add_parameter_change(ParameterChange {
-            value: 1.0,
-            end_time: Timestamp::from_seconds(3.0),
-            method: ValueChangeMethod::Linear,
-        });
-
-        realtime_parameter.add_parameter_change(ParameterChange {
-            value: 0.0,
-            end_time: Timestamp::from_seconds(4.0),
-            method: ValueChangeMethod::Linear,
-        });
-
-        realtime_parameter.add_parameter_change(ParameterChange {
-            value: 1.0,
-            end_time: Timestamp::from_seconds(5.0),
-            method: ValueChangeMethod::Linear,
-        });
+        for (value, end_time, method) in changes {
+            fixture
+                .realtime_parameter
+                .add_parameter_change(ParameterChange {
+                    value,
+                    end_time,
+                    method,
+                });
+        }
 
         let sample_rate = 44_100;
 
-        let values = get_parameter_values(
-            &mut realtime_parameter,
+        let values = fixture.get_parameter_values(
             Timestamp::zero(),
             Timestamp::from_seconds(6.0),
             sample_rate,
