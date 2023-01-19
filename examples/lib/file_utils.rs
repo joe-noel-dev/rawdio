@@ -2,6 +2,28 @@ use rawdio::{
     AudioBuffer, AudioProcess, MutableBorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation,
 };
 
+pub fn render_buffer_to_file(buffer: &dyn AudioBuffer, output_file: &str) {
+    let bits_per_sample = 24;
+    let max_value = 2_i32.pow(bits_per_sample - 1) - 1;
+
+    let mut writer = create_writer(
+        buffer.channel_count(),
+        buffer.sample_rate(),
+        bits_per_sample,
+        output_file,
+    );
+
+    for frame in 0..buffer.frame_count() {
+        for channel in 0..buffer.channel_count() {
+            let location = SampleLocation::new(channel, frame);
+            let sample = buffer.get_sample(location);
+            let sample = sample.clamp(-1.0, 1.0);
+            let sample = (sample * max_value as f32) as i32;
+            writer.write_sample(sample).expect("Failed to write sample");
+        }
+    }
+}
+
 pub fn render_audio_process_to_file(
     sample_rate: usize,
     output_file: &str,
