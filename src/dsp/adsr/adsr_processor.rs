@@ -1,3 +1,5 @@
+use itertools::izip;
+
 use super::{
     adsr_envelope::AdsrEnvelope,
     adsr_event::{AdsrEvent, AdsrEventType},
@@ -5,16 +7,18 @@ use super::{
 use crate::{
     dsp::{utility::EventProcessor, Channel},
     graph::DspProcessor,
-    Level, SampleLocation,
+    Level, SampleLocation, Timestamp,
 };
 use std::time::Duration;
 
 pub struct AdsrProcessor {
     event_processor: EventProcessor<AdsrEvent>,
     envelope: AdsrEnvelope,
+    envelope_buffer: [f32; ENVELOPE_BUFFER_SIZE],
 }
 
 const MAX_PENDING_EVENTS: usize = 64;
+const ENVELOPE_BUFFER_SIZE: usize = 1024;
 
 impl AdsrProcessor {
     pub fn new(event_receiver: Channel::Receiver<AdsrEvent>, sample_rate: usize) -> Self {
@@ -32,6 +36,7 @@ impl AdsrProcessor {
                 Level::from_db(0.0),
                 Duration::ZERO,
             ),
+            envelope_buffer: [0.0_f32; ENVELOPE_BUFFER_SIZE],
         }
     }
 
@@ -47,6 +52,34 @@ impl AdsrProcessor {
             AdsrEventType::SetRelease(release_time) => self.envelope.set_release_time(release_time),
         }
     }
+
+    fn prepare_envelope(&mut self, frame_count: usize, start_time: &Timestamp, sample_rate: usize) {
+        self.event_processor.process_events();
+
+        let mut current_time = *start_time;
+        let mut position = 0;
+
+        while position < frame_count {
+            let (end_frame, event) =
+                self.event_processor
+                    .next_event(start_time, &current_time, frame_count);
+
+            let frame_count = end_frame - position;
+
+            for frame in 0..frame_count {
+                let envelope = self.envelope.process();
+                self.envelope_buffer[frame + position] = envelope as f32;
+            }
+
+            current_time = current_time.incremented_by_samples(frame_count, sample_rate);
+
+            position += frame_count;
+
+            if let Some(event) = event {
+                self.process_event(event);
+            }
+        }
+    }
 }
 
 impl DspProcessor for AdsrProcessor {
@@ -57,38 +90,28 @@ impl DspProcessor for AdsrProcessor {
         start_time: &crate::timestamp::Timestamp,
         _parameters: &crate::graph::DspParameters,
     ) {
-        self.event_processor.process_events();
+        let channel_count =
+            std::cmp::min(input_buffer.channel_count(), output_buffer.channel_count());
+        let frame_count = std::cmp::min(input_buffer.frame_count(), output_buffer.frame_count());
 
-        let mut current_time = *start_time;
-        let mut position = 0;
+        debug_assert!(
+            frame_count <= ENVELOPE_BUFFER_SIZE,
+            "Not designed to work with buffers > ENVELOPE_BUFFER_SIZE"
+        );
 
-        while position < output_buffer.frame_count() {
-            let (end_frame, event) = self.event_processor.next_event(
-                start_time,
-                &current_time,
-                output_buffer.frame_count(),
-            );
+        self.prepare_envelope(frame_count, start_time, output_buffer.sample_rate());
 
-            let frame_count = end_frame - position;
+        for channel in 0..channel_count {
+            let location = SampleLocation::channel(channel);
+            let output_channel = output_buffer.get_channel_data_mut(location);
+            let input_channel = input_buffer.get_channel_data(location);
 
-            for frame in 0..frame_count {
-                let envelope = self.envelope.process();
-
-                for channel in 0..output_buffer.channel_count() {
-                    let location = SampleLocation::new(channel, frame);
-                    let sample = input_buffer.get_sample(location);
-                    let sample = sample * envelope as f32;
-                    output_buffer.set_sample(location, sample);
-                }
-            }
-
-            current_time =
-                current_time.incremented_by_samples(frame_count, output_buffer.sample_rate());
-
-            position += frame_count;
-
-            if let Some(event) = event {
-                self.process_event(event);
+            for (output_sample, input_sample, envelope) in izip!(
+                output_channel.iter_mut(),
+                input_channel.iter(),
+                self.envelope_buffer.iter()
+            ) {
+                *output_sample = *input_sample * *envelope;
             }
         }
     }

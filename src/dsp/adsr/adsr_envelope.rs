@@ -57,7 +57,10 @@ impl AdsrEnvelope {
     }
 
     pub fn close(&mut self) {
-        self.phase = Phase::Release;
+        self.phase = match self.phase {
+            Phase::Idle => Phase::Idle,
+            _ => Phase::Release,
+        };
     }
 
     pub fn set_attack_time(&mut self, attack_time: Duration) {
