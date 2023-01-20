@@ -5,7 +5,6 @@ use super::{biquad_coefficients::BiquadCoefficients, filter_type::FilterType};
 pub struct BiquadProcessor {
     filter_type: FilterType,
     sample_rate: usize,
-    output_gain_id: Id,
     frequency_id: Id,
     q_id: Id,
     shelf_gain_id: Id,
@@ -16,7 +15,6 @@ pub struct BiquadProcessor {
 
 #[derive(PartialEq)]
 struct Parameters {
-    output_gain: f64,
     frequency: f64,
     q: f64,
     shelf_gain: f64,
@@ -58,13 +56,11 @@ impl BiquadProcessor {
         sample_rate: usize,
         num_channels: usize,
         filter_type: FilterType,
-        output_gain_id: Id,
         frequency_id: Id,
         q_id: Id,
         shelf_gain_id: Id,
     ) -> Self {
         let parameters = Parameters {
-            output_gain: 1.0,
             frequency: 1_000.0,
             q: 1.0 / 2.0_f64.sqrt(),
             shelf_gain: 1.0,
@@ -73,7 +69,6 @@ impl BiquadProcessor {
         Self {
             sample_rate,
             filter_type,
-            output_gain_id,
             frequency_id,
             q_id,
             shelf_gain_id,
@@ -101,7 +96,6 @@ impl DspProcessor for BiquadProcessor {
         _start_time: &crate::timestamp::Timestamp,
         parameters: &crate::graph::DspParameters,
     ) {
-        let output_gain = unwrap_or_return!(parameters.get(&self.output_gain_id)).get_values();
         let frequency = unwrap_or_return!(parameters.get(&self.frequency_id)).get_values();
         let q = unwrap_or_return!(parameters.get(&self.q_id)).get_values();
         let shelf_gain = unwrap_or_return!(parameters.get(&self.shelf_gain_id)).get_values();
@@ -111,7 +105,6 @@ impl DspProcessor for BiquadProcessor {
 
         for frame in 0..frame_count {
             let parameters = Parameters {
-                output_gain: output_gain[frame],
                 frequency: frequency[frame],
                 q: q[frame],
                 shelf_gain: shelf_gain[frame],
@@ -144,13 +137,21 @@ impl DspProcessor for BiquadProcessor {
                 self.delays[channel][2] = out;
 
                 for delay in self.delays[channel].iter_mut() {
-                    if -1e-8 <= *delay && *delay <= 1e-8 {
-                        *delay = 0.0;
-                    }
+                    *delay = denormal(*delay);
                 }
 
                 output_buffer.set_sample(location, out as f32);
             }
         }
     }
+}
+
+fn denormal(sample: f64) -> f64 {
+    let denormal_threshold = 1e-8;
+
+    if -denormal_threshold <= sample && sample <= denormal_threshold {
+        return 0.0;
+    }
+
+    sample
 }

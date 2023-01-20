@@ -6,7 +6,6 @@ use super::{biquad_processor::BiquadProcessor, filter_type::FilterType};
 
 pub struct BiquadNode {
     pub node: Node,
-    pub output_gain: AudioParameter,
     pub frequency: AudioParameter,
     pub q: AudioParameter,
     pub shelf_gain: AudioParameter,
@@ -17,9 +16,6 @@ impl BiquadNode {
         let id = Id::generate();
 
         let command_queue = context.get_command_queue();
-
-        let (output_gain, realtime_output_gain) =
-            AudioParameter::new(id, 0.0, 0.0, 1.0, command_queue.clone());
 
         let (frequency, realtime_frequency) =
             AudioParameter::new(id, 1_000.0, 20.0, 20000.0, command_queue.clone());
@@ -39,20 +35,14 @@ impl BiquadNode {
             context.get_sample_rate(),
             channel_count,
             filter_type,
-            output_gain.get_id(),
             frequency.get_id(),
             q.get_id(),
             shelf_gain.get_id(),
         ));
 
         let parameters = HashMap::from(
-            [
-                realtime_output_gain,
-                realtime_frequency,
-                realtime_q,
-                realtime_shelf_gain,
-            ]
-            .map(|parameter| (parameter.get_id(), parameter)),
+            [realtime_frequency, realtime_q, realtime_shelf_gain]
+                .map(|parameter| (parameter.get_id(), parameter)),
         );
 
         let node = Node::new(
@@ -66,7 +56,6 @@ impl BiquadNode {
 
         Self {
             node,
-            output_gain,
             frequency,
             q,
             shelf_gain,
