@@ -57,7 +57,10 @@ impl AdsrEnvelope {
     }
 
     pub fn close(&mut self) {
-        self.phase = Phase::Release;
+        self.phase = match self.phase {
+            Phase::Idle => Phase::Idle,
+            _ => Phase::Release,
+        };
     }
 
     pub fn set_attack_time(&mut self, attack_time: Duration) {
@@ -67,6 +70,7 @@ impl AdsrEnvelope {
     pub fn set_decay_time(&mut self, decay_time: Duration) {
         self.decay_coefficient =
             calculate_decay_coefficient(decay_time, self.sustain_level, self.sample_rate);
+        self.decay_time = decay_time;
     }
 
     pub fn set_sustain_level(&mut self, sustain_level: Level) {
@@ -74,11 +78,13 @@ impl AdsrEnvelope {
             calculate_decay_coefficient(self.decay_time, sustain_level, self.sample_rate);
         self.release_coefficient =
             calculate_release_coefficient(self.release_time, sustain_level, self.sample_rate);
+        self.sustain_level = sustain_level;
     }
 
     pub fn set_release_time(&mut self, release_time: Duration) {
         self.release_coefficient =
             calculate_release_coefficient(release_time, self.sustain_level, self.sample_rate);
+        self.release_time = release_time;
     }
 
     pub fn process(&mut self) -> f64 {
