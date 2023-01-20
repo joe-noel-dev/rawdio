@@ -7,12 +7,17 @@ pub trait AudioBuffer {
         num_channels: usize,
         num_frames: usize,
     ) {
-        for frame in 0..num_frames.min(self.frame_count()) {
-            for channel in 0..num_channels.min(self.channel_count()) {
-                let offset = frame * num_channels + channel;
-                let sample_value = interleaved_data[offset];
-                let location = SampleLocation::new(channel, frame);
-                self.set_sample(location, sample_value);
+        let num_frames = num_frames.min(self.frame_count());
+        let num_channels = num_channels.min(self.channel_count());
+
+        for channel in 0..num_channels {
+            let channel_data = self.get_channel_data_mut(SampleLocation::channel(channel));
+
+            for frame in 0..num_frames {
+                let source_offset = frame * num_channels + channel;
+                let sample_value = interleaved_data[source_offset];
+
+                channel_data[frame] = sample_value;
             }
         }
     }
@@ -23,14 +28,17 @@ pub trait AudioBuffer {
         num_channels: usize,
         num_frames: usize,
     ) {
-        assert!(num_channels * num_frames <= interleaved_data.len());
+        let num_channels = num_channels.min(self.channel_count());
+        let num_frames = num_frames.min(self.frame_count());
 
-        for frame in 0..num_frames.min(self.frame_count()) {
-            for channel in 0..num_channels.min(self.channel_count()) {
-                let location = SampleLocation::new(channel, frame);
-                let sample_value = self.get_sample(location);
-                let offset = frame * num_channels + channel;
-                interleaved_data[offset] = sample_value;
+        for channel in 0..num_channels {
+            let channel_data = self.get_channel_data(SampleLocation::channel(channel));
+
+            for frame in 0..num_frames {
+                let sample_value = channel_data[frame];
+
+                let destination_offset = frame * num_channels + channel;
+                interleaved_data[destination_offset] = sample_value;
             }
         }
     }
