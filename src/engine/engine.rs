@@ -1,11 +1,10 @@
 use std::sync::{atomic::AtomicI64, Arc};
 
-use crate::{
-    audio_process::AudioProcess, context::NotifierStatus, realtime::Processor, Command,
-    CommandQueue, Context, Timestamp,
-};
+use crate::{realtime::Processor, AudioProcess, Command, CommandQueue, Context, Timestamp};
 
 use lockfree::channel::mpsc;
+
+use super::context::NotifierStatus;
 
 pub struct Engine {
     sample_rate: usize,

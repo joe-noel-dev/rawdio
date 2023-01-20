@@ -2,7 +2,7 @@ use super::{
     adsr_event::{AdsrEvent, AdsrEventType},
     adsr_processor::AdsrProcessor,
 };
-use crate::{commands::Id, dsp::Channel, CommandQueue, Level, Node, Timestamp};
+use crate::{commands::Id, effects::Channel, CommandQueue, Level, Node, Timestamp};
 use std::{collections::HashMap, time::Duration};
 
 pub struct AdsrNode {

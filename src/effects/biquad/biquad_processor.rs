@@ -86,7 +86,7 @@ impl DspProcessor for BiquadProcessor {
         &mut self,
         input_buffer: &dyn crate::AudioBuffer,
         output_buffer: &mut dyn crate::AudioBuffer,
-        _start_time: &crate::timestamp::Timestamp,
+        _start_time: &crate::Timestamp,
         parameters: &crate::graph::DspParameters,
     ) {
         let frequency = unwrap_or_return!(parameters.get(&self.frequency_id)).get_values();

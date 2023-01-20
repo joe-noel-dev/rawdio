@@ -1,4 +1,4 @@
-use crate::{dsp::Channel, OwnedAudioBuffer, Timestamp};
+use crate::{effects::Channel, OwnedAudioBuffer, Timestamp};
 
 pub enum RecorderEventType {
     Start,

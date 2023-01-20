@@ -1,7 +1,6 @@
 use crate::{
     commands::{CancelChangeRequest, Command, Id, ParameterChangeRequest},
-    timestamp::Timestamp,
-    CommandQueue,
+    CommandQueue, Timestamp,
 };
 use atomic_float::AtomicF64;
 
