@@ -62,7 +62,7 @@ fn create_adsr(context: &dyn Context) -> Adsr {
 
     adsr.set_attack_time(Duration::from_millis(100));
     adsr.set_decay_time(Duration::from_millis(150));
-    adsr.set_sustain_level(Level::from_db(-12.0));
+    adsr.set_sustain_level(Level::from_db(-6.0));
     adsr.set_release_time(Duration::from_millis(200));
 
     adsr
