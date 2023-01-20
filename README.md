@@ -8,18 +8,20 @@ This is an audio engine, inspired by the Web Audio API.
 
 ## Oscillator Example
 
-1. Create a context
+More examples can be found [here](./examples)
+
+1. Create an engine
 
     ```rust
-    use rawdio::{create_context, Level, Oscillator, Node};
-    let sample_rate = 44100;
-    let mut context = create_context(sample_rate);
+    use rawdio::{create_engine, Level, Oscillator, Node};
+    let sample_rate = 44_100;
+    let (mut context, mut process) = create_engine(sample_rate);
     ```
 
 1. Create an oscillator
 
     ```rust
-    let frequency = 440.0
+    let frequency = 440.0;
     let mut oscillator = Oscillator::new(context.get_command_queue(), frequency);
     ```
 
@@ -44,14 +46,17 @@ This is an audio engine, inspired by the Web Audio API.
     context.start();
     ```
 
-1. Process the audio context to get samples. This will vary depending on whether
-  you wish to run the enginge in realtime (e.g. using CPAL) or offline. The engine
-  doesn't make any assumptions, and will simply wait to be asked to process.
+1. Run the process to get samples. This will vary depending on whether
+   you wish to run the engine in realtime (e.g. using CPAL) or offline (e.g. to a file).
+   The engine doesn't make any assumptions, and will simply wait to be asked to process.
+
+   All audio buffers are assumed to be non-interleaved.
+   So if the audio that comes from your soundcard is interleaved, it will need
+   to be de-interleaved first.
 
     ```rust
-    let output_buffer = /*create an audio buffer or use the one supplied by your audio device in its callback*/
-    let audio_process = context.get_audio_process();
-    audio_process.process (&mut output_buffer);
+    let output_buffer = /*create an audio buffer (see `OwnedAudioBuffer`) or use the one supplied by your audio device in its callback*/
+    process.process (&mut output_buffer);
     ```
 
 ## To run an example
@@ -64,4 +69,10 @@ cargo run --example [example_name] [example_args]
 
 ```sh
 cargo test
+```
+
+## To run the benchmarks
+
+```sh
+cargo bench
 ```
