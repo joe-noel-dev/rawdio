@@ -1,6 +1,7 @@
 use crate::{
     commands::Id,
     graph::{DspParameters, DspProcessor},
+    utility::macros::unwrap_or_return,
     AudioBuffer, SampleLocation, Timestamp,
 };
 
@@ -22,15 +23,10 @@ impl DspProcessor for PanProcessor {
         _start_time: &Timestamp,
         parameters: &DspParameters,
     ) {
-        assert_eq!(input_buffer.channel_count(), 2);
-        assert_eq!(output_buffer.channel_count(), 2);
+        debug_assert_eq!(input_buffer.channel_count(), 2);
+        debug_assert_eq!(output_buffer.channel_count(), 2);
 
-        let pan_parameter = match parameters.get(&self.pan_id) {
-            Some(param) => param,
-            None => return,
-        };
-
-        let pan_values = pan_parameter.get_values();
+        let pan_values = unwrap_or_return!(parameters.get(&self.pan_id)).get_values();
 
         (0..output_buffer.frame_count()).for_each(|frame| {
             let pan = pan_values[frame];

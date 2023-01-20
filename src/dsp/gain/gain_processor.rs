@@ -1,6 +1,7 @@
 use crate::{
     commands::Id,
     graph::{DspParameters, DspProcessor},
+    utility::macros::unwrap_or_return,
     AudioBuffer, SampleLocation, Timestamp,
 };
 
@@ -24,10 +25,7 @@ impl DspProcessor for GainProcessor {
         _start_time: &Timestamp,
         parameters: &DspParameters,
     ) {
-        let gain_parameter = match parameters.get(&self.gain_id) {
-            Some(param) => param,
-            None => return,
-        };
+        let gain = unwrap_or_return!(parameters.get(&self.gain_id)).get_values();
 
         let num_channels =
             std::cmp::min(output_buffer.channel_count(), input_buffer.channel_count());
@@ -36,7 +34,7 @@ impl DspProcessor for GainProcessor {
             for (output, input, gain) in izip!(
                 output_buffer.get_channel_data_mut(SampleLocation::new(channel, 0)),
                 input_buffer.get_channel_data(SampleLocation::new(channel, 0)),
-                gain_parameter.get_values()
+                gain
             ) {
                 *output = *input * (*gain as f32);
             }

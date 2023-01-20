@@ -1,4 +1,6 @@
-use crate::{commands::Id, graph::DspProcessor, Level, SampleLocation};
+use crate::{
+    commands::Id, graph::DspProcessor, utility::macros::unwrap_or_return, Level, SampleLocation,
+};
 
 use super::{biquad_coefficients::BiquadCoefficients, filter_type::FilterType};
 
@@ -77,15 +79,6 @@ impl BiquadProcessor {
             delays: (0..num_channels).map(|_| [0.0, 0.0, 0.0, 0.0]).collect(),
         }
     }
-}
-
-macro_rules! unwrap_or_return {
-    ( $e:expr ) => {
-        match $e {
-            Some(x) => x,
-            None => return,
-        }
-    };
 }
 
 impl DspProcessor for BiquadProcessor {

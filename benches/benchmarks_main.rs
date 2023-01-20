@@ -5,4 +5,5 @@ mod benchmarks;
 criterion_main! {
     benchmarks::audio_buffer_benches::benches,
     benchmarks::gain_benches::benches,
+    benchmarks::biquad_benches::benches,
 }

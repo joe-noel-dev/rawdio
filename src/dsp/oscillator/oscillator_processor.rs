@@ -1,6 +1,7 @@
 use crate::{
     commands::Id,
     graph::{DspParameters, DspProcessor},
+    utility::macros::unwrap_or_return,
     AudioBuffer, SampleLocation, Timestamp,
 };
 
@@ -76,23 +77,13 @@ impl DspProcessor for OscillatorProcessor {
     ) {
         let sample_rate = output_buffer.sample_rate();
 
-        let frequency = match parameters.get(&self.frequency_id) {
-            Some(param) => param,
-            None => return,
-        };
+        let frequency_values = unwrap_or_return!(parameters.get(&self.frequency_id)).get_values();
+        let gain_values = unwrap_or_return!(parameters.get(&self.gain_id)).get_values();
 
-        let gain = match parameters.get(&self.gain_id) {
-            Some(param) => param,
-            None => return,
-        };
+        let frame_count = output_buffer.frame_count();
+        let channel_count = output_buffer.channel_count();
 
-        let num_frames = output_buffer.frame_count();
-        let num_channels = output_buffer.channel_count();
-
-        let frequency_values = frequency.get_values();
-        let gain_values = gain.get_values();
-
-        for frame in 0..num_frames {
+        for frame in 0..frame_count {
             let frequency = frequency_values[frame];
             let gain = gain_values[frame];
 
@@ -100,8 +91,9 @@ impl DspProcessor for OscillatorProcessor {
 
             let value = gain * self.get_value();
 
-            for channel in 0..num_channels {
-                output_buffer.set_sample(SampleLocation::new(channel, frame), value as f32);
+            for channel in 0..channel_count {
+                let location = SampleLocation::new(channel, frame);
+                output_buffer.set_sample(location, value as f32);
             }
         }
     }

@@ -1,11 +1,11 @@
-use criterion::{criterion_group, Criterion};
+use criterion::{black_box, criterion_group, Criterion};
 use rawdio::{create_engine, Gain, OwnedAudioBuffer, Timestamp};
 
 fn gain_benchmarks(c: &mut Criterion) {
     c.benchmark_group("Gain");
 
     c.bench_function("process gain", |b| {
-        let sample_rate = 96_000;
+        let sample_rate = 48_000;
         let (mut context, mut process) = create_engine(sample_rate);
         let channel_count = 1;
         let mut gain = Gain::new(context.get_command_queue(), channel_count);
@@ -19,10 +19,12 @@ fn gain_benchmarks(c: &mut Criterion) {
 
         context.start();
 
-        let frame_count = 512;
+        let frame_count = 4096;
         let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
-        b.iter(|| process.process(&mut output_buffer))
+        b.iter(|| process.process(&mut output_buffer));
+
+        black_box(output_buffer);
     });
 }
 
