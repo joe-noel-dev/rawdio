@@ -12,13 +12,13 @@ fn read_and_write_interleaved(source: &dyn AudioBuffer, destination: &mut dyn Au
 }
 
 fn read_and_write_non_interleaved(source: &dyn AudioBuffer, destination: &mut dyn AudioBuffer) {
-    for channel in 0..source.channel_count() {
-        for frame in 0..source.frame_count() {
-            let location = SampleLocation::new(channel, frame);
-            let sample = source.get_sample(location);
-            destination.set_sample(location, sample);
-        }
-    }
+    destination.copy_from(
+        source,
+        SampleLocation::origin(),
+        SampleLocation::origin(),
+        destination.channel_count(),
+        destination.frame_count(),
+    );
 }
 
 fn add_from(source: &dyn AudioBuffer, destination: &mut dyn AudioBuffer) {
