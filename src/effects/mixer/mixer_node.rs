@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{commands::Id, dsp::Channel, CommandQueue, Level, Node};
+use crate::{commands::Id, effects::Channel, CommandQueue, Level, Node};
 
 use super::{
     mixer_event::EventTransmitter, mixer_matrix::MixerMatrix, mixer_processor::MixerProcessor,

@@ -4,8 +4,7 @@ use crate::{
     buffer::{BufferPool, MutableBorrowedAudioBuffer},
     commands::{CancelChangeRequest, Id, ParameterChangeRequest},
     graph::{AssignedBufferPool, Connection, Dsp, Endpoint, EndpointType},
-    timestamp::Timestamp,
-    AudioBuffer, BorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation,
+    AudioBuffer, BorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation, Timestamp,
 };
 
 use super::{

@@ -1,9 +1,6 @@
 use std::sync::{atomic::AtomicI64, atomic::Ordering, Arc};
 
-use crate::{
-    audio_process::AudioProcess, commands::Command, timestamp::Timestamp, AudioBuffer,
-    MutableBorrowedAudioBuffer,
-};
+use crate::{commands::Command, AudioBuffer, AudioProcess, MutableBorrowedAudioBuffer, Timestamp};
 use lockfree::channel::mpsc::Receiver;
 
 use super::dsp_graph::DspGraph;

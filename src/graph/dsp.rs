@@ -1,7 +1,6 @@
 use crate::{
     commands::{CancelChangeRequest, Command, Id, ParameterChangeRequest},
-    timestamp::Timestamp,
-    AudioBuffer, CommandQueue,
+    AudioBuffer, CommandQueue, Timestamp,
 };
 
 use super::DspParameters;

@@ -1,5 +1,5 @@
 use crate::{
-    commands::Id, dsp::Channel, graph::DspParameters, AudioBuffer, CommandQueue, Node,
+    commands::Id, effects::Channel, graph::DspParameters, AudioBuffer, CommandQueue, Node,
     OwnedAudioBuffer, Timestamp,
 };
 

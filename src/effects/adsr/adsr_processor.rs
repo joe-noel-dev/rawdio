@@ -5,7 +5,7 @@ use super::{
     adsr_event::{AdsrEvent, AdsrEventType},
 };
 use crate::{
-    dsp::{utility::EventProcessor, Channel},
+    effects::{utility::EventProcessor, Channel},
     graph::DspProcessor,
     Level, SampleLocation, Timestamp,
 };
@@ -87,7 +87,7 @@ impl DspProcessor for AdsrProcessor {
         &mut self,
         input_buffer: &dyn crate::AudioBuffer,
         output_buffer: &mut dyn crate::AudioBuffer,
-        start_time: &crate::timestamp::Timestamp,
+        start_time: &crate::Timestamp,
         _parameters: &crate::graph::DspParameters,
     ) {
         let channel_count =

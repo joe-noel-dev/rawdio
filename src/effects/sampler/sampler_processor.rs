@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::{
-    dsp::{utility::EventProcessor, Channel},
+    effects::{utility::EventProcessor, Channel},
     graph::{DspParameters, DspProcessor},
     AudioBuffer, MutableBorrowedAudioBuffer, OwnedAudioBuffer, Timestamp,
 };

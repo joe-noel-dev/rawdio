@@ -1,4 +1,4 @@
-use crate::{dsp::Channel, OwnedAudioBuffer};
+use crate::{effects::Channel, OwnedAudioBuffer};
 
 pub enum RecorderNotification {
     Start,

@@ -1,4 +1,4 @@
-use crate::{dsp::Channel, Timestamp};
+use crate::{effects::Channel, Timestamp};
 
 type GetEventTime<Event> = fn(&Event) -> Timestamp;
 

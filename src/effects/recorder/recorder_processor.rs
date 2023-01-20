@@ -1,6 +1,6 @@
 use crate::{
     buffer::BufferPool,
-    dsp::utility::EventProcessor,
+    effects::utility::EventProcessor,
     graph::{DspParameters, DspProcessor},
     AudioBuffer, OwnedAudioBuffer, SampleLocation, Timestamp,
 };

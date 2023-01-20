@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    commands::Id, context::NotifierStatus, dsp::Channel, BorrowedAudioBuffer, Context, Node,
+    commands::Id, effects::Channel, engine::NotifierStatus, BorrowedAudioBuffer, Context, Node,
     OwnedAudioBuffer, Timestamp,
 };
 
