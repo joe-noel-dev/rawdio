@@ -53,6 +53,10 @@ impl AudioParameter {
         self.value.clone()
     }
 
+    pub fn set_value_now(&mut self, value: f64) {
+        self.set_value_at_time(value, Timestamp::zero());
+    }
+
     pub fn set_value_at_time(&mut self, mut value: f64, at_time: Timestamp) {
         value = value.clamp(self.minimum_value, self.maximum_value);
         let _ = self

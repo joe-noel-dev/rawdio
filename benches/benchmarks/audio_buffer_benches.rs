@@ -1,78 +1,78 @@
 use criterion::{black_box, criterion_group, Criterion};
 use rawdio::{AudioBuffer, OwnedAudioBuffer, SampleLocation};
 
-fn read_and_write_interleaved() {
-    let num_frames = 1024;
-    let num_channels = 2;
-    let sample_rate = 44_100;
-
-    let mut buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
-
-    for frame in 0..buffer.frame_count() {
-        for channel in 0..buffer.channel_count() {
-            buffer.set_sample(SampleLocation::new(channel, frame), 0.0);
-        }
-    }
-
-    for frame in 0..buffer.frame_count() {
-        for channel in 0..buffer.channel_count() {
-            black_box(buffer.get_sample(SampleLocation::new(channel, frame)));
+fn read_and_write_interleaved(source: &dyn AudioBuffer, destination: &mut dyn AudioBuffer) {
+    for frame in 0..source.frame_count() {
+        for channel in 0..source.channel_count() {
+            let location = SampleLocation::new(channel, frame);
+            let sample = source.get_sample(location);
+            destination.set_sample(location, sample);
         }
     }
 }
 
-fn read_and_write_non_interleaved() {
-    let num_frames = 1024;
-    let num_channels = 2;
-    let sample_rate = 44_100;
-
-    let mut buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
-
-    for channel in 0..buffer.channel_count() {
-        for frame in 0..buffer.frame_count() {
-            buffer.set_sample(SampleLocation::new(channel, frame), 0.0);
-        }
-    }
-
-    for channel in 0..buffer.channel_count() {
-        for frame in 0..buffer.frame_count() {
-            black_box(buffer.get_sample(SampleLocation::new(channel, frame)));
+fn read_and_write_non_interleaved(source: &dyn AudioBuffer, destination: &mut dyn AudioBuffer) {
+    for channel in 0..source.channel_count() {
+        for frame in 0..source.frame_count() {
+            let location = SampleLocation::new(channel, frame);
+            let sample = source.get_sample(location);
+            destination.set_sample(location, sample);
         }
     }
 }
 
-fn add_from() {
-    let num_frames = 50_000;
-    let num_channels = 2;
-    let sample_rate = 44_100;
-
-    let mut buffer1 = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
-    let buffer2 = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
-
-    buffer1.add_from(
-        &buffer2,
+fn add_from(source: &dyn AudioBuffer, destination: &mut dyn AudioBuffer) {
+    destination.add_from(
+        source,
         SampleLocation::origin(),
         SampleLocation::origin(),
-        num_channels,
-        num_frames,
+        destination.channel_count(),
+        destination.frame_count(),
     );
-
-    black_box(buffer1);
-    black_box(buffer2);
 }
 
 fn audio_buffer_benchmarks(c: &mut Criterion) {
     c.benchmark_group("AudioBuffer");
 
     c.bench_function("read and write interleaved", |b| {
-        b.iter(read_and_write_interleaved)
+        let frame_count = 4096;
+        let channel_count = 2;
+        let sample_rate = 44_100;
+
+        let source = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
+        let mut destination = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+
+        b.iter(|| read_and_write_interleaved(&source, &mut destination));
+
+        black_box(destination);
     });
 
     c.bench_function("read and write non-interleaved", |b| {
-        b.iter(read_and_write_non_interleaved)
+        let frame_count = 4096;
+        let channel_count = 2;
+        let sample_rate = 44_100;
+
+        let source = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
+        let mut destination = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+
+        b.iter(|| read_and_write_non_interleaved(&source, &mut destination));
+
+        black_box(destination);
     });
 
-    c.bench_function("add_from", |b| b.iter(add_from));
+    c.bench_function("add_from", |b| {
+        let frame_count = 4096;
+        let channel_count = 2;
+        let sample_rate = 44_100;
+
+        let source = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
+        let mut destination =
+            OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
+
+        b.iter(|| add_from(&source, &mut destination));
+
+        black_box(destination);
+    });
 }
 
 criterion_group!(benches, audio_buffer_benchmarks);

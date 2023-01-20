@@ -31,10 +31,9 @@ impl OscillatorNode {
         let (gain, realtime_gain) =
             AudioParameter::new(id, DEFAULT_GAIN, MIN_GAIN, MAX_GAIN, command_queue.clone());
 
-        let parameters = HashMap::from([
-            (realtime_frequency.get_id(), realtime_frequency),
-            (realtime_gain.get_id(), realtime_gain),
-        ]);
+        let parameters = HashMap::from(
+            [realtime_frequency, realtime_gain].map(|parameter| (parameter.get_id(), parameter)),
+        );
 
         let input_count = 0;
 

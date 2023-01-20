@@ -5,25 +5,6 @@ use rawdio::{
     create_engine, AudioBuffer, OwnedAudioBuffer, Recorder, SampleLocation, Sampler, Timestamp,
 };
 
-use rand::Rng;
-
-fn create_white_noise_buffer(
-    frame_count: usize,
-    sample_rate: usize,
-    channel_count: usize,
-) -> OwnedAudioBuffer {
-    let mut buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
-
-    let mut random_generator = rand::thread_rng();
-
-    for frame in buffer.frame_iter() {
-        let sample_value = random_generator.gen_range(-1.0..=1.0);
-        buffer.set_sample(frame, sample_value);
-    }
-
-    buffer
-}
-
 fn record_sampler(
     sample_rate: usize,
     channel_count: usize,
@@ -98,7 +79,7 @@ fn records_data() {
 
     let channel_count = 2;
 
-    let buffer = create_white_noise_buffer(sample_frame_count, sample_rate, channel_count);
+    let buffer = OwnedAudioBuffer::white_noise(sample_frame_count, channel_count, sample_rate);
     let recorded_buffer = record_sampler(sample_rate, channel_count, &buffer);
 
     for channel in 0..channel_count {

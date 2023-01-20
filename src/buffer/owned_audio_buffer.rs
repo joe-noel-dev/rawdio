@@ -1,4 +1,5 @@
 use crate::{AudioBuffer, SampleLocation};
+use rand::Rng;
 
 #[derive(Clone)]
 pub struct OwnedAudioBuffer {
@@ -63,6 +64,23 @@ impl OwnedAudioBuffer {
         );
 
         new_buffer
+    }
+
+    pub fn white_noise(
+        frame_count: usize,
+        channel_count: usize,
+        sample_rate: usize,
+    ) -> OwnedAudioBuffer {
+        let mut buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+
+        let mut random_generator = rand::thread_rng();
+
+        for frame in buffer.frame_iter() {
+            let sample_value = random_generator.gen_range(-1.0..=1.0);
+            buffer.set_sample(frame, sample_value);
+        }
+
+        buffer
     }
 
     fn get_sample_location_bounds(&self, sample_location: &SampleLocation) -> (usize, usize) {

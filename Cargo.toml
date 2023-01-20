@@ -9,6 +9,7 @@ fixed = "1.11.0"
 itertools = "0.10.5"
 lazy_static = "1.4.0"
 lockfree = "0.5.1"
+rand = "0.8.5"
 
 [dev-dependencies]
 anyhow = "1.0.51"
@@ -17,7 +18,6 @@ criterion = "0.4"
 futures = "0.3.17"
 futures-channel = "0.3.17"
 futures-util = "0.3.17"
-rand = "0.8.5"
 structopt = "0.3.26"
 utilities = { path = "utilities" } 
 
