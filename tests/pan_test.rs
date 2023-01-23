@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use itertools::Itertools;
 use rawdio::{
-    create_engine, AudioBuffer, AudioProcess, Context, Oscillator, OwnedAudioBuffer, Pan,
-    SampleLocation, Timestamp,
+    create_engine, AudioBuffer, AudioProcess, Context, OwnedAudioBuffer, Pan, SampleLocation,
+    Timestamp,
 };
 
 struct Fixture {
@@ -11,16 +11,39 @@ struct Fixture {
     channel_count: usize,
     _context: Box<dyn Context>,
     audio_process: Box<dyn AudioProcess>,
-    _oscillator: Oscillator,
     pan: Pan,
+}
+
+fn make_noise_buffer(
+    frame_count: usize,
+    channel_count: usize,
+    sample_rate: usize,
+) -> OwnedAudioBuffer {
+    let reference = OwnedAudioBuffer::white_noise(frame_count, 1, sample_rate);
+
+    let mut buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+
+    (0..channel_count).for_each(|channel| {
+        buffer.copy_from(
+            &reference,
+            SampleLocation::origin(),
+            SampleLocation::channel(channel),
+            1,
+            reference.frame_count(),
+        );
+    });
+
+    buffer
 }
 
 impl Fixture {
     fn process(&mut self, duration: Duration) -> OwnedAudioBuffer {
         let frame_count = (duration.as_secs_f64() * self.sample_rate as f64).ceil() as usize;
+        let input_buffer = make_noise_buffer(frame_count, self.channel_count, self.sample_rate);
         let mut output_buffer =
             OwnedAudioBuffer::new(frame_count, self.channel_count, self.sample_rate);
-        self.audio_process.process(&mut output_buffer);
+        self.audio_process
+            .process(&input_buffer, &mut output_buffer);
         output_buffer
     }
 }
@@ -30,17 +53,11 @@ impl Default for Fixture {
         let sample_rate = 48_000;
         let (mut context, audio_process) = create_engine(sample_rate);
 
-        let oscillator_frequency = 997.0;
         let channel_count = 2;
-        let oscillator = Oscillator::new(
-            context.get_command_queue(),
-            oscillator_frequency,
-            channel_count,
-        );
 
         let pan = Pan::new(context.get_command_queue(), channel_count);
 
-        oscillator.node.connect_to(&pan.node);
+        pan.node.connect_to_input();
         pan.node.connect_to_output();
 
         context.start();
@@ -48,7 +65,6 @@ impl Default for Fixture {
         Self {
             _context: context,
             audio_process,
-            _oscillator: oscillator,
             pan,
             sample_rate,
             channel_count,

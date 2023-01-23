@@ -20,7 +20,7 @@ fn play_file(file_to_play: &str) {
     let sample_rate = sample.sample_rate();
 
     let (mut context, audio_process) = create_engine(sample_rate);
-    let _audio_callack = AudioCallback::new(audio_process, sample_rate);
+    let audio_callback = AudioCallback::new(audio_process, sample_rate);
 
     let length_in_seconds = sample.length_in_seconds().ceil() as u64;
     let length_in_samples = sample.frame_count();
@@ -56,4 +56,6 @@ fn play_file(file_to_play: &str) {
     context.stop();
 
     thread::sleep(Duration::from_secs(1));
+
+    drop(audio_callback);
 }

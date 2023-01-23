@@ -31,6 +31,15 @@ impl GraphNode {
         self.id
     }
 
+    pub fn connect_to_input(&self) {
+        let _ = self
+            .command_queue
+            .send(Command::ConnectToInput(Endpoint::new(
+                self.get_id(),
+                EndpointType::Input,
+            )));
+    }
+
     pub fn connect_to_output(&self) {
         let _ = self
             .command_queue

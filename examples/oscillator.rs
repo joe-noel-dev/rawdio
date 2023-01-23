@@ -6,7 +6,7 @@ use utilities::AudioCallback;
 fn main() {
     let sample_rate = 44100;
     let (mut context, audio_process) = create_engine(sample_rate);
-    let _audio_callack = AudioCallback::new(audio_process, sample_rate);
+    let audio_callback = AudioCallback::new(audio_process, sample_rate);
 
     let mut oscillators = create_oscillators(context.as_ref());
     let mut gain = create_gain(context.as_ref());
@@ -16,6 +16,8 @@ fn main() {
     make_connections(&mut oscillators, &mut gain, &mut mixer);
 
     run(context.as_mut());
+
+    drop(audio_callback);
 }
 
 fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {

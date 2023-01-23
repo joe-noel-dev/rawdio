@@ -1,13 +1,11 @@
 use criterion::{criterion_group, Criterion};
-use rawdio::{
-    create_engine, AudioProcess, Biquad, BiquadFilterType, OwnedAudioBuffer, Sampler, Timestamp,
-};
+use rawdio::{create_engine, AudioProcess, Biquad, BiquadFilterType, OwnedAudioBuffer, Timestamp};
 
 struct Fixture {
     audio_process: Box<dyn AudioProcess + Send>,
+    input_buffer: OwnedAudioBuffer,
     output_buffer: OwnedAudioBuffer,
     biquad: Biquad,
-    _sampler: Sampler,
 }
 
 impl Fixture {
@@ -20,23 +18,20 @@ impl Fixture {
 
         let sample = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
 
-        let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, sample);
-        sampler.start_now();
-
         let mut biquad = Biquad::new(context.as_ref(), channel_count, filter_type);
 
         biquad.frequency.set_value_now(cutoff_frequency);
 
-        sampler.node.connect_to(&biquad.node);
+        biquad.node.connect_to_input();
         biquad.node.connect_to_output();
 
         context.start();
 
         Self {
             audio_process: process,
+            input_buffer: sample,
             output_buffer: OwnedAudioBuffer::new(frame_count, channel_count, sample_rate),
             biquad,
-            _sampler: sampler,
         }
     }
 
@@ -45,7 +40,8 @@ impl Fixture {
     }
 
     fn process(&mut self) {
-        self.audio_process.process(&mut self.output_buffer)
+        self.audio_process
+            .process(&self.input_buffer, &mut self.output_buffer);
     }
 }
 

@@ -1,9 +1,7 @@
 use std::time::Duration;
 
 use itertools::izip;
-use rawdio::{
-    create_engine, AudioBuffer, OwnedAudioBuffer, Recorder, SampleLocation, Sampler, Timestamp,
-};
+use rawdio::{create_engine, AudioBuffer, OwnedAudioBuffer, Recorder, SampleLocation, Timestamp};
 
 fn record_sampler(
     sample_rate: usize,
@@ -12,12 +10,10 @@ fn record_sampler(
 ) -> OwnedAudioBuffer {
     let (mut context, mut process) = create_engine(sample_rate);
 
-    let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, buffer.clone());
     let recorder = Recorder::new(context.as_mut(), channel_count, sample_rate);
 
-    sampler.node.connect_to(&recorder.borrow_mut().node);
+    recorder.borrow_mut().node.connect_to_input();
 
-    sampler.start_now();
     recorder.borrow_mut().record_now();
     recorder
         .borrow_mut()
@@ -26,12 +22,22 @@ fn record_sampler(
             sample_rate,
         ));
 
-    let mut output_buffer =
-        OwnedAudioBuffer::new(2 * buffer.frame_count(), channel_count, sample_rate);
+    let frame_count = 2 * buffer.frame_count();
+
+    let mut input_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+
+    input_buffer.copy_from(
+        buffer,
+        SampleLocation::origin(),
+        SampleLocation::origin(),
+        channel_count,
+        buffer.frame_count(),
+    );
+
+    let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
     context.start();
-    process.process(&mut output_buffer);
-    sampler.stop_now();
+    process.process(&input_buffer, &mut output_buffer);
 
     context.process_notifications();
 

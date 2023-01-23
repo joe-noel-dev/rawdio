@@ -15,4 +15,5 @@ pub enum Command {
     AddConnection(Connection),
     RemoveConnection(Connection),
     ConnectToOutput(Endpoint),
+    ConnectToInput(Endpoint),
 }

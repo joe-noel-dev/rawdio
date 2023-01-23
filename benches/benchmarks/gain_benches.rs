@@ -4,6 +4,7 @@ use rawdio::{create_engine, AudioProcess, Gain, OwnedAudioBuffer, Timestamp};
 struct Fixture {
     process: Box<dyn AudioProcess + Send>,
     gain: Gain,
+    input_buffer: OwnedAudioBuffer,
     output_buffer: OwnedAudioBuffer,
 }
 
@@ -24,17 +25,21 @@ impl Fixture {
         context.start();
 
         let frame_count = 4096;
+
+        let input_buffer = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
         let output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
         Self {
             process,
             gain,
+            input_buffer,
             output_buffer,
         }
     }
 
     fn process(&mut self) {
-        self.process.process(&mut self.output_buffer);
+        self.process
+            .process(&self.input_buffer, &mut self.output_buffer);
     }
 }
 

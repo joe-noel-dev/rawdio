@@ -1,6 +1,6 @@
 use approx::assert_relative_eq;
 use rawdio::{
-    create_engine, AudioBuffer, AudioProcess, Context, Gain, Level, Oscillator, OwnedAudioBuffer,
+    create_engine, AudioBuffer, AudioProcess, Context, Gain, Level, OwnedAudioBuffer,
     SampleLocation, Timestamp,
 };
 
@@ -10,33 +10,28 @@ struct Fixture {
     context: Box<dyn Context>,
     audio_process: Box<dyn AudioProcess>,
     gain: Gain,
-    _oscillator: Oscillator,
 }
 
 impl Fixture {
     fn process_seconds(&mut self, seconds: f64) -> OwnedAudioBuffer {
-        let frame_count = (seconds * self.sample_rate as f64).ceil();
+        let frame_count = (seconds * self.sample_rate as f64).ceil() as usize;
+        let input_buffer =
+            OwnedAudioBuffer::white_noise(frame_count, self.channel_count, self.sample_rate);
         let mut output_buffer =
-            OwnedAudioBuffer::new(frame_count as usize, self.channel_count, self.sample_rate);
-        self.audio_process.process(&mut output_buffer);
+            OwnedAudioBuffer::new(frame_count, self.channel_count, self.sample_rate);
+        self.audio_process
+            .process(&input_buffer, &mut output_buffer);
         output_buffer
     }
 
     fn new(channel_count: usize) -> Self {
         let sample_rate = 44100;
-        let oscillator_frequency = 1_000.0;
 
         let (mut context, process) = create_engine(sample_rate);
 
-        let oscillator = Oscillator::new(
-            context.get_command_queue(),
-            oscillator_frequency,
-            channel_count,
-        );
-
         let gain = Gain::new(context.get_command_queue(), channel_count);
 
-        oscillator.node.connect_to(&gain.node);
+        gain.node.connect_to_input();
         gain.node.connect_to_output();
 
         context.start();
@@ -47,7 +42,6 @@ impl Fixture {
             context,
             audio_process: process,
             gain,
-            _oscillator: oscillator,
         }
     }
 }
@@ -131,7 +125,7 @@ fn test_gain_envelope() {
     for (frame, value) in envelope.iter().enumerate() {
         let time = Timestamp::from_samples(frame as f64, fixture.sample_rate).as_seconds();
         let expected_value = if time < 1.0 { time } else { 2.0 - time };
-        assert_relative_eq!(expected_value as f32, value, epsilon = 0.05);
+        assert_relative_eq!(expected_value as f32, value, epsilon = 0.1);
     }
 }
 

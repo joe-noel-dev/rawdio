@@ -1,93 +1,83 @@
 use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 
-use rawdio::{create_engine, Context, Gain, Level, Mixer, Oscillator, Recorder, Timestamp};
+use rawdio::{create_engine, Context, Level, Mixer, Recorder, Timestamp};
 use structopt::StructOpt;
 use utilities::{write_buffer_into_file, AudioCallback};
 
 #[derive(Debug, StructOpt)]
 struct Options {
     output_file: String,
+    duration: f64,
 }
 
 fn main() {
-    let output_file = &Options::from_args().output_file;
+    let options = Options::from_args();
+    let output_file = &options.output_file;
+    let record_duration = Timestamp::from_seconds(options.duration);
 
     let sample_rate = 44100;
+    let channel_count = 2;
+
     let (mut context, audio_process) = create_engine(sample_rate);
-    let _audio_callack = AudioCallback::new(audio_process, sample_rate);
 
-    let mut oscillators = create_oscillators(context.as_ref());
-    let mut gain = create_gain(context.as_ref());
-    let mut mixer = create_mixer(context.as_ref());
-    let recorder = create_recorder(context.as_mut());
+    let audio_callback = AudioCallback::new(audio_process, sample_rate);
 
-    let process_duration = Timestamp::from_seconds(4.0);
+    let recorder = create_recorder(context.as_mut(), channel_count, record_duration);
+
+    let mixer = create_mixer(
+        context.as_ref(),
+        audio_callback.input_channel_count(),
+        channel_count,
+    );
+
+    mixer.node.connect_to_input();
+    mixer.node.connect_to(&recorder.borrow_mut().node);
+
+    run(context.as_mut(), &record_duration);
+
+    drop(audio_callback);
+
+    finish_recording(recorder, output_file);
+}
+
+fn finish_recording(recorder: Rc<RefCell<Recorder>>, output_file: &str) {
+    let mut recorder = recorder.borrow_mut();
+    let recording = recorder.take_recording().expect("No recording was made");
+    write_buffer_into_file(recording, output_file);
+}
+
+fn create_recorder(
+    context: &mut dyn Context,
+    channel_count: usize,
+    end_time: Timestamp,
+) -> Rc<RefCell<Recorder>> {
+    let sample_rate = context.get_sample_rate();
+    let recorder = Recorder::new(context, channel_count, sample_rate);
 
     recorder.borrow_mut().record_now();
-    recorder.borrow_mut().stop_record_at_time(process_duration);
+    recorder.borrow_mut().stop_record_at_time(end_time);
 
-    {
-        let mut recorder = recorder.borrow_mut();
-        make_connections(&mut oscillators, &mut gain, &mut mixer, &mut recorder);
-    }
-
-    run(context.as_mut(), &process_duration);
-
-    {
-        let mut recorder = recorder.borrow_mut();
-        let recording = recorder.take_recording().expect("No recording was made");
-        write_buffer_into_file(recording, output_file);
-    }
+    recorder
 }
 
-fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
-    let channel_count = 1;
+fn create_mixer(
+    context: &dyn Context,
+    input_channel_count: usize,
+    output_channel_count: usize,
+) -> Mixer {
+    let mut mixer = Mixer::new(
+        context.get_command_queue(),
+        input_channel_count,
+        output_channel_count,
+    );
 
-    [
-        (440.0, Level::from_db(-3.0)),
-        (880.0, Level::from_db(-9.0)),
-        (1320.0, Level::from_db(-15.0)),
-        (1760.0, Level::from_db(-21.0)),
-    ]
-    .map(|(frequency, level)| {
-        let mut oscillator = Oscillator::new(context.get_command_queue(), frequency, channel_count);
+    (0..output_channel_count).for_each(|output_channel| {
+        (0..input_channel_count).for_each(|input_channel| {
+            mixer.set_level(input_channel, output_channel, Level::unity());
+        });
+    });
 
-        oscillator
-            .gain
-            .set_value_at_time(level.as_gain(), Timestamp::zero());
-
-        oscillator
-    })
-}
-
-fn create_mixer(context: &dyn Context) -> Mixer {
-    Mixer::mono_to_stereo_splitter(context.get_command_queue())
-}
-
-fn create_recorder(context: &mut dyn Context) -> Rc<RefCell<Recorder>> {
-    let channel_count = 2;
-    let sample_rate = context.get_sample_rate();
-    Recorder::new(context, channel_count, sample_rate)
-}
-
-fn create_gain(context: &dyn Context) -> Gain {
-    let gain_channel_count = 1;
-    Gain::new(context.get_command_queue(), gain_channel_count)
-}
-
-fn make_connections(
-    oscillators: &mut [Oscillator],
-    gain: &mut Gain,
-    mixer: &mut Mixer,
-    recorder: &mut Recorder,
-) {
-    for oscillator in oscillators {
-        oscillator.node.connect_to(&gain.node);
-    }
-
-    gain.node.connect_to(&mixer.node);
-
-    mixer.node.connect_to(&recorder.node);
+    mixer
 }
 
 fn run(context: &mut dyn Context, end_time: &Timestamp) {

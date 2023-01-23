@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 cpal = "0.14.1"
 hound = "3.4.0" 
+lockfree = "0.5.1"
 rawdio = { path = ".." }

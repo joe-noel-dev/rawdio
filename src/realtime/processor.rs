@@ -1,6 +1,9 @@
 use std::sync::{atomic::AtomicI64, atomic::Ordering, Arc};
 
-use crate::{commands::Command, AudioBuffer, AudioProcess, MutableBorrowedAudioBuffer, Timestamp};
+use crate::{
+    commands::Command, AudioBuffer, AudioProcess, BorrowedAudioBuffer, MutableBorrowedAudioBuffer,
+    Timestamp,
+};
 use lockfree::channel::mpsc::Receiver;
 
 use super::dsp_graph::DspGraph;
@@ -38,7 +41,11 @@ impl Processor {
         }
     }
 
-    fn process_graph(&mut self, output_buffer: &mut dyn AudioBuffer) {
+    fn process_graph(
+        &mut self,
+        input_buffer: &dyn AudioBuffer,
+        output_buffer: &mut dyn AudioBuffer,
+    ) {
         let mut offset = 0;
 
         let current_time = Timestamp::from_raw_i64(self.current_time.load(Ordering::Acquire));
@@ -49,12 +56,15 @@ impl Processor {
                 self.get_maximum_number_of_frames(),
             );
 
-            let mut audio_buffer =
+            let input_slice = BorrowedAudioBuffer::slice_frames(input_buffer, offset, num_frames);
+
+            let mut output_slice =
                 MutableBorrowedAudioBuffer::slice_frames(output_buffer, offset, num_frames);
 
             let start_time = current_time.incremented_by_samples(offset, self.sample_rate);
 
-            self.graph.process(&mut audio_buffer, &start_time);
+            self.graph
+                .process(&input_slice, &mut output_slice, &start_time);
 
             offset += num_frames;
         }
@@ -62,7 +72,9 @@ impl Processor {
 }
 
 impl AudioProcess for Processor {
-    fn process(&mut self, output_buffer: &mut dyn AudioBuffer) {
+    fn process(&mut self, input_buffer: &dyn AudioBuffer, output_buffer: &mut dyn AudioBuffer) {
+        debug_assert_eq!(input_buffer.frame_count(), output_buffer.frame_count());
+
         output_buffer.clear();
 
         self.process_commands();
@@ -72,7 +84,7 @@ impl AudioProcess for Processor {
         }
 
         let num_frames = output_buffer.frame_count();
-        self.process_graph(output_buffer);
+        self.process_graph(input_buffer, output_buffer);
         self.update_position(num_frames);
     }
 }
@@ -96,8 +108,11 @@ impl Processor {
 
                 Command::AddConnection(connection) => self.graph.add_connection(connection),
                 Command::RemoveConnection(connection) => self.graph.remove_connection(connection),
-                Command::ConnectToOutput(output_connection) => {
-                    self.graph.connect_to_output(output_connection)
+                Command::ConnectToOutput(output_endpoint) => {
+                    self.graph.connect_to_output(output_endpoint)
+                }
+                Command::ConnectToInput(input_endpoint) => {
+                    self.graph.connect_to_input(input_endpoint)
                 }
             }
         }

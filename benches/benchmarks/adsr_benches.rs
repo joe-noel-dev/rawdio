@@ -31,9 +31,10 @@ fn adsr_benchmarks(c: &mut Criterion) {
 
         context.start();
 
+        let input_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
         let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
-        bencher.iter(|| process.process(&mut output_buffer));
+        bencher.iter(|| process.process(&input_buffer, &mut output_buffer));
 
         black_box(output_buffer);
     });
