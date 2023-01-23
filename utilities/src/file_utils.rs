@@ -2,7 +2,7 @@ use rawdio::{
     AudioBuffer, AudioProcess, MutableBorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation,
 };
 
-pub fn read_file_into_buffer(file_path: &str) -> (OwnedAudioBuffer, usize) {
+pub fn read_file_into_buffer(file_path: &str) -> OwnedAudioBuffer {
     let mut reader = hound::WavReader::open(file_path).expect("Unable to open file for reading");
     let file_specification = reader.spec();
     let num_channels = file_specification.channels as usize;
@@ -24,7 +24,7 @@ pub fn read_file_into_buffer(file_path: &str) -> (OwnedAudioBuffer, usize) {
         }
     }
 
-    (output_buffer, sample_rate)
+    output_buffer
 }
 
 pub fn write_buffer_into_file(buffer: OwnedAudioBuffer, output_file: &str) {

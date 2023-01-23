@@ -20,6 +20,7 @@ pub type SampleLocation = buffer::SampleLocation;
 pub type Adsr = effects::Adsr;
 pub type Biquad = effects::Biquad;
 pub type BiquadFilterType = effects::BiquadFilterType;
+pub type Envelope = effects::Envelope;
 pub type Gain = effects::Gain;
 pub type Mixer = effects::Mixer;
 pub type Oscillator = effects::Oscillator;

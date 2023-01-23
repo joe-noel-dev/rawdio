@@ -16,7 +16,8 @@ fn main() {
 }
 
 fn play_file(file_to_play: &str) {
-    let (sample, sample_rate) = read_file_into_buffer(file_to_play);
+    let sample = read_file_into_buffer(file_to_play);
+    let sample_rate = sample.sample_rate();
 
     let (mut context, audio_process) = create_engine(sample_rate);
     let _audio_callack = AudioCallback::new(audio_process, sample_rate);

@@ -339,7 +339,7 @@ fn process_dsp(
     let mut node_output_buffer =
         get_buffer_with_endpoint(&output_endpoint, free_buffer_pool, assigned_buffer_pool);
 
-    let (mut node_input_buffer, input_endpoint) = prepare_input(
+    let (node_input_buffer, input_endpoint) = prepare_input(
         free_buffer_pool,
         assigned_buffer_pool,
         graph,
@@ -358,7 +358,7 @@ fn process_dsp(
         );
 
         let node_input_buffer_slice =
-            BorrowedAudioBuffer::slice(&mut node_input_buffer, 0, num_frames, 0, dsp.input_count());
+            BorrowedAudioBuffer::slice(&node_input_buffer, 0, num_frames, 0, dsp.input_count());
 
         dsp.process_audio(
             &node_input_buffer_slice,

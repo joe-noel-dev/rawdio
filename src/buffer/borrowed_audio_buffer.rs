@@ -102,7 +102,7 @@ mod tests {
         let slice_offset = 50;
         let slice_num_frames = 100;
         let slice =
-            BorrowedAudioBuffer::slice_frames(&mut original_buffer, slice_offset, slice_num_frames);
+            BorrowedAudioBuffer::slice_frames(&original_buffer, slice_offset, slice_num_frames);
         let expected_location = SampleLocation::new(channel, frame - slice_offset);
         assert_relative_eq!(slice.get_sample(expected_location), value);
     }

@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::SampleLocation;
 
 pub trait AudioBuffer {
@@ -13,12 +15,12 @@ pub trait AudioBuffer {
         for channel in 0..num_channels {
             let channel_data = self.get_channel_data_mut(SampleLocation::channel(channel));
 
-            for frame in 0..num_frames {
+            (0..num_frames).for_each(|frame| {
                 let source_offset = frame * num_channels + channel;
                 let sample_value = interleaved_data[source_offset];
 
                 channel_data[frame] = sample_value;
-            }
+            });
         }
     }
 
@@ -34,12 +36,12 @@ pub trait AudioBuffer {
         for channel in 0..num_channels {
             let channel_data = self.get_channel_data(SampleLocation::channel(channel));
 
-            for frame in 0..num_frames {
+            (0..num_frames).for_each(|frame| {
                 let sample_value = channel_data[frame];
 
                 let destination_offset = frame * num_channels + channel;
                 interleaved_data[destination_offset] = sample_value;
-            }
+            });
         }
     }
 
@@ -51,6 +53,10 @@ pub trait AudioBuffer {
 
     fn length_in_seconds(&self) -> f64 {
         self.frame_count() as f64 / self.sample_rate() as f64
+    }
+
+    fn duration(&self) -> Duration {
+        Duration::from_secs_f64(self.length_in_seconds())
     }
 
     fn clear(&mut self) {
