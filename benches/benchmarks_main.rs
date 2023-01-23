@@ -8,4 +8,6 @@ criterion_main! {
     benchmarks::biquad_benches::benches,
     benchmarks::envelope_benches::benches,
     benchmarks::gain_benches::benches,
+    benchmarks::oscillator_benches::benches,
+    benchmarks::sampler_benches::benches,
 }

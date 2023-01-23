@@ -1,3 +1,5 @@
+use itertools::izip;
+
 use crate::{
     commands::Id,
     graph::{DspParameters, DspProcessor},
@@ -80,21 +82,24 @@ impl DspProcessor for OscillatorProcessor {
         let frequency_values = unwrap_or_return!(parameters.get(&self.frequency_id)).get_values();
         let gain_values = unwrap_or_return!(parameters.get(&self.gain_id)).get_values();
 
-        let frame_count = output_buffer.frame_count();
         let channel_count = output_buffer.channel_count();
 
-        for frame in 0..frame_count {
-            let frequency = frequency_values[frame];
-            let gain = gain_values[frame];
+        let starting_phase = self.phase;
 
-            self.increment_phase(frequency, sample_rate);
+        (0..channel_count).for_each(|channel| {
+            self.phase = starting_phase;
 
-            let value = gain * self.get_value();
+            let location = SampleLocation::channel(channel);
+            let channel_data = output_buffer.get_channel_data_mut(location);
 
-            for channel in 0..channel_count {
-                let location = SampleLocation::new(channel, frame);
-                output_buffer.set_sample(location, value as f32);
+            for (sample, frequency, gain) in izip!(
+                channel_data.iter_mut(),
+                frequency_values.iter(),
+                gain_values.iter()
+            ) {
+                self.increment_phase(*frequency, sample_rate);
+                *sample = (*gain * self.get_value()) as f32;
             }
-        }
+        });
     }
 }

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use criterion::{black_box, criterion_group, Criterion};
-use rawdio::{create_engine, Adsr, Level, OwnedAudioBuffer, Sampler, Timestamp};
+use rawdio::{create_engine, Adsr, Level, OwnedAudioBuffer, Timestamp};
 
 fn adsr_benchmarks(c: &mut Criterion) {
     c.benchmark_group("ADSR");
@@ -12,10 +12,6 @@ fn adsr_benchmarks(c: &mut Criterion) {
 
         let frame_count = 4_096;
         let channel_count = 2;
-        let sample = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
-
-        let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, sample);
-        sampler.start_now();
 
         let mut adsr = Adsr::new(context.get_command_queue(), channel_count, sample_rate);
         adsr.set_attack_time(Duration::from_millis(10));
@@ -26,12 +22,12 @@ fn adsr_benchmarks(c: &mut Criterion) {
         adsr.note_on_at_time(Timestamp::zero());
         adsr.note_off_at_time(Timestamp::from_duration(Duration::from_millis(35)));
 
-        sampler.node.connect_to(&adsr.node);
+        adsr.node.connect_to_input();
         adsr.node.connect_to_output();
 
         context.start();
 
-        let input_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+        let input_buffer = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
         let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
         bencher.iter(|| process.process(&input_buffer, &mut output_buffer));
