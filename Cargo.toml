@@ -22,5 +22,29 @@ structopt = "0.3.26"
 utilities = { path = "utilities" } 
 
 [[bench]]
-name = "benchmarks_main"
+name = "adsr_benches"
+harness = false
+
+[[bench]]
+name = "audio_buffer_benches"
+harness = false
+
+[[bench]]
+name = "biquad_benches"
+harness = false
+
+[[bench]]
+name = "envelope_benches"
+harness = false
+
+[[bench]]
+name = "gain_benches"
+harness = false
+
+[[bench]]
+name = "oscillator_benches"
+harness = false
+
+[[bench]]
+name = "sampler_benches" 
 harness = false

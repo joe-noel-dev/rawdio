@@ -1,4 +1,4 @@
-use criterion::{criterion_group, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{create_engine, AudioProcess, Gain, OwnedAudioBuffer, Timestamp};
 
 struct Fixture {
@@ -65,3 +65,5 @@ fn gain_benchmarks(c: &mut Criterion) {
 }
 
 criterion_group!(benches, gain_benchmarks);
+
+criterion_main!(benches);

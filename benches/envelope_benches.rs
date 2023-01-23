@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
-use criterion::{criterion_group, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{create_engine, AudioProcess, Context, Envelope, OwnedAudioBuffer};
 
 struct Fixture {
@@ -64,3 +64,5 @@ fn envelope_benchmarks(c: &mut Criterion) {
 }
 
 criterion_group!(benches, envelope_benchmarks);
+
+criterion_main!(benches);

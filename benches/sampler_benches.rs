@@ -1,12 +1,12 @@
-use criterion::{criterion_group, Criterion};
-use rawdio::{create_engine, AudioProcess, Context, Oscillator, OwnedAudioBuffer};
+use criterion::{criterion_group, criterion_main, Criterion};
+use rawdio::{create_engine, AudioProcess, Context, OwnedAudioBuffer, Sampler};
 
 struct Fixture {
     audio_process: Box<dyn AudioProcess + Send>,
     context: Box<dyn Context>,
     input_buffer: OwnedAudioBuffer,
     output_buffer: OwnedAudioBuffer,
-    _oscillator: Oscillator,
+    _sampler: Sampler,
 }
 
 impl Fixture {
@@ -17,10 +17,13 @@ impl Fixture {
         let frame_count = 4096;
         let channel_count = 2;
 
-        let frequency = 1_000.0;
-        let oscillator = Oscillator::new(context.get_command_queue(), frequency, channel_count);
+        let sample = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
 
-        oscillator.node.connect_to_output();
+        let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, sample);
+
+        sampler.start_now();
+
+        sampler.node.connect_to_output();
 
         context.start();
 
@@ -29,7 +32,7 @@ impl Fixture {
             context,
             input_buffer: OwnedAudioBuffer::new(frame_count, channel_count, sample_rate),
             output_buffer: OwnedAudioBuffer::new(frame_count, channel_count, sample_rate),
-            _oscillator: oscillator,
+            _sampler: sampler,
         }
     }
 
@@ -40,14 +43,16 @@ impl Fixture {
     }
 }
 
-fn oscillator_benchmarks(c: &mut Criterion) {
-    c.benchmark_group("Oscillator");
+fn sampler_benchmarks(c: &mut Criterion) {
+    c.benchmark_group("Sampler");
 
-    c.bench_function("play oscillator", |b| {
+    c.bench_function("play sample", |b| {
         let mut fixture = Fixture::new();
 
         b.iter(|| fixture.process());
     });
 }
 
-criterion_group!(benches, oscillator_benchmarks);
+criterion_group!(benches, sampler_benchmarks);
+
+criterion_main!(benches);
