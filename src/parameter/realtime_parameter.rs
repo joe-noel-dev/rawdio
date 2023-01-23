@@ -96,8 +96,8 @@ impl RealtimeAudioParameter {
 
                         let ratio = next_event.value / value;
 
-                        let sample_duration = sample_rate as f64 * next_event.end_time.as_seconds()
-                            - time.as_seconds();
+                        let sample_duration = sample_rate as f64
+                            * (next_event.end_time.as_seconds() - time.as_seconds());
 
                         self.increment = 0.0;
                         self.coefficient = (ratio.ln() / sample_duration).exp();
