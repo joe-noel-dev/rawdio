@@ -24,10 +24,10 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
     let channel_count = 1;
 
     [
-        (440.0, Level::from_db(-3.0)),
-        (880.0, Level::from_db(-9.0)),
-        (1320.0, Level::from_db(-15.0)),
-        (1760.0, Level::from_db(-21.0)),
+        (20.0, Level::from_db(-3.0)),
+        (40.0, Level::from_db(-9.0)),
+        (80.0, Level::from_db(-15.0)),
+        (160.0, Level::from_db(-21.0)),
     ]
     .map(|(frequency, level)| {
         let mut oscillator = Oscillator::new(context.get_command_queue(), frequency, channel_count);
@@ -38,7 +38,7 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
 
         oscillator
             .frequency
-            .exponential_ramp_to_value(4.0 * frequency, Timestamp::from_seconds(4.0));
+            .linear_ramp_to_value(100.0 * frequency, Timestamp::from_seconds(4.0));
 
         oscillator
     })
@@ -58,6 +58,9 @@ fn schedule_gain_changes(gain: &mut Gain) {
 
     gain.gain
         .linear_ramp_to_value(1.0, Timestamp::from_seconds(0.1));
+
+    gain.gain
+        .set_value_at_time(1.0, Timestamp::from_seconds(3.9));
 
     gain.gain
         .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
