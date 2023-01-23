@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rawdio::{AudioBuffer, OwnedAudioBuffer, SampleLocation};
 
 fn read_interleaved(destination: &mut dyn AudioBuffer, interleaved_buffer: &[f32]) {
@@ -99,3 +99,5 @@ fn audio_buffer_benchmarks(c: &mut Criterion) {
 }
 
 criterion_group!(benches, audio_buffer_benchmarks);
+
+criterion_main!(benches);

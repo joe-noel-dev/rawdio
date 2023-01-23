@@ -1,4 +1,4 @@
-use criterion::{criterion_group, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{create_engine, AudioProcess, Biquad, BiquadFilterType, OwnedAudioBuffer, Timestamp};
 
 struct Fixture {
@@ -66,3 +66,5 @@ fn biquad_benchmarks(c: &mut Criterion) {
 }
 
 criterion_group!(benches, biquad_benchmarks);
+
+criterion_main!(benches);
