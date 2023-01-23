@@ -1,5 +1,6 @@
 mod adsr;
 mod biquad;
+mod envelope;
 mod gain;
 mod mixer;
 mod oscillator;
@@ -17,5 +18,6 @@ pub type Mixer = mixer::MixerNode;
 pub type Recorder = recorder::RecorderNode;
 pub type Biquad = biquad::BiquadNode;
 pub type BiquadFilterType = biquad::BiquadFilterType;
+pub type Envelope = envelope::EnvelopeNode;
 
 use lockfree::channel::spsc as Channel;

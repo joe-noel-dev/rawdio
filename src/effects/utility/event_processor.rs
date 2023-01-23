@@ -34,8 +34,8 @@ impl<Event> EventProcessor<Event> {
 
         if sort_required {
             self.pending_events.sort_by(|a, b| {
-                let a_time = (self.get_event_time)(&a);
-                let b_time = (self.get_event_time)(&b);
+                let a_time = (self.get_event_time)(a);
+                let b_time = (self.get_event_time)(b);
                 a_time.partial_cmp(&b_time).unwrap()
             });
         }

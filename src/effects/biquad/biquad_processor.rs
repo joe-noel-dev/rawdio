@@ -118,7 +118,7 @@ impl DspProcessor for BiquadProcessor {
                 let y1 = self.delays[channel][2];
                 let y2 = self.delays[channel][3];
 
-                let out = self.coefficients.b0() * input_sample as f64
+                let out = self.coefficients.b0() * input_sample
                     + self.coefficients.b1() * x1
                     + self.coefficients.b2() * x2
                     - self.coefficients.a1() * y1

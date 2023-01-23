@@ -91,8 +91,8 @@ impl RealtimeAudioParameter {
                 }
                 ValueChangeMethod::Exponential => {
                     if self.current_change.end_time <= *time {
-                        assert_ne!(next_event.value, 0.0);
-                        assert_ne!(value, 0.0);
+                        debug_assert_ne!(next_event.value, 0.0);
+                        debug_assert_ne!(value, 0.0);
 
                         let ratio = next_event.value / value;
 

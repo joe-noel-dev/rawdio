@@ -18,7 +18,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "gain_test",
+      "name": "integration: gain",
       "cargo": {
         "args": ["test", "--no-run", "--test=gain_test"]
       },
@@ -29,7 +29,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "pan_test",
+      "name": "integration: pan",
       "cargo": {
         "args": ["test", "--no-run", "--test=pan_test"]
       },
@@ -40,7 +40,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "recorder_test",
+      "name": "integration: recorder",
       "cargo": {
         "args": ["test", "--no-run", "--test=recorder_test"]
       },
@@ -51,7 +51,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "oscillator: Debug",
+      "name": "example: oscillator",
       "cargo": {
         "args": ["build", "--example=oscillator", "--package=rawdio"],
         "filter": {
@@ -65,7 +65,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "offline_process: debug",
+      "name": "example: offline_process",
       "cargo": {
         "args": ["build", "--example=offline_process", "--package=rawdio"],
         "filter": {
@@ -79,7 +79,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "file_playback: debug",
+      "name": "example: file_playback",
       "cargo": {
         "args": ["build", "--example=file_playback", "--package=rawdio"],
         "filter": {
@@ -95,7 +95,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "oscillator: Debug",
+      "name": "example: oscillator",
       "cargo": {
         "args": [
           "test",
@@ -114,7 +114,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "pan: Debug",
+      "name": "example: pan",
       "cargo": {
         "args": ["build", "--example=pan", "--package=rawdio"],
         "filter": {
@@ -128,7 +128,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "adsr: Debug",
+      "name": "example: adsr",
       "cargo": {
         "args": ["build", "--example=adsr", "--package=rawdio"],
         "filter": {
@@ -137,6 +137,22 @@
         }
       },
       "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "example: meter",
+      "cargo": {
+        "args": ["build", "--example=meter", "--package=rawdio"],
+        "filter": {
+          "name": "meter",
+          "kind": "example"
+        }
+      },
+      "args": [
+        "/Users/joe.noel/Splice/sounds/packs/Pocket Drums with Corey Fonville/Loops/Drum_Loops/Natural_no_perc/SO_PD_115_drum_loop_jetstream.wav"
+      ],
       "cwd": "${workspaceFolder}"
     }
   ]

@@ -6,14 +6,14 @@ use lockfree::channel::mpsc;
 
 use super::context::NotifierStatus;
 
-pub struct Engine {
+pub struct Root {
     sample_rate: usize,
     timestamp: Arc<AtomicI64>,
     command_tx: CommandQueue,
     notifiers: Vec<Box<dyn Fn() -> NotifierStatus>>,
 }
 
-impl Context for Engine {
+impl Context for Root {
     fn start(&mut self) {
         let _ = self.command_tx.send(Command::Start);
     }
@@ -53,7 +53,7 @@ pub fn create_engine(sample_rate: usize) -> (Box<dyn Context>, Box<dyn AudioProc
         Arc::clone(&timestamp),
     ));
 
-    let engine = Box::new(Engine {
+    let engine = Box::new(Root {
         sample_rate,
         timestamp,
         command_tx,
