@@ -87,9 +87,7 @@
           "kind": "example"
         }
       },
-      "args": [
-        "/Users/joe.noel/Dropbox/My Music/Ideas/2022-12-03 Project/Bounces/2022-12-03.wav"
-      ],
+      "args": ["out.wav"],
       "cwd": "${workspaceFolder}"
     },
     {
@@ -150,9 +148,21 @@
           "kind": "example"
         }
       },
-      "args": [
-        "/Users/joe.noel/Splice/sounds/packs/Pocket Drums with Corey Fonville/Loops/Drum_Loops/Natural_no_perc/SO_PD_115_drum_loop_jetstream.wav"
-      ],
+      "args": ["out.wav"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "example: record",
+      "cargo": {
+        "args": ["build", "--example=record", "--package=rawdio"],
+        "filter": {
+          "name": "record",
+          "kind": "example"
+        }
+      },
+      "args": ["out.wav", "3"],
       "cwd": "${workspaceFolder}"
     }
   ]

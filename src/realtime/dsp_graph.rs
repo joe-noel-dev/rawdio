@@ -16,6 +16,7 @@ use super::{
 pub struct DspGraph {
     graph: Graph<Box<Dsp>, Connection>,
     topological_sort: TopologicalSort,
+    input_endpoint: Option<Endpoint>,
     output_endpoint: Option<Endpoint>,
     garbage_collection_tx: Sender<GarbageCollectionCommand>,
     graph_needs_sort: bool,
@@ -42,6 +43,7 @@ impl DspGraph {
             graph: Graph::with_capacity(MAXIMUM_GRAPH_NODE_COUNT, MAXIMUM_GRAPH_EDGE_COUNT),
             topological_sort: TopologicalSort::with_capacity(MAXIMUM_GRAPH_NODE_COUNT),
             graph_needs_sort: false,
+            input_endpoint: None,
             output_endpoint: None,
             garbage_collection_tx,
             free_buffer_pool: BufferPool::new(
@@ -56,19 +58,41 @@ impl DspGraph {
         }
     }
 
-    pub fn process(&mut self, output_buffer: &mut dyn AudioBuffer, start_time: &Timestamp) {
-        let num_channels = std::cmp::min(output_buffer.channel_count(), self.maximum_channel_count);
-        let num_frames = std::cmp::min(output_buffer.frame_count(), self.maximum_frame_count);
+    pub fn process(
+        &mut self,
+        input_buffer: &dyn AudioBuffer,
+        output_buffer: &mut dyn AudioBuffer,
+        start_time: &Timestamp,
+    ) {
+        let input_channel_count =
+            std::cmp::min(input_buffer.channel_count(), self.maximum_channel_count);
+        let output_channel_count =
+            std::cmp::min(output_buffer.channel_count(), self.maximum_channel_count);
+        let frame_count = std::cmp::min(output_buffer.frame_count(), self.maximum_frame_count);
 
         self.sort_graph();
+
+        if let Some(input_endpoint) = self.input_endpoint {
+            if let Some(mut buffer) = self.free_buffer_pool.remove() {
+                buffer.copy_from(
+                    input_buffer,
+                    SampleLocation::origin(),
+                    SampleLocation::origin(),
+                    input_channel_count,
+                    frame_count,
+                );
+
+                self.assigned_buffer_pool.add(buffer, &input_endpoint);
+            }
+        }
 
         process_dsps(
             self.topological_sort.get_sorted_graph(),
             &mut self.free_buffer_pool,
             &mut self.assigned_buffer_pool,
             &mut self.graph,
-            num_frames,
-            num_channels,
+            frame_count,
+            output_channel_count,
             start_time,
         );
 
@@ -77,8 +101,8 @@ impl DspGraph {
                 &mut self.assigned_buffer_pool,
                 &output_endpoint,
                 output_buffer,
-                num_channels,
-                num_frames,
+                output_channel_count,
+                frame_count,
                 MixBehaviour::Overwrite,
             );
         }
@@ -148,6 +172,10 @@ impl DspGraph {
 
     pub fn connect_to_output(&mut self, output_endpoint: Endpoint) {
         self.output_endpoint = Some(output_endpoint);
+    }
+
+    pub fn connect_to_input(&mut self, input_endpoint: Endpoint) {
+        self.input_endpoint = Some(input_endpoint);
     }
 }
 
@@ -450,16 +478,19 @@ mod tests {
 
         let num_frames = 128;
 
-        let mut audio_buffer = OwnedAudioBuffer::new(num_frames, 2, sample_rate);
-        graph.process(&mut audio_buffer, &Timestamp::default());
+        let channel_count = 2;
+        let input_buffer = OwnedAudioBuffer::new(num_frames, channel_count, sample_rate);
+        let mut output_buffer = OwnedAudioBuffer::new(num_frames, channel_count, sample_rate);
 
-        assert_relative_ne!(audio_buffer.get_sample(location), value);
+        graph.process(&input_buffer, &mut output_buffer, &Timestamp::default());
+
+        assert_relative_ne!(output_buffer.get_sample(location), value);
 
         graph.connect_to_output(Endpoint::new(dsp_id, EndpointType::Output));
 
-        graph.process(&mut audio_buffer, &Timestamp::default());
+        graph.process(&input_buffer, &mut output_buffer, &Timestamp::default());
 
-        assert_relative_eq!(audio_buffer.get_sample(location), value);
+        assert_relative_eq!(output_buffer.get_sample(location), value);
     }
 
     #[test]
@@ -483,17 +514,20 @@ mod tests {
         graph.add_dsp(dsp_1);
         graph.add_dsp(dsp_2);
 
-        let num_frames = 128;
+        let frame_count = 128;
 
         graph.connect_to_output(Endpoint::new(dsp_id_2, EndpointType::Output));
 
         graph.add_connection(Connection::new(dsp_id_1, dsp_id_2));
 
-        let mut audio_buffer = OwnedAudioBuffer::new(num_frames, 2, 44100);
-        graph.process(&mut audio_buffer, &Timestamp::default());
+        let channel_count = 2;
+        let input_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+        let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
-        assert_relative_eq!(audio_buffer.get_sample(location_1), value_1);
-        assert_relative_eq!(audio_buffer.get_sample(location_2), value_2);
+        graph.process(&input_buffer, &mut output_buffer, &Timestamp::default());
+
+        assert_relative_eq!(output_buffer.get_sample(location_1), value_1);
+        assert_relative_eq!(output_buffer.get_sample(location_2), value_2);
     }
 
     #[test]
@@ -511,10 +545,12 @@ mod tests {
 
         graph.connect_to_output(Endpoint::new(dsp_id, EndpointType::Output));
 
-        let mut audio_buffer =
-            OwnedAudioBuffer::new(num_frames, maximum_number_of_channels * 2, 44100);
+        let input_buffer =
+            OwnedAudioBuffer::new(num_frames, maximum_number_of_channels * 2, sample_rate);
+        let mut output_buffer =
+            OwnedAudioBuffer::new(num_frames, maximum_number_of_channels * 2, sample_rate);
 
-        graph.process(&mut audio_buffer, &Timestamp::default());
+        graph.process(&input_buffer, &mut output_buffer, &Timestamp::default());
     }
 
     #[test]
@@ -530,7 +566,12 @@ mod tests {
 
         graph.connect_to_output(Endpoint::new(dsp_id, EndpointType::Output));
 
-        let mut audio_buffer = OwnedAudioBuffer::new(maximum_number_of_frames * 2, 2, 44100);
-        graph.process(&mut audio_buffer, &Timestamp::default());
+        let channel_count = 2;
+        let input_buffer =
+            OwnedAudioBuffer::new(maximum_number_of_frames * 2, channel_count, sample_rate);
+        let mut output_buffer =
+            OwnedAudioBuffer::new(maximum_number_of_frames * 2, channel_count, sample_rate);
+
+        graph.process(&input_buffer, &mut output_buffer, &Timestamp::default());
     }
 }

@@ -22,7 +22,7 @@ fn play_file(file_to_play: &str) {
     let sample_rate = sample.sample_rate();
 
     let (mut context, audio_process) = create_engine(sample_rate);
-    let _audio_callack = AudioCallback::new(audio_process, sample_rate);
+    let audio_callack = AudioCallback::new(audio_process, sample_rate);
 
     let channel_count = 2;
     let (mut sampler, duration) = create_sampler(context.as_mut(), sample);
@@ -48,6 +48,8 @@ fn play_file(file_to_play: &str) {
     }
 
     context.stop();
+
+    drop(audio_callack);
 }
 
 fn create_sampler(context: &mut dyn Context, sample: OwnedAudioBuffer) -> (Sampler, Duration) {

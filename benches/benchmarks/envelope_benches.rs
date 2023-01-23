@@ -1,14 +1,14 @@
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use criterion::{criterion_group, Criterion};
-use rawdio::{create_engine, AudioProcess, Context, Envelope, OwnedAudioBuffer, Sampler};
+use rawdio::{create_engine, AudioProcess, Context, Envelope, OwnedAudioBuffer};
 
 struct Fixture {
     audio_process: Box<dyn AudioProcess + Send>,
     context: Box<dyn Context>,
+    input_buffer: OwnedAudioBuffer,
     output_buffer: OwnedAudioBuffer,
     _envelope: Rc<RefCell<Envelope>>,
-    _sampler: Sampler,
 }
 
 impl Fixture {
@@ -21,9 +21,6 @@ impl Fixture {
 
         let sample = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
 
-        let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, sample);
-        sampler.start_now();
-
         let envelope = Envelope::new(
             context.as_mut(),
             channel_count,
@@ -32,21 +29,22 @@ impl Fixture {
             notification_frequency,
         );
 
-        sampler.node.connect_to(&envelope.borrow_mut().node);
+        envelope.borrow_mut().node.connect_to_input();
 
         context.start();
 
         Self {
             audio_process: process,
             context,
+            input_buffer: sample,
             output_buffer: OwnedAudioBuffer::new(frame_count, channel_count, sample_rate),
             _envelope: envelope,
-            _sampler: sampler,
         }
     }
 
     fn process(&mut self) {
-        self.audio_process.process(&mut self.output_buffer);
+        self.audio_process
+            .process(&self.input_buffer, &mut self.output_buffer);
         self.context.process_notifications();
     }
 }

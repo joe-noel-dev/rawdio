@@ -107,10 +107,16 @@ fn process_block<T>(
 ) where
     T: std::io::Write + std::io::Seek,
 {
+    let input_buffer = OwnedAudioBuffer::new(
+        frames_this_time,
+        audio_buffer.channel_count(),
+        audio_buffer.sample_rate(),
+    );
+
     let mut frame_buffer =
         MutableBorrowedAudioBuffer::slice_frames(audio_buffer, frame_offset, frames_this_time);
 
-    audio_process.process(&mut frame_buffer);
+    audio_process.process(&input_buffer, &mut frame_buffer);
 
     for frame in 0..frame_buffer.frame_count() {
         for channel in 0..frame_buffer.channel_count() {

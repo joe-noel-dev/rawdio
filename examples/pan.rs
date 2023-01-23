@@ -7,7 +7,7 @@ use utilities::AudioCallback;
 fn main() {
     let sample_rate = 44100;
     let (mut context, audio_process) = create_engine(sample_rate);
-    let _audio_callack = AudioCallback::new(audio_process, sample_rate);
+    let audio_callack = AudioCallback::new(audio_process, sample_rate);
 
     let oscillator = create_oscillator(context.as_ref());
     let pan = create_pan(context.as_ref());
@@ -20,6 +20,8 @@ fn main() {
     context.stop();
 
     thread::sleep(time::Duration::from_secs(1));
+
+    drop(audio_callack);
 }
 
 fn create_oscillator(context: &dyn Context) -> Oscillator {
