@@ -10,7 +10,7 @@ fn adsr_benchmarks(c: &mut Criterion) {
         let sample_rate = 48_000;
         let (mut context, mut process) = create_engine(sample_rate);
 
-        let frame_count = 48_000;
+        let frame_count = 4_096;
         let channel_count = 2;
         let sample = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
 
@@ -18,13 +18,13 @@ fn adsr_benchmarks(c: &mut Criterion) {
         sampler.start_now();
 
         let mut adsr = Adsr::new(context.get_command_queue(), channel_count, sample_rate);
-        adsr.set_attack_time(Duration::from_millis(100));
-        adsr.set_decay_time(Duration::from_millis(200));
+        adsr.set_attack_time(Duration::from_millis(10));
+        adsr.set_decay_time(Duration::from_millis(20));
         adsr.set_sustain_level(Level::from_db(-6.0));
-        adsr.set_release_time(Duration::from_millis(400));
+        adsr.set_release_time(Duration::from_millis(40));
 
         adsr.note_on_at_time(Timestamp::zero());
-        adsr.note_off_at_time(Timestamp::from_duration(Duration::from_millis(600)));
+        adsr.note_off_at_time(Timestamp::from_duration(Duration::from_millis(35)));
 
         sampler.node.connect_to(&adsr.node);
         adsr.node.connect_to_output();

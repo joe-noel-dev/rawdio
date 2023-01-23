@@ -1,12 +1,10 @@
 use criterion::{criterion_group, Criterion};
 use rawdio::{
-    create_engine, AudioProcess, Biquad, BiquadFilterType, Context, OwnedAudioBuffer, Sampler,
-    Timestamp,
+    create_engine, AudioProcess, Biquad, BiquadFilterType, OwnedAudioBuffer, Sampler, Timestamp,
 };
 
 struct Fixture {
     audio_process: Box<dyn AudioProcess + Send>,
-    _context: Box<dyn Context>,
     output_buffer: OwnedAudioBuffer,
     biquad: Biquad,
     _sampler: Sampler,
@@ -36,7 +34,6 @@ impl Fixture {
 
         Self {
             audio_process: process,
-            _context: context,
             output_buffer: OwnedAudioBuffer::new(frame_count, channel_count, sample_rate),
             biquad,
             _sampler: sampler,
