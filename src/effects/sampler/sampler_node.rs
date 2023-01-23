@@ -1,5 +1,5 @@
 use crate::{
-    commands::Id, effects::Channel, graph::DspParameters, AudioBuffer, CommandQueue, Node,
+    commands::Id, effects::Channel, graph::DspParameters, AudioBuffer, CommandQueue, GraphNode,
     OwnedAudioBuffer, Timestamp,
 };
 
@@ -9,7 +9,7 @@ use super::{
 };
 
 pub struct SamplerNode {
-    pub node: Node,
+    pub node: GraphNode,
     event_transmitter: EventTransmitter,
 }
 
@@ -24,7 +24,7 @@ impl SamplerNode {
 
         let processor = Box::new(SamplerDspProcess::new(sample_rate, sample, event_receiver));
 
-        let node = Node::new(
+        let node = GraphNode::new(
             id,
             command_queue,
             input_count,

@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use crate::{commands::Id, effects::Channel, CommandQueue, Level, Node};
+use crate::{commands::Id, effects::Channel, CommandQueue, GraphNode, Level};
 
 use super::{
     mixer_event::EventTransmitter, mixer_matrix::MixerMatrix, mixer_processor::MixerProcessor,
 };
 
 pub struct MixerNode {
-    pub node: Node,
+    pub node: GraphNode,
     pub gain_matrix: MixerMatrix,
     event_transmitter: EventTransmitter,
 }
@@ -22,7 +22,7 @@ impl MixerNode {
 
         let processor = Box::new(MixerProcessor::new(event_receiver));
 
-        let node = Node::new(
+        let node = GraphNode::new(
             id,
             command_queue,
             input_count,

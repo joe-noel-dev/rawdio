@@ -6,12 +6,12 @@ use super::{
     Dsp, DspParameters, DspProcessor,
 };
 
-pub struct Node {
+pub struct GraphNode {
     id: Id,
     command_queue: CommandQueue,
 }
 
-impl Node {
+impl GraphNode {
     pub fn new(
         id: Id,
         command_queue: CommandQueue,
@@ -46,7 +46,7 @@ impl Node {
             .send(Command::AddConnection(Connection::new(self.get_id(), id)));
     }
 
-    pub fn connect_to(&self, node: &Node) {
+    pub fn connect_to(&self, node: &GraphNode) {
         self.connect_to_id(node.get_id());
     }
 
@@ -59,12 +59,12 @@ impl Node {
             )));
     }
 
-    pub fn disconnect_from_node(&self, node: &Node) {
+    pub fn disconnect_from_node(&self, node: &GraphNode) {
         self.disconnect_from_id(node.get_id());
     }
 }
 
-impl Drop for Node {
+impl Drop for GraphNode {
     fn drop(&mut self) {
         Dsp::remove_from_audio_process(self.id, &self.command_queue);
     }

@@ -1,8 +1,8 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    commands::Id, effects::Channel, engine::NotifierStatus, BorrowedAudioBuffer, Context, Node,
-    OwnedAudioBuffer, Timestamp,
+    commands::Id, effects::Channel, engine::NotifierStatus, BorrowedAudioBuffer, Context,
+    GraphNode, OwnedAudioBuffer, Timestamp,
 };
 
 use super::{
@@ -12,7 +12,7 @@ use super::{
 };
 
 pub struct RecorderNode {
-    pub node: Node,
+    pub node: GraphNode,
     event_transmitter: RecorderEventTransmitter,
     notification_receiver: RecorderNotificationReceiver,
     current_recording: Option<OwnedAudioBuffer>,
@@ -41,7 +41,7 @@ impl RecorderNode {
 
         let output_count = 0;
 
-        let node = Node::new(
+        let node = GraphNode::new(
             id,
             context.get_command_queue(),
             channel_count,

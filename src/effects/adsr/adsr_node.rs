@@ -2,11 +2,11 @@ use super::{
     adsr_event::{AdsrEvent, AdsrEventType},
     adsr_processor::AdsrProcessor,
 };
-use crate::{commands::Id, effects::Channel, CommandQueue, Level, Node, Timestamp};
+use crate::{commands::Id, effects::Channel, CommandQueue, GraphNode, Level, Timestamp};
 use std::{collections::HashMap, time::Duration};
 
 pub struct AdsrNode {
-    pub node: Node,
+    pub node: GraphNode,
     event_transmitter: Channel::Sender<AdsrEvent>,
 }
 
@@ -20,7 +20,7 @@ impl AdsrNode {
 
         let processor = Box::new(AdsrProcessor::new(event_receiver, sample_rate));
 
-        let node = Node::new(
+        let node = GraphNode::new(
             id,
             command_queue,
             channel_count,
