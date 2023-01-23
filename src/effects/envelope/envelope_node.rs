@@ -3,13 +3,13 @@ use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use crate::effects::Channel;
 use crate::engine::NotifierStatus;
-use crate::{commands::Id, Context, Node};
+use crate::{commands::Id, Context, GraphNode};
 
 use super::envelope_notification::{EnvelopeNotification, EnvelopeNotificationReceiver};
 use super::envelope_processor::EnvelopeProcessor;
 
 pub struct EnvelopeNode {
-    pub node: Node,
+    pub node: GraphNode,
     notifications: Vec<EnvelopeNotification>,
     notification_receiver: EnvelopeNotificationReceiver,
 }
@@ -37,7 +37,7 @@ impl EnvelopeNode {
 
         let parameters = HashMap::new();
 
-        let node = Node::new(
+        let node = GraphNode::new(
             id,
             context.get_command_queue(),
             channel_count,

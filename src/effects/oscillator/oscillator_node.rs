@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use crate::{commands::Id, graph::Node, parameter::AudioParameter, CommandQueue};
+use crate::{commands::Id, graph::GraphNode, parameter::AudioParameter, CommandQueue};
 
 use super::oscillator_processor::OscillatorProcessor;
 
 pub struct OscillatorNode {
-    pub node: Node,
+    pub node: GraphNode,
     pub frequency: AudioParameter,
     pub gain: AudioParameter,
 }
@@ -39,7 +39,7 @@ impl OscillatorNode {
 
         let processor = Box::new(OscillatorProcessor::new(frequency.get_id(), gain.get_id()));
 
-        let node = Node::new(
+        let node = GraphNode::new(
             id,
             command_queue,
             input_count,

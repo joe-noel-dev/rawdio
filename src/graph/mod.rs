@@ -3,7 +3,7 @@ mod connection;
 mod dsp;
 mod dsp_parameters;
 mod endpoint;
-mod node;
+mod graph_node;
 
 pub type AssignedBufferPool<Identifier> = assigned_buffer_pool::AssignedBufferPool<Identifier>;
 pub type Connection = connection::Connection;
@@ -13,4 +13,4 @@ pub type EndpointType = endpoint::EndpointType;
 pub type DspParameters = dsp_parameters::DspParameters;
 
 pub use dsp::DspProcessor;
-pub use node::Node;
+pub use graph_node::GraphNode;

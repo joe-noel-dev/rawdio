@@ -34,7 +34,7 @@ pub use buffer::AudioBuffer;
 pub use engine::create_engine;
 pub use engine::AudioProcess;
 pub use engine::Context;
-pub use graph::Node;
+pub use graph::GraphNode;
 
 #[macro_use]
 extern crate lazy_static;

@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use crate::{commands::Id, graph::Node, parameter::AudioParameter, CommandQueue};
+use crate::{commands::Id, graph::GraphNode, parameter::AudioParameter, CommandQueue};
 
 use super::gain_processor::GainProcessor;
 
 pub struct GainNode {
-    pub node: Node,
+    pub node: GraphNode,
     pub gain: AudioParameter,
 }
 
@@ -23,7 +23,7 @@ impl GainNode {
         let processor = Box::new(GainProcessor::new(gain.get_id()));
 
         Self {
-            node: Node::new(
+            node: GraphNode::new(
                 id,
                 command_queue,
                 channel_count,

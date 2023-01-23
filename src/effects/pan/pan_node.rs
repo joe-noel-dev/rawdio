@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{commands::Id, AudioParameter, CommandQueue, Node};
+use crate::{commands::Id, AudioParameter, CommandQueue, GraphNode};
 
 use super::pan_processor::PanProcessor;
 
@@ -8,7 +8,7 @@ const MIN_PAN: f64 = -1.0;
 const MAX_PAN: f64 = 1.0;
 
 pub struct PanNode {
-    pub node: Node,
+    pub node: GraphNode,
     pub pan: AudioParameter,
 }
 
@@ -25,7 +25,7 @@ impl PanNode {
 
         let processor = Box::new(PanProcessor::new(pan.get_id()));
 
-        let node = Node::new(
+        let node = GraphNode::new(
             id,
             command_queue,
             input_count,
