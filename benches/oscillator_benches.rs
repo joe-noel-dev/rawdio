@@ -18,7 +18,7 @@ impl Fixture {
         let channel_count = 2;
 
         let frequency = 1_000.0;
-        let oscillator = Oscillator::new(context.as_ref(), frequency, channel_count);
+        let oscillator = Oscillator::sine(context.as_ref(), frequency, channel_count);
 
         oscillator.node.connect_to_output();
 
