@@ -11,32 +11,16 @@ pub struct OscillatorProcessor {
     phase: f64,
     frequency_id: Id,
     gain_id: Id,
-}
-
-lazy_static! {
-    static ref SINE_WAVE_TABLE: Vec<f64> = {
-        let length = 8192;
-        let mut values = Vec::with_capacity(length);
-
-        for frame in 0..length {
-            let time = frame as f64 / length as f64;
-            let value = (std::f64::consts::TAU * time).sin();
-            values.push(value);
-        }
-
-        values
-    };
+    wavetable: Vec<f64>,
 }
 
 impl OscillatorProcessor {
-    pub fn new(frequency_id: Id, gain_id: Id) -> Self {
-        // ensure table is initialised off the realtime thread
-        let _ = SINE_WAVE_TABLE[0];
-
+    pub fn new(frequency_id: Id, gain_id: Id, wavetable: Vec<f64>) -> Self {
         Self {
             phase: 0.0,
             frequency_id,
             gain_id,
+            wavetable,
         }
     }
 
@@ -48,14 +32,14 @@ impl OscillatorProcessor {
     }
 
     fn get_value(&self) -> f64 {
-        let offset = self.phase * SINE_WAVE_TABLE.len() as f64;
+        let offset = self.phase * self.wavetable.len() as f64;
 
         let offset_before = offset.floor() as usize;
         let offset_after = offset.ceil() as usize;
 
-        let value_before = SINE_WAVE_TABLE[offset_before];
-        let value_after = if offset_after < SINE_WAVE_TABLE.len() {
-            SINE_WAVE_TABLE[offset_after]
+        let value_before = self.wavetable[offset_before];
+        let value_after = if offset_after < self.wavetable.len() {
+            self.wavetable[offset_after]
         } else {
             0.0
         };

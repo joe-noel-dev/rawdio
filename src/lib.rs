@@ -36,6 +36,3 @@ pub use graph::GraphNode;
 
 pub use utility::Level;
 pub use utility::Timestamp;
-
-#[macro_use]
-extern crate lazy_static;

@@ -34,7 +34,7 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
     let output_count = 2;
 
     [(440.0, 0.4), (880.0, 0.2), (1320.0, 0.1), (1760.0, 0.05)].map(|(frequency, gain)| {
-        let mut oscillator = Oscillator::new(context, frequency, output_count);
+        let mut oscillator = Oscillator::sine(context, frequency, output_count);
         oscillator.gain.set_value_at_time(gain, Timestamp::zero());
         oscillator
     })

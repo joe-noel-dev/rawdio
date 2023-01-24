@@ -33,7 +33,7 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
         (1760.0, Level::from_db(-21.0)),
     ]
     .map(|(frequency, level)| {
-        let mut oscillator = Oscillator::new(context, frequency, channel_count);
+        let mut oscillator = Oscillator::sine(context, frequency, channel_count);
 
         oscillator
             .gain

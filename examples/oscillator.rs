@@ -8,40 +8,42 @@ fn main() {
     let (mut context, audio_process) = create_engine(sample_rate);
     let audio_callback = AudioCallback::new(audio_process, sample_rate);
 
-    let mut oscillators = create_oscillators(context.as_ref());
+    let mut oscillator = create_oscillator(context.as_ref());
     let mut gain = create_gain(context.as_ref());
     let mut mixer = create_mixer(context.as_ref());
 
     schedule_gain_changes(&mut gain);
-    make_connections(&mut oscillators, &mut gain, &mut mixer);
+    make_connections(&mut oscillator, &mut gain, &mut mixer);
 
     run(context.as_mut());
 
     drop(audio_callback);
 }
 
-fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
+fn create_oscillator(context: &dyn Context) -> Oscillator {
     let channel_count = 1;
 
-    [
-        (20.0, Level::from_db(-3.0)),
-        (40.0, Level::from_db(-9.0)),
-        (80.0, Level::from_db(-15.0)),
-        (160.0, Level::from_db(-21.0)),
-    ]
-    .map(|(frequency, level)| {
-        let mut oscillator = Oscillator::new(context, frequency, channel_count);
+    let harmonics = [
+        Level::from_db(-3.0),
+        Level::from_db(-9.0),
+        Level::from_db(-15.0),
+        Level::from_db(-21.0),
+        Level::from_db(-27.0),
+    ];
 
-        oscillator
-            .gain
-            .set_value_at_time(level.as_gain(), Timestamp::zero());
+    let frequency = 20.0;
 
-        oscillator
-            .frequency
-            .linear_ramp_to_value(100.0 * frequency, Timestamp::from_seconds(4.0));
+    let mut oscillator = Oscillator::with_harmonics(context, 20.0, channel_count, &harmonics);
 
-        oscillator
-    })
+    oscillator
+        .gain
+        .set_value_at_time(Level::unity().as_gain(), Timestamp::zero());
+
+    oscillator
+        .frequency
+        .exponential_ramp_to_value(100.0 * frequency, Timestamp::from_seconds(4.0));
+
+    oscillator
 }
 
 fn create_mixer(context: &dyn Context) -> Mixer {
@@ -66,13 +68,9 @@ fn schedule_gain_changes(gain: &mut Gain) {
         .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
 }
 
-fn make_connections(oscillators: &mut [Oscillator], gain: &mut Gain, mixer: &mut Mixer) {
-    for oscillator in oscillators {
-        oscillator.node.connect_to(&gain.node);
-    }
-
+fn make_connections(oscillator: &mut Oscillator, gain: &mut Gain, mixer: &mut Mixer) {
+    oscillator.node.connect_to(&gain.node);
     gain.node.connect_to(&mixer.node);
-
     mixer.node.connect_to_output();
 }
 
