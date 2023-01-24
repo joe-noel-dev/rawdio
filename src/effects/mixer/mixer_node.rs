@@ -6,13 +6,13 @@ use super::{
     mixer_event::EventTransmitter, mixer_matrix::MixerMatrix, mixer_processor::MixerProcessor,
 };
 
-pub struct MixerNode {
+pub struct Mixer {
     pub node: GraphNode,
     pub gain_matrix: MixerMatrix,
     event_transmitter: EventTransmitter,
 }
 
-impl MixerNode {
+impl Mixer {
     pub fn new(command_queue: CommandQueue, input_count: usize, output_count: usize) -> Self {
         let id = Id::generate();
 

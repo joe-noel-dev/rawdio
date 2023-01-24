@@ -2,17 +2,17 @@ use std::collections::HashMap;
 
 use crate::{commands::Id, AudioParameter, Context, GraphNode, Level};
 
-use super::{biquad_processor::BiquadProcessor, filter_type::FilterType};
+use super::{biquad_processor::BiquadProcessor, filter_type::BiquadFilterType};
 
-pub struct BiquadNode {
+pub struct Biquad {
     pub node: GraphNode,
     pub frequency: AudioParameter,
     pub q: AudioParameter,
     pub shelf_gain: AudioParameter,
 }
 
-impl BiquadNode {
-    pub fn new(context: &dyn Context, channel_count: usize, filter_type: FilterType) -> Self {
+impl Biquad {
+    pub fn new(context: &dyn Context, channel_count: usize, filter_type: BiquadFilterType) -> Self {
         let id = Id::generate();
 
         let command_queue = context.get_command_queue();

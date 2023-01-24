@@ -6,4 +6,4 @@ pub use audio_process::AudioProcess;
 pub use context::Context;
 pub use root::create_engine;
 
-pub type NotifierStatus = context::NotifierStatus;
+pub use context::NotifierStatus;

@@ -8,12 +8,12 @@ use super::{
     sampler_processor::{EventTransmitter, SamplerDspProcess},
 };
 
-pub struct SamplerNode {
+pub struct Sampler {
     pub node: GraphNode,
     event_transmitter: EventTransmitter,
 }
 
-impl SamplerNode {
+impl Sampler {
     pub fn new(command_queue: CommandQueue, sample_rate: usize, sample: OwnedAudioBuffer) -> Self {
         let id = Id::generate();
 

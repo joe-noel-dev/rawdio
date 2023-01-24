@@ -5,12 +5,12 @@ use super::{
 use crate::{commands::Id, effects::Channel, CommandQueue, GraphNode, Level, Timestamp};
 use std::{collections::HashMap, time::Duration};
 
-pub struct AdsrNode {
+pub struct Adsr {
     pub node: GraphNode,
     event_transmitter: Channel::Sender<AdsrEvent>,
 }
 
-impl AdsrNode {
+impl Adsr {
     pub fn new(command_queue: CommandQueue, channel_count: usize, sample_rate: usize) -> Self {
         let id = Id::generate();
 

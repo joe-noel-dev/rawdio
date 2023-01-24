@@ -4,7 +4,7 @@ use crate::{commands::Id, graph::GraphNode, parameter::AudioParameter, CommandQu
 
 use super::oscillator_processor::OscillatorProcessor;
 
-pub struct OscillatorNode {
+pub struct Oscillator {
     pub node: GraphNode,
     pub frequency: AudioParameter,
     pub gain: AudioParameter,
@@ -16,7 +16,7 @@ const MIN_FREQUENCY: f64 = 20.0;
 const MAX_FREQUENCY: f64 = 20000.0;
 const DEFAULT_GAIN: f64 = 1.0;
 
-impl OscillatorNode {
+impl Oscillator {
     pub fn new(command_queue: CommandQueue, frequency: f64, output_count: usize) -> Self {
         debug_assert!(output_count > 0);
 

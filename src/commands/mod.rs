@@ -3,8 +3,8 @@ mod id;
 mod notifier;
 mod parameter_change_request;
 
-pub type Id = id::Id;
-pub type Command = command::Command;
-pub type ParameterChangeRequest = parameter_change_request::ParameterChangeRequest;
-pub type CancelChangeRequest = parameter_change_request::CancelChangeRequest;
+pub use command::Command;
+pub use id::Id;
 pub use notifier::Notifier;
+pub use parameter_change_request::CancelChangeRequest;
+pub use parameter_change_request::ParameterChangeRequest;

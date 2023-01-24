@@ -7,12 +7,12 @@ use super::pan_processor::PanProcessor;
 const MIN_PAN: f64 = -1.0;
 const MAX_PAN: f64 = 1.0;
 
-pub struct PanNode {
+pub struct Pan {
     pub node: GraphNode,
     pub pan: AudioParameter,
 }
 
-impl PanNode {
+impl Pan {
     pub fn new(command_queue: CommandQueue, input_count: usize) -> Self {
         let id = Id::generate();
 

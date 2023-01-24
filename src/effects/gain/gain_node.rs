@@ -4,7 +4,7 @@ use crate::{commands::Id, graph::GraphNode, parameter::AudioParameter, CommandQu
 
 use super::gain_processor::GainProcessor;
 
-pub struct GainNode {
+pub struct Gain {
     pub node: GraphNode,
     pub gain: AudioParameter,
 }
@@ -13,7 +13,7 @@ const MIN_GAIN: f64 = f64::NEG_INFINITY;
 const MAX_GAIN: f64 = f64::INFINITY;
 const DEFAULT_GAIN: f64 = 1.0;
 
-impl GainNode {
+impl Gain {
     pub fn new(command_queue: CommandQueue, channel_count: usize) -> Self {
         let id = Id::generate();
         let (gain, realtime_gain) =
