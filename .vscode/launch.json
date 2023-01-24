@@ -164,6 +164,20 @@
       },
       "args": ["out.wav", "3"],
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "example: metronome",
+      "cargo": {
+        "args": ["build", "--example=metronome", "--package=rawdio"],
+        "filter": {
+          "name": "metronome",
+          "kind": "example"
+        }
+      },
+      "args": ["--tempo", "127"],
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

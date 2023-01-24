@@ -48,8 +48,8 @@ fn print_input_devices(host: &Host) {
 }
 
 fn print_devices(host: &Host) {
-    print_output_devices(&host);
-    print_input_devices(&host);
+    print_output_devices(host);
+    print_input_devices(host);
 }
 
 type AudioSender = crossbeam::channel::Sender<f32>;

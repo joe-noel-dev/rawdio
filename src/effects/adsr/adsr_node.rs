@@ -2,7 +2,7 @@ use super::{
     adsr_event::{AdsrEvent, AdsrEventType},
     adsr_processor::AdsrProcessor,
 };
-use crate::{commands::Id, effects::Channel, CommandQueue, GraphNode, Level, Timestamp};
+use crate::{commands::Id, effects::Channel, Context, GraphNode, Level, Timestamp};
 use std::{collections::HashMap, time::Duration};
 
 pub struct Adsr {
@@ -13,11 +13,7 @@ pub struct Adsr {
 static EVENT_CHANNEL_CAPACITY: usize = 32;
 
 impl Adsr {
-    pub fn new(
-        command_queue: Box<dyn CommandQueue>,
-        channel_count: usize,
-        sample_rate: usize,
-    ) -> Self {
+    pub fn new(context: &dyn Context, channel_count: usize, sample_rate: usize) -> Self {
         let id = Id::generate();
 
         let parameters = HashMap::new();
@@ -28,7 +24,7 @@ impl Adsr {
 
         let node = GraphNode::new(
             id,
-            command_queue,
+            context.get_command_queue(),
             channel_count,
             channel_count,
             processor,

@@ -54,11 +54,7 @@ fn create_gain(context: &dyn Context) -> Gain {
 
 fn create_adsr(context: &dyn Context) -> Adsr {
     let adsr_channel_count = 1;
-    let mut adsr = Adsr::new(
-        context.get_command_queue(),
-        adsr_channel_count,
-        context.get_sample_rate(),
-    );
+    let mut adsr = Adsr::new(context, adsr_channel_count, context.get_sample_rate());
 
     adsr.set_attack_time(Duration::from_millis(100));
     adsr.set_decay_time(Duration::from_millis(150));

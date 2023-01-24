@@ -13,7 +13,7 @@ fn adsr_benchmarks(c: &mut Criterion) {
         let frame_count = 4_096;
         let channel_count = 2;
 
-        let mut adsr = Adsr::new(context.get_command_queue(), channel_count, sample_rate);
+        let mut adsr = Adsr::new(context.as_ref(), channel_count, sample_rate);
         adsr.set_attack_time(Duration::from_millis(10));
         adsr.set_decay_time(Duration::from_millis(20));
         adsr.set_sustain_level(Level::from_db(-6.0));
