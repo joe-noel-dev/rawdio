@@ -13,6 +13,8 @@ pub struct Sampler {
     event_transmitter: EventTransmitter,
 }
 
+static EVENT_CHANNEL_CAPACITY: usize = 32;
+
 impl Sampler {
     pub fn new(
         command_queue: Box<dyn CommandQueue>,
@@ -21,7 +23,7 @@ impl Sampler {
     ) -> Self {
         let id = Id::generate();
 
-        let (event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = Channel::bounded(EVENT_CHANNEL_CAPACITY);
 
         let input_count = 0;
         let output_count = sample.channel_count();

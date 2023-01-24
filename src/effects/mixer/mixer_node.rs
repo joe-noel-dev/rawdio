@@ -12,6 +12,8 @@ pub struct Mixer {
     event_transmitter: EventTransmitter,
 }
 
+static EVENT_CHANNEL_CAPACITY: usize = 32;
+
 impl Mixer {
     pub fn new(
         command_queue: Box<dyn CommandQueue>,
@@ -22,7 +24,7 @@ impl Mixer {
 
         let gain_matrix = MixerMatrix::new(input_count, output_count);
 
-        let (event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = Channel::bounded(EVENT_CHANNEL_CAPACITY);
 
         let processor = Box::new(MixerProcessor::new(event_receiver));
 

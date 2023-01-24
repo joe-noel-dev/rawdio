@@ -1,5 +1,3 @@
-use lockfree::channel::{spsc, spsc::Sender};
-
 use crate::{
     buffer::{BufferPool, MutableBorrowedAudioBuffer},
     commands::{CancelChangeRequest, Id, ParameterChangeRequest},
@@ -8,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    garbage_collector::{run_garbage_collector, GarbageCollectionCommand},
+    garbage_collector::{run_garbage_collector, GarbageCollectionCommand, GarbaseCollectionSender},
     graph::{Direction, Graph},
     topological_sort::TopologicalSort,
 };
@@ -18,7 +16,7 @@ pub struct DspGraph {
     topological_sort: TopologicalSort,
     input_endpoint: Option<Endpoint>,
     output_endpoint: Option<Endpoint>,
-    garbage_collection_tx: Sender<GarbageCollectionCommand>,
+    garbage_collection_tx: GarbaseCollectionSender,
     graph_needs_sort: bool,
     free_buffer_pool: BufferPool,
     assigned_buffer_pool: AssignedBufferPool<Endpoint>,
@@ -29,6 +27,7 @@ pub struct DspGraph {
 static MAXIMUM_BUFFER_COUNT: usize = 128;
 static MAXIMUM_GRAPH_NODE_COUNT: usize = 512;
 static MAXIMUM_GRAPH_EDGE_COUNT: usize = 512;
+static GARBAGE_COLLECTION_CHANNEL_CAPACITY: usize = 512;
 
 impl DspGraph {
     pub fn new(
@@ -36,7 +35,8 @@ impl DspGraph {
         maximum_channel_count: usize,
         sample_rate: usize,
     ) -> Self {
-        let (garbage_collection_tx, garbage_collection_rx) = spsc::create();
+        let (garbage_collection_tx, garbage_collection_rx) =
+            crossbeam::channel::bounded(GARBAGE_COLLECTION_CHANNEL_CAPACITY);
         run_garbage_collector(garbage_collection_rx);
 
         Self {

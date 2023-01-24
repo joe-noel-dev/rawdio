@@ -28,8 +28,8 @@ fn print_output_devices(host: &Host) {
     println!();
 }
 
-type AudioSender = lockfree::channel::spsc::Sender<f32>;
-type AudioReceiver = lockfree::channel::spsc::Receiver<f32>;
+type AudioSender = crossbeam::channel::Sender<f32>;
+type AudioReceiver = crossbeam::channel::Receiver<f32>;
 
 impl AudioCallback {
     pub fn new(audio_process: Box<dyn AudioProcess + Send>, sample_rate: usize) -> Self {
@@ -38,7 +38,8 @@ impl AudioCallback {
 
         print_output_devices(&host);
 
-        let (input_to_output_tx, input_to_output_rx) = lockfree::channel::spsc::create();
+        let queue_capacity = 1024 * 1024;
+        let (input_to_output_tx, input_to_output_rx) = crossbeam::channel::bounded(queue_capacity);
 
         let (input_stream, input_channel_count) =
             prepare_input_stream(&host, sample_rate, input_to_output_tx);
@@ -65,7 +66,7 @@ impl AudioCallback {
 fn prepare_input_stream(
     host: &Host,
     sample_rate: usize,
-    mut input_to_output_tx: AudioSender,
+    input_to_output_tx: AudioSender,
 ) -> (Stream, usize) {
     let preferred_device = host.default_input_device();
 
@@ -88,8 +89,9 @@ fn prepare_input_stream(
 
     let channel_count = config.channels() as usize;
 
-    let input_delay = Duration::from_millis(10);
-    let input_delay = (input_delay.as_secs_f64() * sample_rate as f64).ceil() as usize;
+    let input_delay = Duration::from_millis(1);
+    let input_delay =
+        channel_count * (input_delay.as_secs_f64() * sample_rate as f64).ceil() as usize;
 
     (0..input_delay).for_each(|_| {
         let _ = input_to_output_tx.send(0.0_f32);
@@ -116,7 +118,7 @@ fn prepare_output_stream(
     host: &Host,
     sample_rate: usize,
     input_channel_count: usize,
-    mut input_to_output_rx: AudioReceiver,
+    input_to_output_rx: AudioReceiver,
     mut audio_process: Box<dyn AudioProcess + Send>,
 ) -> Stream {
     let preferred_device = host.default_output_device();
@@ -161,7 +163,9 @@ fn prepare_output_stream(
 
         (0..num_frames).for_each(|frame| {
             (0..input_channel_count).for_each(|channel| {
-                let sample = input_to_output_rx.recv().expect("Ran out of input samples");
+                let sample = input_to_output_rx
+                    .try_recv()
+                    .expect("Ran out of input samples");
                 let location = SampleLocation::new(channel, frame);
                 input_buffer.set_sample(location, sample);
             });

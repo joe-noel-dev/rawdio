@@ -14,6 +14,8 @@ pub struct Envelope {
     notification_receiver: EnvelopeNotificationReceiver,
 }
 
+static NOTIFICATION_CHANNEL_CAPACITY: usize = 64;
+
 impl Envelope {
     pub fn new(
         context: &mut dyn Context,
@@ -24,7 +26,8 @@ impl Envelope {
     ) -> Rc<RefCell<Self>> {
         let id = Id::generate();
 
-        let (notification_transmitter, notification_receiver) = Channel::create();
+        let (notification_transmitter, notification_receiver) =
+            Channel::bounded(NOTIFICATION_CHANNEL_CAPACITY);
 
         let processor = Box::new(EnvelopeProcessor::new(
             context.get_sample_rate(),
@@ -67,7 +70,7 @@ impl Envelope {
     }
 
     fn process_notifications(&mut self) {
-        while let Ok(notification) = self.notification_receiver.recv() {
+        while let Ok(notification) = self.notification_receiver.try_recv() {
             self.notifications.push(notification);
         }
     }

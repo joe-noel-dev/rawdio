@@ -10,6 +10,8 @@ pub struct Adsr {
     event_transmitter: Channel::Sender<AdsrEvent>,
 }
 
+static EVENT_CHANNEL_CAPACITY: usize = 32;
+
 impl Adsr {
     pub fn new(
         command_queue: Box<dyn CommandQueue>,
@@ -20,7 +22,7 @@ impl Adsr {
 
         let parameters = HashMap::new();
 
-        let (event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = Channel::bounded(EVENT_CHANNEL_CAPACITY);
 
         let processor = Box::new(AdsrProcessor::new(event_receiver, sample_rate));
 

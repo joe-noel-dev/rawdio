@@ -1,19 +1,22 @@
 use std::{thread, time};
 
-use lockfree::channel::{spsc::Receiver, RecvErr};
+use crossbeam::channel::TryRecvError;
 
 use crate::graph::Dsp;
+
+pub type GarbaseCollectionSender = crossbeam::channel::Sender<GarbageCollectionCommand>;
+pub type GarbaseCollectionReceiver = crossbeam::channel::Receiver<GarbageCollectionCommand>;
 
 pub enum GarbageCollectionCommand {
     DisposeDsp(Box<Dsp>),
 }
 
-pub fn run_garbage_collector(mut receive_channel: Receiver<GarbageCollectionCommand>) {
+pub fn run_garbage_collector(receive_channel: GarbaseCollectionReceiver) {
     thread::spawn(move || loop {
-        match receive_channel.recv() {
+        match receive_channel.try_recv() {
             Ok(command) => handle_garbage_collection_event(command),
-            Err(RecvErr::NoMessage) => thread::sleep(time::Duration::from_secs(1)),
-            Err(RecvErr::NoSender) => break,
+            Err(TryRecvError::Empty) => thread::sleep(time::Duration::from_secs(1)),
+            Err(TryRecvError::Disconnected) => break,
         };
     });
 }
