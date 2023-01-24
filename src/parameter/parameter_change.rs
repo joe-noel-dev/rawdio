@@ -3,8 +3,8 @@ use crate::Timestamp;
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd)]
 pub enum ValueChangeMethod {
     Immediate,
-    Linear,
-    Exponential,
+    Linear(Timestamp),
+    Exponential(Timestamp),
 }
 
 #[derive(Clone, Copy, PartialEq, PartialOrd)]

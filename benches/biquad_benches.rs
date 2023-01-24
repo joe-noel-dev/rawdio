@@ -35,8 +35,15 @@ impl Fixture {
         }
     }
 
-    fn ramp_to_frequency_at_time(&mut self, value: f64, end_time: Timestamp) {
-        self.biquad.frequency.linear_ramp_to_value(value, end_time);
+    fn ramp_to_frequency_at_time(
+        &mut self,
+        value: f64,
+        start_time: Timestamp,
+        end_time: Timestamp,
+    ) {
+        self.biquad
+            .frequency
+            .linear_ramp_to_value(value, start_time, end_time);
     }
 
     fn process(&mut self) {
@@ -59,7 +66,7 @@ fn biquad_benchmarks(c: &mut Criterion) {
         let cutoff = 1_000.0;
         let mut fixture = Fixture::new(BiquadFilterType::LowPass, cutoff);
 
-        fixture.ramp_to_frequency_at_time(2_000.0, Timestamp::from_seconds(1.0));
+        fixture.ramp_to_frequency_at_time(2_000.0, Timestamp::zero(), Timestamp::from_seconds(1.0));
 
         b.iter(|| fixture.process());
     });

@@ -8,7 +8,6 @@ mod realtime;
 mod utility;
 
 pub(crate) use commands::Command;
-pub(crate) use parameter::AudioParameter;
 
 pub use buffer::AudioBuffer;
 pub use buffer::BorrowedAudioBuffer;
@@ -33,6 +32,8 @@ pub use engine::CommandQueue;
 pub use engine::Context;
 
 pub use graph::GraphNode;
+
+pub use parameter::AudioParameter;
 
 pub use utility::Level;
 pub use utility::Timestamp;

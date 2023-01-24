@@ -54,9 +54,12 @@ fn create_pan(context: &dyn Context) -> Pan {
 
     pan.pan.set_value_at_time(-1.0, Timestamp::zero());
     pan.pan
-        .linear_ramp_to_value(1.0, Timestamp::from_seconds(2.0));
-    pan.pan
-        .linear_ramp_to_value(-1.0, Timestamp::from_seconds(4.0));
+        .linear_ramp_to_value(1.0, Timestamp::zero(), Timestamp::from_seconds(2.0));
+    pan.pan.linear_ramp_to_value(
+        -1.0,
+        Timestamp::from_seconds(2.0),
+        Timestamp::from_seconds(4.0),
+    );
 
     pan
 }

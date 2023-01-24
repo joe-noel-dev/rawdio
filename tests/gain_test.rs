@@ -108,11 +108,18 @@ fn test_gain_envelope() {
 
     fixture.gain.gain.set_value_at_time(0.0, Timestamp::zero());
 
-    for (gain, time_in_seconds) in [(1.0, 1.0), (0.0, 2.0)] {
+    for (gain, start_time, end_time) in [
+        (1.0, Timestamp::zero(), Timestamp::from_seconds(1.0)),
+        (
+            0.0,
+            Timestamp::from_seconds(1.0),
+            Timestamp::from_seconds(2.0),
+        ),
+    ] {
         fixture
             .gain
             .gain
-            .linear_ramp_to_value(gain, Timestamp::from_seconds(time_in_seconds));
+            .linear_ramp_to_value(gain, start_time, end_time);
     }
 
     let output_buffer = fixture.process_seconds(2.0);

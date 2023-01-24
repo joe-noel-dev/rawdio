@@ -31,13 +31,17 @@ fn play_file(file_to_play: &str) {
 
     biquad.frequency.set_value_now(20.0);
 
-    biquad
-        .frequency
-        .exponential_ramp_to_value(20_000.0, Timestamp::from_seconds(10.0));
+    biquad.frequency.exponential_ramp_to_value(
+        20_000.0,
+        Timestamp::zero(),
+        Timestamp::from_seconds(10.0),
+    );
 
-    biquad
-        .frequency
-        .exponential_ramp_to_value(20.0, Timestamp::from_seconds(20.0));
+    biquad.frequency.exponential_ramp_to_value(
+        20.0,
+        Timestamp::from_seconds(10.0),
+        Timestamp::from_seconds(20.0),
+    );
 
     sampler.node.connect_to(&biquad.node);
 

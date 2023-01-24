@@ -61,14 +61,14 @@ impl RealtimeAudioParameter {
         for frame in 0..frame_count {
             let frame_time = time.incremented_by_samples(frame, sample_rate);
 
-            value = self.process_next_change(&frame_time, sample_rate, value);
+            value = self.process_change(&frame_time, sample_rate, value);
             self.value_buffer[frame] = value;
         }
 
         self.set_value(value);
     }
 
-    fn process_next_change(&mut self, time: &Timestamp, sample_rate: usize, value: f64) -> f64 {
+    fn process_change(&mut self, time: &Timestamp, sample_rate: usize, value: f64) -> f64 {
         if let Some(next_event) = self.parameter_changes.first() {
             match next_event.method {
                 ValueChangeMethod::Immediate => {
@@ -78,29 +78,29 @@ impl RealtimeAudioParameter {
                         self.current_change = self.parameter_changes.remove(0);
                     }
                 }
-                ValueChangeMethod::Linear => {
-                    if self.current_change.end_time <= *time {
-                        let duration = next_event.end_time.as_seconds() - time.as_seconds();
+                ValueChangeMethod::Linear(start_time) => {
+                    if *time >= start_time {
+                        let duration = next_event.end_time.as_samples(sample_rate)
+                            - time.as_samples(sample_rate);
                         let delta = next_event.value - value;
-                        let increment_per_second = delta / duration;
 
-                        self.increment = increment_per_second / sample_rate as f64;
+                        self.increment = delta / duration;
                         self.coefficient = 1.0;
                         self.current_change = self.parameter_changes.remove(0);
                     }
                 }
-                ValueChangeMethod::Exponential => {
-                    if self.current_change.end_time <= *time {
+                ValueChangeMethod::Exponential(start_time) => {
+                    if *time >= start_time {
                         debug_assert_ne!(next_event.value, 0.0);
                         debug_assert_ne!(value, 0.0);
 
                         let ratio = next_event.value / value;
 
-                        let sample_duration = sample_rate as f64
-                            * (next_event.end_time.as_seconds() - time.as_seconds());
+                        let duration = next_event.end_time.as_samples(sample_rate)
+                            - time.as_samples(sample_rate);
 
                         self.increment = 0.0;
-                        self.coefficient = (ratio.ln() / sample_duration).exp();
+                        self.coefficient = (ratio.ln() / duration).exp();
 
                         self.current_change = self.parameter_changes.remove(0);
                     }
@@ -112,8 +112,7 @@ impl RealtimeAudioParameter {
             return self.current_change.value;
         }
 
-        let next_value = value * self.coefficient;
-        next_value + self.increment
+        (value * self.coefficient) + self.increment
     }
 
     pub fn get_values(&self) -> &[f64] {
@@ -223,22 +222,26 @@ mod tests {
         let value = ParameterValue::new(AtomicF64::new(0.0));
         let mut param = RealtimeAudioParameter::new(id, value);
 
-        param.add_parameter_change(ParameterChange {
-            value: 1.0,
-            end_time: Timestamp::from_seconds(1.0),
-            method: ValueChangeMethod::Linear,
-        });
-
-        param.add_parameter_change(ParameterChange {
-            value: 2.0,
-            end_time: Timestamp::from_seconds(2.0),
-            method: ValueChangeMethod::Linear,
-        });
-
-        param.add_parameter_change(ParameterChange {
-            value: 3.0,
-            end_time: Timestamp::from_seconds(3.0),
-            method: ValueChangeMethod::Linear,
+        [
+            (1.0, Timestamp::zero(), Timestamp::from_seconds(1.0)),
+            (
+                2.0,
+                Timestamp::from_seconds(1.0),
+                Timestamp::from_seconds(2.0),
+            ),
+            (
+                3.0,
+                Timestamp::from_seconds(2.0),
+                Timestamp::from_seconds(3.0),
+            ),
+        ]
+        .iter()
+        .for_each(|(value, start_time, end_time)| {
+            param.add_parameter_change(ParameterChange {
+                value: *value,
+                end_time: *end_time,
+                method: ValueChangeMethod::Linear(*start_time),
+            });
         });
 
         let sample_rate = 48_000;
@@ -274,7 +277,7 @@ mod tests {
         param.add_parameter_change(ParameterChange {
             value: 2.0 * initial_value,
             end_time: ramp_duration,
-            method: ValueChangeMethod::Exponential,
+            method: ValueChangeMethod::Exponential(Timestamp::zero()),
         });
 
         let sample_rate = 96_000;
@@ -295,4 +298,7 @@ mod tests {
         assert_relative_eq!(get_value_at_time(0.5), 2.0 * 1.414, epsilon = 1e-3);
         assert_relative_eq!(get_value_at_time(1.0), 4.0, epsilon = 1e-3);
     }
+
+    #[test]
+    fn smooth_ramp() {}
 }
