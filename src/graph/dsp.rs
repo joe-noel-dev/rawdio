@@ -48,12 +48,12 @@ impl Dsp {
         self.output_count
     }
 
-    pub fn add_to_audio_process(self, command_queue: &CommandQueue) {
-        let _ = command_queue.send(Command::AddDsp(Box::new(self)));
+    pub fn add_to_audio_process(self, command_queue: &dyn CommandQueue) {
+        command_queue.send(Command::AddDsp(Box::new(self)));
     }
 
-    pub fn remove_from_audio_process(id: Id, command_queue: &CommandQueue) {
-        let _ = command_queue.send(Command::RemoveDsp(id));
+    pub fn remove_from_audio_process(id: Id, command_queue: &dyn CommandQueue) {
+        command_queue.send(Command::RemoveDsp(id));
     }
 
     pub fn get_id(&self) -> Id {

@@ -29,7 +29,7 @@ fn create_oscillator(context: &dyn Context) -> Oscillator {
 
     let channel_count = 2;
 
-    let mut oscillator = Oscillator::new(context.get_command_queue(), frequency, channel_count);
+    let mut oscillator = Oscillator::new(context, frequency, channel_count);
 
     oscillator
         .gain
@@ -40,7 +40,7 @@ fn create_oscillator(context: &dyn Context) -> Oscillator {
 
 fn create_pan(context: &dyn Context) -> Pan {
     let pan_input_count = 2;
-    let mut pan = Pan::new(context.get_command_queue(), pan_input_count);
+    let mut pan = Pan::new(context, pan_input_count);
 
     pan.pan.set_value_at_time(-1.0, Timestamp::zero());
 

@@ -11,7 +11,11 @@ pub struct Adsr {
 }
 
 impl Adsr {
-    pub fn new(command_queue: CommandQueue, channel_count: usize, sample_rate: usize) -> Self {
+    pub fn new(
+        command_queue: Box<dyn CommandQueue>,
+        channel_count: usize,
+        sample_rate: usize,
+    ) -> Self {
         let id = Id::generate();
 
         let parameters = HashMap::new();

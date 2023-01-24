@@ -30,7 +30,7 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
         (160.0, Level::from_db(-21.0)),
     ]
     .map(|(frequency, level)| {
-        let mut oscillator = Oscillator::new(context.get_command_queue(), frequency, channel_count);
+        let mut oscillator = Oscillator::new(context, frequency, channel_count);
 
         oscillator
             .gain
@@ -50,7 +50,7 @@ fn create_mixer(context: &dyn Context) -> Mixer {
 
 fn create_gain(context: &dyn Context) -> Gain {
     let gain_channel_count = 1;
-    Gain::new(context.get_command_queue(), gain_channel_count)
+    Gain::new(context, gain_channel_count)
 }
 
 fn schedule_gain_changes(gain: &mut Gain) {

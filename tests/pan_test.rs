@@ -55,7 +55,7 @@ impl Default for Fixture {
 
         let channel_count = 2;
 
-        let pan = Pan::new(context.get_command_queue(), channel_count);
+        let pan = Pan::new(context.as_ref(), channel_count);
 
         pan.node.connect_to_input();
         pan.node.connect_to_output();

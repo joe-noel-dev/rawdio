@@ -13,7 +13,7 @@ pub struct AudioParameter {
     value: ParameterValue,
     minimum_value: f64,
     maximum_value: f64,
-    command_queue: CommandQueue,
+    command_queue: Box<dyn CommandQueue>,
 }
 
 impl AudioParameter {
@@ -22,7 +22,7 @@ impl AudioParameter {
         initial_value: f64,
         minimum_value: f64,
         maximum_value: f64,
-        command_queue: CommandQueue,
+        command_queue: Box<dyn CommandQueue>,
     ) -> (Self, RealtimeAudioParameter) {
         assert!((minimum_value..maximum_value).contains(&initial_value));
         assert!(minimum_value < maximum_value);
@@ -58,8 +58,7 @@ impl AudioParameter {
 
     pub fn set_value_at_time(&mut self, mut value: f64, at_time: Timestamp) {
         value = value.clamp(self.minimum_value, self.maximum_value);
-        let _ = self
-            .command_queue
+        self.command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {
                 dsp_id: self.dsp_id,
                 parameter_id: self.parameter_id,
@@ -73,8 +72,7 @@ impl AudioParameter {
 
     pub fn linear_ramp_to_value(&mut self, value: f64, end_time: Timestamp) {
         let value = value.clamp(self.minimum_value, self.maximum_value);
-        let _ = self
-            .command_queue
+        self.command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {
                 dsp_id: self.dsp_id,
                 parameter_id: self.parameter_id,
@@ -88,8 +86,7 @@ impl AudioParameter {
 
     pub fn exponential_ramp_to_value(&mut self, value: f64, end_time: Timestamp) {
         let value = value.clamp(self.minimum_value, self.maximum_value);
-        let _ = self
-            .command_queue
+        self.command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {
                 dsp_id: self.dsp_id,
                 parameter_id: self.parameter_id,
@@ -102,8 +99,7 @@ impl AudioParameter {
     }
 
     pub fn cancel_scheduled_changes(&mut self) {
-        let _ = self
-            .command_queue
+        self.command_queue
             .send(Command::CancelParamaterChanges(CancelChangeRequest {
                 dsp_id: self.dsp_id,
                 parameter_id: self.parameter_id,
@@ -112,8 +108,7 @@ impl AudioParameter {
     }
 
     pub fn cancel_scheduled_changes_ending_after(&mut self, end_time: Timestamp) {
-        let _ = self
-            .command_queue
+        self.command_queue
             .send(Command::CancelParamaterChanges(CancelChangeRequest {
                 dsp_id: self.dsp_id,
                 parameter_id: self.parameter_id,

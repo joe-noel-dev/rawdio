@@ -16,7 +16,7 @@ impl Fixture {
 
         let channel_count = 2;
 
-        let mut gain = Gain::new(context.get_command_queue(), channel_count);
+        let mut gain = Gain::new(context.as_ref(), channel_count);
 
         gain.gain.set_value_at_time(1.0, Timestamp::zero());
 

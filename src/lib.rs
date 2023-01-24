@@ -10,9 +10,7 @@ mod utility;
 pub(crate) use commands::Command;
 pub(crate) use parameter::AudioParameter;
 
-pub use utility::Level;
-pub use utility::Timestamp;
-
+pub use buffer::AudioBuffer;
 pub use buffer::BorrowedAudioBuffer;
 pub use buffer::MutableBorrowedAudioBuffer;
 pub use buffer::OwnedAudioBuffer;
@@ -29,13 +27,15 @@ pub use effects::Pan;
 pub use effects::Recorder;
 pub use effects::Sampler;
 
-pub type CommandQueue = lockfree::channel::mpsc::Sender<Command>;
-
-pub use buffer::AudioBuffer;
 pub use engine::create_engine;
 pub use engine::AudioProcess;
+pub use engine::CommandQueue;
 pub use engine::Context;
+
 pub use graph::GraphNode;
+
+pub use utility::Level;
+pub use utility::Timestamp;
 
 #[macro_use]
 extern crate lazy_static;

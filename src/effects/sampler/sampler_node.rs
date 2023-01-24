@@ -14,7 +14,11 @@ pub struct Sampler {
 }
 
 impl Sampler {
-    pub fn new(command_queue: CommandQueue, sample_rate: usize, sample: OwnedAudioBuffer) -> Self {
+    pub fn new(
+        command_queue: Box<dyn CommandQueue>,
+        sample_rate: usize,
+        sample: OwnedAudioBuffer,
+    ) -> Self {
         let id = Id::generate();
 
         let (event_transmitter, event_receiver) = Channel::create();

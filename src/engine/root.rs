@@ -9,17 +9,17 @@ use super::context::NotifierStatus;
 pub struct Root {
     sample_rate: usize,
     timestamp: Arc<AtomicI64>,
-    command_tx: CommandQueue,
+    command_transmitter: CommandTransmitter,
     notifiers: Vec<Box<dyn Fn() -> NotifierStatus>>,
 }
 
 impl Context for Root {
     fn start(&mut self) {
-        let _ = self.command_tx.send(Command::Start);
+        self.command_transmitter.send(Command::Start);
     }
 
     fn stop(&mut self) {
-        let _ = self.command_tx.send(Command::Stop);
+        self.command_transmitter.send(Command::Stop);
     }
 
     fn current_time(&self) -> Timestamp {
@@ -30,8 +30,8 @@ impl Context for Root {
         self.sample_rate
     }
 
-    fn get_command_queue(&self) -> CommandQueue {
-        self.command_tx.clone()
+    fn get_command_queue(&self) -> Box<dyn CommandQueue> {
+        Box::new(self.command_transmitter.clone())
     }
 
     fn add_notifier(&mut self, notifier: Box<dyn Fn() -> NotifierStatus>) {
@@ -45,20 +45,38 @@ impl Context for Root {
 }
 
 pub fn create_engine(sample_rate: usize) -> (Box<dyn Context>, Box<dyn AudioProcess + Send>) {
-    let (command_tx, command_rx) = mpsc::create();
+    let (command_transmitter, command_receiver) = CommandTransmitter::new();
     let timestamp = Arc::new(AtomicI64::new(0));
     let processor = Box::new(Processor::new(
         sample_rate,
-        command_rx,
+        command_receiver,
         Arc::clone(&timestamp),
     ));
 
     let engine = Box::new(Root {
         sample_rate,
         timestamp,
-        command_tx,
+        command_transmitter,
         notifiers: Vec::new(),
     });
 
     (engine, processor)
+}
+
+#[derive(Clone)]
+struct CommandTransmitter {
+    command_tx: lockfree::channel::mpsc::Sender<Command>,
+}
+
+impl CommandTransmitter {
+    fn new() -> (Self, lockfree::channel::mpsc::Receiver<Command>) {
+        let (command_tx, command_rx) = mpsc::create();
+        (Self { command_tx }, command_rx)
+    }
+}
+
+impl CommandQueue for CommandTransmitter {
+    fn send(&self, command: Command) {
+        let _ = self.command_tx.send(command);
+    }
 }

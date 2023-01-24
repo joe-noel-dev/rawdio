@@ -13,7 +13,11 @@ pub struct Mixer {
 }
 
 impl Mixer {
-    pub fn new(command_queue: CommandQueue, input_count: usize, output_count: usize) -> Self {
+    pub fn new(
+        command_queue: Box<dyn CommandQueue>,
+        input_count: usize,
+        output_count: usize,
+    ) -> Self {
         let id = Id::generate();
 
         let gain_matrix = MixerMatrix::new(input_count, output_count);
@@ -45,7 +49,7 @@ impl Mixer {
         let _ = self.event_transmitter.send(self.gain_matrix.clone());
     }
 
-    pub fn mono_to_stereo_splitter(command_queue: CommandQueue) -> Self {
+    pub fn mono_to_stereo_splitter(command_queue: Box<dyn CommandQueue>) -> Self {
         let input_count = 1;
         let output_count = 2;
 

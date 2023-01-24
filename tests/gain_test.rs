@@ -29,7 +29,7 @@ impl Fixture {
 
         let (mut context, process) = create_engine(sample_rate);
 
-        let gain = Gain::new(context.get_command_queue(), channel_count);
+        let gain = Gain::new(context.as_ref(), channel_count);
 
         gain.node.connect_to_input();
         gain.node.connect_to_output();

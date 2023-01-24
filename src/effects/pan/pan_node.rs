@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{commands::Id, AudioParameter, CommandQueue, GraphNode};
+use crate::{commands::Id, AudioParameter, Context, GraphNode};
 
 use super::pan_processor::PanProcessor;
 
@@ -13,11 +13,11 @@ pub struct Pan {
 }
 
 impl Pan {
-    pub fn new(command_queue: CommandQueue, input_count: usize) -> Self {
+    pub fn new(context: &dyn Context, input_count: usize) -> Self {
         let id = Id::generate();
 
         let (pan, realtime_pan) =
-            AudioParameter::new(id, 0.0, MIN_PAN, MAX_PAN, command_queue.clone());
+            AudioParameter::new(id, 0.0, MIN_PAN, MAX_PAN, context.get_command_queue());
 
         let parameters = HashMap::from([(realtime_pan.get_id(), realtime_pan)]);
 
@@ -27,7 +27,7 @@ impl Pan {
 
         let node = GraphNode::new(
             id,
-            command_queue,
+            context.get_command_queue(),
             input_count,
             output_count,
             processor,
