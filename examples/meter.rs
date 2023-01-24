@@ -66,8 +66,11 @@ fn create_gain(context: &mut dyn Context, channel_count: usize, sample_duration:
 
     gain.gain.set_value_now(1.0);
 
-    gain.gain
-        .linear_ramp_to_value(0.0, Timestamp::from_duration(sample_duration));
+    gain.gain.linear_ramp_to_value(
+        0.0,
+        Timestamp::zero(),
+        Timestamp::from_duration(sample_duration),
+    );
 
     gain
 }

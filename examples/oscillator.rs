@@ -39,9 +39,11 @@ fn create_oscillator(context: &dyn Context) -> Oscillator {
         .gain
         .set_value_at_time(Level::unity().as_gain(), Timestamp::zero());
 
-    oscillator
-        .frequency
-        .exponential_ramp_to_value(100.0 * frequency, Timestamp::from_seconds(4.0));
+    oscillator.frequency.exponential_ramp_to_value(
+        100.0 * frequency,
+        Timestamp::zero(),
+        Timestamp::from_seconds(4.0),
+    );
 
     oscillator
 }
@@ -59,13 +61,13 @@ fn schedule_gain_changes(gain: &mut Gain) {
     gain.gain.set_value_at_time(0.0, Timestamp::zero());
 
     gain.gain
-        .linear_ramp_to_value(1.0, Timestamp::from_seconds(0.1));
+        .linear_ramp_to_value(1.0, Timestamp::zero(), Timestamp::from_seconds(0.1));
 
-    gain.gain
-        .set_value_at_time(1.0, Timestamp::from_seconds(3.9));
-
-    gain.gain
-        .linear_ramp_to_value(0.0, Timestamp::from_seconds(4.0));
+    gain.gain.linear_ramp_to_value(
+        0.0,
+        Timestamp::from_seconds(3.9),
+        Timestamp::from_seconds(4.0),
+    );
 }
 
 fn make_connections(oscillator: &mut Oscillator, gain: &mut Gain, mixer: &mut Mixer) {

@@ -55,10 +55,13 @@ fn gain_benchmarks(c: &mut Criterion) {
     c.bench_function("process gain with ramp", |b| {
         let mut fixture = Fixture::new();
 
+        let start_time = Timestamp::zero();
+        let end_time = Timestamp::from_seconds(2.0);
+
         fixture
             .gain
             .gain
-            .linear_ramp_to_value(0.0, Timestamp::from_seconds(2.0));
+            .linear_ramp_to_value(0.0, start_time, end_time);
 
         b.iter(|| fixture.process());
     });

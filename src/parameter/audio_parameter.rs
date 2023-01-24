@@ -70,7 +70,7 @@ impl AudioParameter {
             }));
     }
 
-    pub fn linear_ramp_to_value(&mut self, value: f64, end_time: Timestamp) {
+    pub fn linear_ramp_to_value(&mut self, value: f64, start_time: Timestamp, end_time: Timestamp) {
         let value = value.clamp(self.minimum_value, self.maximum_value);
         self.command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {
@@ -79,12 +79,17 @@ impl AudioParameter {
                 change: ParameterChange {
                     value,
                     end_time,
-                    method: ValueChangeMethod::Linear,
+                    method: ValueChangeMethod::Linear(start_time),
                 },
             }));
     }
 
-    pub fn exponential_ramp_to_value(&mut self, value: f64, end_time: Timestamp) {
+    pub fn exponential_ramp_to_value(
+        &mut self,
+        value: f64,
+        start_time: Timestamp,
+        end_time: Timestamp,
+    ) {
         let value = value.clamp(self.minimum_value, self.maximum_value);
         self.command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {
@@ -93,7 +98,7 @@ impl AudioParameter {
                 change: ParameterChange {
                     value,
                     end_time,
-                    method: ValueChangeMethod::Exponential,
+                    method: ValueChangeMethod::Exponential(start_time),
                 },
             }));
     }
@@ -201,13 +206,15 @@ mod tests {
     fn linear_ramp() {
         let mut fixture = Fixture::new(5.0);
 
+        let start_time = Timestamp::zero();
         let end_time = Timestamp::from_seconds(5.0);
+
         fixture
             .realtime_parameter
             .add_parameter_change(ParameterChange {
                 value: 10.0,
                 end_time,
-                method: ValueChangeMethod::Linear,
+                method: ValueChangeMethod::Linear(start_time),
             });
 
         let sample_rate = 44_100;
@@ -236,11 +243,31 @@ mod tests {
 
         let changes = [
             (0.0, Timestamp::zero(), ValueChangeMethod::Immediate),
-            (1.0, Timestamp::from_seconds(1.0), ValueChangeMethod::Linear),
-            (0.0, Timestamp::from_seconds(2.0), ValueChangeMethod::Linear),
-            (1.0, Timestamp::from_seconds(3.0), ValueChangeMethod::Linear),
-            (0.0, Timestamp::from_seconds(4.0), ValueChangeMethod::Linear),
-            (1.0, Timestamp::from_seconds(5.0), ValueChangeMethod::Linear),
+            (
+                1.0,
+                Timestamp::from_seconds(1.0),
+                ValueChangeMethod::Linear(Timestamp::zero()),
+            ),
+            (
+                0.0,
+                Timestamp::from_seconds(2.0),
+                ValueChangeMethod::Linear(Timestamp::from_seconds(1.0)),
+            ),
+            (
+                1.0,
+                Timestamp::from_seconds(3.0),
+                ValueChangeMethod::Linear(Timestamp::from_seconds(2.0)),
+            ),
+            (
+                0.0,
+                Timestamp::from_seconds(4.0),
+                ValueChangeMethod::Linear(Timestamp::from_seconds(3.0)),
+            ),
+            (
+                1.0,
+                Timestamp::from_seconds(5.0),
+                ValueChangeMethod::Linear(Timestamp::from_seconds(4.0)),
+            ),
         ];
 
         for (value, end_time, method) in changes {
