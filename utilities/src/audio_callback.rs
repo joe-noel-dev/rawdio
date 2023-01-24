@@ -17,15 +17,39 @@ pub struct AudioCallback {
 
 fn print_output_devices(host: &Host) {
     println!("Output devices: ");
-    host.output_devices().unwrap().for_each(|device| {
-        let device_name = match device.name() {
-            Ok(name) => name,
-            Err(_) => return,
-        };
 
-        println!("{device_name}");
-    });
+    host.output_devices()
+        .expect("Unable to access output devices")
+        .for_each(|device| {
+            let device_name = match device.name() {
+                Ok(name) => name,
+                Err(_) => return,
+            };
+
+            println!("  {device_name}");
+        });
     println!();
+}
+
+fn print_input_devices(host: &Host) {
+    println!("Input devices: ");
+
+    host.input_devices()
+        .expect("Unable to access input devices")
+        .for_each(|device| {
+            let device_name = match device.name() {
+                Ok(name) => name,
+                Err(_) => return,
+            };
+
+            println!("  {device_name}");
+        });
+    println!();
+}
+
+fn print_devices(host: &Host) {
+    print_output_devices(&host);
+    print_input_devices(&host);
 }
 
 type AudioSender = crossbeam::channel::Sender<f32>;
@@ -36,7 +60,9 @@ impl AudioCallback {
         let host = cpal::default_host();
         println!("Using audio host: {}\n", host.id().name());
 
-        print_output_devices(&host);
+        if cfg!(debug_assertions) {
+            print_devices(&host);
+        }
 
         let queue_capacity = 1024 * 1024;
         let (input_to_output_tx, input_to_output_rx) = crossbeam::channel::bounded(queue_capacity);
