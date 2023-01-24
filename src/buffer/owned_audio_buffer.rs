@@ -112,6 +112,31 @@ impl AudioBuffer for OwnedAudioBuffer {
         let (start, end) = self.get_sample_location_bounds(&sample_location);
         &mut self.data[start..end]
     }
+
+    fn duplicate_channel(&mut self, source: SampleLocation, to_channel: usize, frame_count: usize) {
+        let (source_start, _) = self.get_sample_location_bounds(&source);
+        let (destination_start, _) =
+            self.get_sample_location_bounds(&source.with_channel(to_channel));
+
+        debug_assert!(
+            (source_start + frame_count <= destination_start)
+                || (destination_start + frame_count <= source_start)
+        );
+
+        if source_start < destination_start {
+            let (presplit, postsplit) = self.data.split_at_mut(destination_start);
+            let source_data = &presplit[source_start..source_start + frame_count];
+            let destination_data = &mut postsplit[0..frame_count];
+            destination_data.copy_from_slice(source_data);
+        } else {
+            let destination_start = destination_start - source_start;
+            let (presplit, postsplit) = self.data.split_at_mut(source_start);
+            let source_data = &presplit[0..frame_count];
+            let destination_data =
+                &mut postsplit[destination_start..destination_start + frame_count];
+            destination_data.copy_from_slice(source_data);
+        }
+    }
 }
 
 #[cfg(test)]

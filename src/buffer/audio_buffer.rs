@@ -149,6 +149,8 @@ pub trait AudioBuffer {
             frame_count: self.frame_count(),
         }
     }
+
+    fn duplicate_channel(&mut self, source: SampleLocation, to_channel: usize, frame_count: usize);
 }
 
 pub struct FrameIterator {

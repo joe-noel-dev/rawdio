@@ -18,6 +18,8 @@ const DEFAULT_GAIN: f64 = 1.0;
 
 impl OscillatorNode {
     pub fn new(command_queue: CommandQueue, frequency: f64, output_count: usize) -> Self {
+        debug_assert!(output_count > 0);
+
         let id = Id::generate();
 
         let (frequency, realtime_frequency) = AudioParameter::new(

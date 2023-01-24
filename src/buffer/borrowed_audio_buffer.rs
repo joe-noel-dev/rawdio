@@ -73,7 +73,16 @@ impl<'a> AudioBuffer for BorrowedAudioBuffer<'a> {
     }
 
     fn get_channel_data_mut(&mut self, _sample_location: SampleLocation) -> &mut [f32] {
-        panic!("Cannot get mutable channel data for a mutable audio channel");
+        panic!("Cannot get mutable channel data for an immutable audio buffer");
+    }
+
+    fn duplicate_channel(
+        &mut self,
+        _source: SampleLocation,
+        _to_channel: usize,
+        _frame_count: usize,
+    ) {
+        panic!("Cannot duplicate channel for an immutable audio buffer");
     }
 }
 

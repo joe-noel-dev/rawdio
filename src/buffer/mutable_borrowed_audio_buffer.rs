@@ -81,6 +81,16 @@ impl<'a> AudioBuffer for MutableBorrowedAudioBuffer<'a> {
         let end = self.frame_count - sample_location.frame;
         &mut data[0..end]
     }
+
+    fn duplicate_channel(&mut self, source: SampleLocation, to_channel: usize, frame_count: usize) {
+        self.buffer.duplicate_channel(
+            source
+                .offset_frames(self.frame_offset)
+                .offset_channels(self.channel_offset),
+            to_channel + self.channel_offset,
+            frame_count,
+        );
+    }
 }
 
 #[cfg(test)]
