@@ -315,7 +315,7 @@ mod tests {
         let num_channels = 1;
 
         let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
-        let (mut event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
         let _ = event_transmitter.send(SamplerEvent::start(
@@ -337,7 +337,7 @@ mod tests {
         let num_channels = 1;
 
         let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
-        let (mut event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
         let _ = event_transmitter.send(SamplerEvent::start_now());
@@ -360,7 +360,7 @@ mod tests {
         let num_channels = 2;
 
         let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
-        let (mut event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
         let _ = event_transmitter.send(SamplerEvent::start(Timestamp::zero(), Timestamp::zero()));
@@ -389,7 +389,7 @@ mod tests {
         let num_channels = 2;
 
         let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
-        let (mut event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
         let start_time_in_samples = 1500;
@@ -411,7 +411,7 @@ mod tests {
         let num_channels = 2;
 
         let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
-        let (mut event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
         let stop_time_in_samples = 2000;
@@ -437,7 +437,7 @@ mod tests {
         let mut sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
         sample.set_sample(SampleLocation::new(0, 4999), 0.4999);
 
-        let (mut event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
         let _ = event_transmitter.send(SamplerEvent::start_now());
@@ -462,7 +462,7 @@ mod tests {
         let mut sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
         sample.set_sample(SampleLocation::new(0, 9999), 0.123);
 
-        let (mut event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
         let _ = event_transmitter.send(SamplerEvent::start_now());
@@ -491,7 +491,7 @@ mod tests {
 
         let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
 
-        let (mut event_transmitter, event_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
         let _ = event_transmitter.send(SamplerEvent::start(

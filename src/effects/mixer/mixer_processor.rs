@@ -19,7 +19,7 @@ impl MixerProcessor {
     }
 
     fn process_events(&mut self) {
-        while let Ok(matrix) = self.event_receiver.recv() {
+        while let Ok(matrix) = self.event_receiver.try_recv() {
             self.gain_matrix = matrix;
         }
     }

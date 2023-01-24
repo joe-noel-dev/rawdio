@@ -5,10 +5,10 @@ edition = "2021"
 
 [dependencies]
 atomic_float = "0.1.0"
+crossbeam = "0.8.2"
 fixed = "1.11.0"
 itertools = "0.10.5"
 lazy_static = "1.4.0" 
-lockfree = "0.5.1"
 rand = "0.8.5"
 
 [dev-dependencies]

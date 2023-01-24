@@ -2,9 +2,9 @@ use std::sync::{atomic::AtomicI64, Arc};
 
 use crate::{realtime::Processor, AudioProcess, Command, CommandQueue, Context, Timestamp};
 
-use lockfree::channel::mpsc;
-
 use super::context::NotifierStatus;
+
+static COMMAND_QUEUE_CAPACITY: usize = 1024;
 
 pub struct Root {
     sample_rate: usize,
@@ -65,12 +65,12 @@ pub fn create_engine(sample_rate: usize) -> (Box<dyn Context>, Box<dyn AudioProc
 
 #[derive(Clone)]
 struct CommandTransmitter {
-    command_tx: lockfree::channel::mpsc::Sender<Command>,
+    command_tx: crossbeam::channel::Sender<Command>,
 }
 
 impl CommandTransmitter {
-    fn new() -> (Self, lockfree::channel::mpsc::Receiver<Command>) {
-        let (command_tx, command_rx) = mpsc::create();
+    fn new() -> (Self, crossbeam::channel::Receiver<Command>) {
+        let (command_tx, command_rx) = crossbeam::channel::bounded(COMMAND_QUEUE_CAPACITY);
         (Self { command_tx }, command_rx)
     }
 }

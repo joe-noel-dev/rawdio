@@ -4,17 +4,18 @@ use crate::{
     commands::Command, AudioBuffer, AudioProcess, BorrowedAudioBuffer, MutableBorrowedAudioBuffer,
     Timestamp,
 };
-use lockfree::channel::mpsc::Receiver;
 
 use super::dsp_graph::DspGraph;
 
 const MAXIMUM_NUMBER_OF_FRAMES: usize = 512;
 const MAXIMUM_NUMBER_OF_CHANNELS: usize = 2;
 
+type CommandReceiver = crossbeam::channel::Receiver<Command>;
+
 pub struct Processor {
     started: bool,
     sample_rate: usize,
-    command_rx: Receiver<Command>,
+    command_rx: CommandReceiver,
 
     sample_position: usize,
     current_time: Arc<AtomicI64>,
@@ -24,7 +25,7 @@ pub struct Processor {
 impl Processor {
     pub fn new(
         sample_rate: usize,
-        command_rx: Receiver<Command>,
+        command_rx: CommandReceiver,
         current_time: Arc<AtomicI64>,
     ) -> Self {
         Self {
@@ -91,7 +92,7 @@ impl AudioProcess for Processor {
 
 impl Processor {
     fn process_commands(&mut self) {
-        while let Ok(command) = self.command_rx.recv() {
+        while let Ok(command) = self.command_rx.try_recv() {
             match command {
                 Command::Start => self.started = true,
                 Command::Stop => self.started = false,

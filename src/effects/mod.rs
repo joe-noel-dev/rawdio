@@ -20,4 +20,4 @@ pub use pan::Pan;
 pub use recorder::Recorder;
 pub use sampler::Sampler;
 
-use lockfree::channel::spsc as Channel;
+use crossbeam::channel as Channel;

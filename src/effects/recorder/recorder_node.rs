@@ -19,6 +19,9 @@ pub struct Recorder {
     is_recording: bool,
 }
 
+static EVENT_CHANNEL_CAPACITY: usize = 32;
+static NOTIFICATION_CHANNEL_CAPACITY: usize = 32;
+
 impl Recorder {
     pub fn new(
         context: &mut dyn Context,
@@ -29,8 +32,9 @@ impl Recorder {
 
         let parameters = HashMap::new();
 
-        let (event_transmitter, event_receiver) = Channel::create();
-        let (notification_transmitter, notification_receiver) = Channel::create();
+        let (event_transmitter, event_receiver) = Channel::bounded(EVENT_CHANNEL_CAPACITY);
+        let (notification_transmitter, notification_receiver) =
+            Channel::bounded(NOTIFICATION_CHANNEL_CAPACITY);
 
         let processor = Box::new(RecorderProcessor::new(
             sample_rate,
@@ -109,7 +113,7 @@ impl Recorder {
     }
 
     fn process_notifications(&mut self) {
-        while let Ok(event) = self.notification_receiver.recv() {
+        while let Ok(event) = self.notification_receiver.try_recv() {
             match event {
                 RecorderNotification::Start => self.is_recording = true,
                 RecorderNotification::Data(buffer, samples_used) => {
