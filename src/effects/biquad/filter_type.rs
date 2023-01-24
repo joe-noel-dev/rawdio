@@ -1,5 +1,5 @@
 #[derive(Clone, Copy)]
-pub enum FilterType {
+pub enum BiquadFilterType {
     HighPass,
     LowPass,
     BandPass,

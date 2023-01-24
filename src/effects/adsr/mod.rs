@@ -3,4 +3,4 @@ mod adsr_event;
 mod adsr_node;
 mod adsr_processor;
 
-pub type AdsrNode = adsr_node::AdsrNode;
+pub use adsr_node::Adsr;

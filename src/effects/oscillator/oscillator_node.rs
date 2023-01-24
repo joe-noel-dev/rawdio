@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{commands::Id, graph::GraphNode, parameter::AudioParameter, CommandQueue};
+use crate::{commands::Id, graph::GraphNode, parameter::AudioParameter, Context};
 
 use super::oscillator_processor::OscillatorProcessor;
 
-pub struct OscillatorNode {
+pub struct Oscillator {
     pub node: GraphNode,
     pub frequency: AudioParameter,
     pub gain: AudioParameter,
@@ -16,8 +16,8 @@ const MIN_FREQUENCY: f64 = 20.0;
 const MAX_FREQUENCY: f64 = 20000.0;
 const DEFAULT_GAIN: f64 = 1.0;
 
-impl OscillatorNode {
-    pub fn new(command_queue: CommandQueue, frequency: f64, output_count: usize) -> Self {
+impl Oscillator {
+    pub fn new(context: &dyn Context, frequency: f64, output_count: usize) -> Self {
         debug_assert!(output_count > 0);
 
         let id = Id::generate();
@@ -27,11 +27,16 @@ impl OscillatorNode {
             frequency,
             MIN_FREQUENCY,
             MAX_FREQUENCY,
-            command_queue.clone(),
+            context.get_command_queue(),
         );
 
-        let (gain, realtime_gain) =
-            AudioParameter::new(id, DEFAULT_GAIN, MIN_GAIN, MAX_GAIN, command_queue.clone());
+        let (gain, realtime_gain) = AudioParameter::new(
+            id,
+            DEFAULT_GAIN,
+            MIN_GAIN,
+            MAX_GAIN,
+            context.get_command_queue(),
+        );
 
         let parameters = HashMap::from(
             [realtime_frequency, realtime_gain].map(|parameter| (parameter.get_id(), parameter)),
@@ -43,7 +48,7 @@ impl OscillatorNode {
 
         let node = GraphNode::new(
             id,
-            command_queue,
+            context.get_command_queue(),
             input_count,
             output_count,
             processor,

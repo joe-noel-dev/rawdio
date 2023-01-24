@@ -9,15 +9,15 @@ mod recorder;
 mod sampler;
 mod utility;
 
-pub type Gain = gain::GainNode;
-pub type Oscillator = oscillator::OscillatorNode;
-pub type Pan = pan::PanNode;
-pub type Sampler = sampler::SamplerNode;
-pub type Adsr = adsr::AdsrNode;
-pub type Mixer = mixer::MixerNode;
-pub type Recorder = recorder::RecorderNode;
-pub type Biquad = biquad::BiquadNode;
-pub type BiquadFilterType = biquad::BiquadFilterType;
-pub type Envelope = envelope::EnvelopeNode;
+pub use adsr::Adsr;
+pub use biquad::Biquad;
+pub use biquad::BiquadFilterType;
+pub use envelope::Envelope;
+pub use gain::Gain;
+pub use mixer::Mixer;
+pub use oscillator::Oscillator;
+pub use pan::Pan;
+pub use recorder::Recorder;
+pub use sampler::Sampler;
 
 use lockfree::channel::spsc as Channel;

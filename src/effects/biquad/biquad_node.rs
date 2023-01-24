@@ -2,33 +2,36 @@ use std::collections::HashMap;
 
 use crate::{commands::Id, AudioParameter, Context, GraphNode, Level};
 
-use super::{biquad_processor::BiquadProcessor, filter_type::FilterType};
+use super::{biquad_processor::BiquadProcessor, filter_type::BiquadFilterType};
 
-pub struct BiquadNode {
+pub struct Biquad {
     pub node: GraphNode,
     pub frequency: AudioParameter,
     pub q: AudioParameter,
     pub shelf_gain: AudioParameter,
 }
 
-impl BiquadNode {
-    pub fn new(context: &dyn Context, channel_count: usize, filter_type: FilterType) -> Self {
+impl Biquad {
+    pub fn new(context: &dyn Context, channel_count: usize, filter_type: BiquadFilterType) -> Self {
         let id = Id::generate();
 
-        let command_queue = context.get_command_queue();
-
         let (frequency, realtime_frequency) =
-            AudioParameter::new(id, 1_000.0, 20.0, 20000.0, command_queue.clone());
+            AudioParameter::new(id, 1_000.0, 20.0, 20000.0, context.get_command_queue());
 
-        let (q, realtime_q) =
-            AudioParameter::new(id, 1.0 / 2.0_f64.sqrt(), 0.1, 10.0, command_queue.clone());
+        let (q, realtime_q) = AudioParameter::new(
+            id,
+            1.0 / 2.0_f64.sqrt(),
+            0.1,
+            10.0,
+            context.get_command_queue(),
+        );
 
         let (shelf_gain, realtime_shelf_gain) = AudioParameter::new(
             id,
             Level::unity().as_gain(),
             0.0,
             Level::from_db(100.0).as_gain(),
-            command_queue.clone(),
+            context.get_command_queue(),
         );
 
         let processor = Box::new(BiquadProcessor::new(
@@ -47,7 +50,7 @@ impl BiquadNode {
 
         let node = GraphNode::new(
             id,
-            command_queue,
+            context.get_command_queue(),
             channel_count,
             channel_count,
             processor,

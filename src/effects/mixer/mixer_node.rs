@@ -6,14 +6,18 @@ use super::{
     mixer_event::EventTransmitter, mixer_matrix::MixerMatrix, mixer_processor::MixerProcessor,
 };
 
-pub struct MixerNode {
+pub struct Mixer {
     pub node: GraphNode,
     pub gain_matrix: MixerMatrix,
     event_transmitter: EventTransmitter,
 }
 
-impl MixerNode {
-    pub fn new(command_queue: CommandQueue, input_count: usize, output_count: usize) -> Self {
+impl Mixer {
+    pub fn new(
+        command_queue: Box<dyn CommandQueue>,
+        input_count: usize,
+        output_count: usize,
+    ) -> Self {
         let id = Id::generate();
 
         let gain_matrix = MixerMatrix::new(input_count, output_count);
@@ -45,7 +49,7 @@ impl MixerNode {
         let _ = self.event_transmitter.send(self.gain_matrix.clone());
     }
 
-    pub fn mono_to_stereo_splitter(command_queue: CommandQueue) -> Self {
+    pub fn mono_to_stereo_splitter(command_queue: Box<dyn CommandQueue>) -> Self {
         let input_count = 1;
         let output_count = 2;
 

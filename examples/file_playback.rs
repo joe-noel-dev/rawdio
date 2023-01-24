@@ -27,7 +27,7 @@ fn play_file(file_to_play: &str) {
     let mut sampler = Sampler::new(context.get_command_queue(), sample_rate, sample);
 
     let channel_count = 2;
-    let mut gain = Gain::new(context.get_command_queue(), channel_count);
+    let mut gain = Gain::new(context.as_ref(), channel_count);
 
     sampler.node.connect_to(&gain.node);
     sampler.start_now();

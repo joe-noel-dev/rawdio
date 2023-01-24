@@ -5,12 +5,11 @@ mod dsp_parameters;
 mod endpoint;
 mod graph_node;
 
-pub type AssignedBufferPool<Identifier> = assigned_buffer_pool::AssignedBufferPool<Identifier>;
-pub type Connection = connection::Connection;
-pub type Dsp = dsp::Dsp;
-pub type Endpoint = endpoint::Endpoint;
-pub type EndpointType = endpoint::EndpointType;
-pub type DspParameters = dsp_parameters::DspParameters;
-
+pub use assigned_buffer_pool::AssignedBufferPool;
+pub use connection::Connection;
+pub use dsp::Dsp;
 pub use dsp::DspProcessor;
+pub use dsp_parameters::DspParameters;
+pub use endpoint::Endpoint;
+pub use endpoint::EndpointType;
 pub use graph_node::GraphNode;

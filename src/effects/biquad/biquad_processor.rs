@@ -2,10 +2,10 @@ use crate::{
     commands::Id, graph::DspProcessor, utility::macros::unwrap_or_return, Level, SampleLocation,
 };
 
-use super::{biquad_coefficients::BiquadCoefficients, filter_type::FilterType};
+use super::{biquad_coefficients::BiquadCoefficients, filter_type::BiquadFilterType};
 
 pub struct BiquadProcessor {
-    filter_type: FilterType,
+    filter_type: BiquadFilterType,
     sample_rate: usize,
     frequency_id: Id,
     q_id: Id,
@@ -23,29 +23,29 @@ struct Parameters {
 }
 
 fn calculate_coefficients(
-    filter_type: FilterType,
+    filter_type: BiquadFilterType,
     parameters: &Parameters,
     sample_rate: usize,
 ) -> BiquadCoefficients {
     match filter_type {
-        FilterType::HighPass => {
+        BiquadFilterType::HighPass => {
             BiquadCoefficients::high_pass(parameters.frequency, sample_rate as f64, parameters.q)
         }
-        FilterType::LowPass => {
+        BiquadFilterType::LowPass => {
             BiquadCoefficients::low_pass(parameters.frequency, sample_rate as f64, parameters.q)
         }
-        FilterType::BandPass => {
+        BiquadFilterType::BandPass => {
             BiquadCoefficients::band_pass(parameters.frequency, sample_rate as f64, parameters.q)
         }
-        FilterType::Notch => {
+        BiquadFilterType::Notch => {
             BiquadCoefficients::notch(parameters.frequency, sample_rate as f64, parameters.q)
         }
-        FilterType::HighShelf => BiquadCoefficients::high_shelf(
+        BiquadFilterType::HighShelf => BiquadCoefficients::high_shelf(
             parameters.frequency,
             sample_rate as f64,
             Level::from_gain(parameters.shelf_gain),
         ),
-        FilterType::LowShelf => BiquadCoefficients::low_shelf(
+        BiquadFilterType::LowShelf => BiquadCoefficients::low_shelf(
             parameters.frequency,
             sample_rate as f64,
             Level::from_gain(parameters.shelf_gain),
@@ -57,7 +57,7 @@ impl BiquadProcessor {
     pub fn new(
         sample_rate: usize,
         num_channels: usize,
-        filter_type: FilterType,
+        filter_type: BiquadFilterType,
         frequency_id: Id,
         q_id: Id,
         shelf_gain_id: Id,

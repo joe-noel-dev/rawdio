@@ -1,4 +1,4 @@
 mod pan_node;
 mod pan_processor;
 
-pub type PanNode = pan_node::PanNode;
+pub use pan_node::Pan;

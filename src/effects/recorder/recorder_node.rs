@@ -11,7 +11,7 @@ use super::{
     recorder_processor::RecorderProcessor,
 };
 
-pub struct RecorderNode {
+pub struct Recorder {
     pub node: GraphNode,
     event_transmitter: RecorderEventTransmitter,
     notification_receiver: RecorderNotificationReceiver,
@@ -19,7 +19,7 @@ pub struct RecorderNode {
     is_recording: bool,
 }
 
-impl RecorderNode {
+impl Recorder {
     pub fn new(
         context: &mut dyn Context,
         channel_count: usize,

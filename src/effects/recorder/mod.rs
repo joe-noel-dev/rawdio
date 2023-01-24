@@ -3,4 +3,4 @@ mod recorder_node;
 mod recorder_notification;
 mod recorder_processor;
 
-pub type RecorderNode = recorder_node::RecorderNode;
+pub use recorder_node::Recorder;

@@ -8,13 +8,13 @@ use crate::{commands::Id, Context, GraphNode};
 use super::envelope_notification::{EnvelopeNotification, EnvelopeNotificationReceiver};
 use super::envelope_processor::EnvelopeProcessor;
 
-pub struct EnvelopeNode {
+pub struct Envelope {
     pub node: GraphNode,
     notifications: Vec<EnvelopeNotification>,
     notification_receiver: EnvelopeNotificationReceiver,
 }
 
-impl EnvelopeNode {
+impl Envelope {
     pub fn new(
         context: &mut dyn Context,
         channel_count: usize,
@@ -46,7 +46,7 @@ impl EnvelopeNode {
             parameters,
         );
 
-        let envelope_node = Rc::new(RefCell::new(EnvelopeNode {
+        let envelope_node = Rc::new(RefCell::new(Envelope {
             node,
             notifications: Vec::new(),
             notification_receiver,
