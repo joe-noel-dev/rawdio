@@ -1,5 +1,5 @@
 use crate::{
-    commands::Id, effects::Channel, graph::DspParameters, AudioBuffer, CommandQueue, GraphNode,
+    commands::Id, effects::Channel, graph::DspParameters, AudioBuffer, Context, GraphNode,
     OwnedAudioBuffer, Timestamp,
 };
 
@@ -16,11 +16,7 @@ pub struct Sampler {
 static EVENT_CHANNEL_CAPACITY: usize = 32;
 
 impl Sampler {
-    pub fn new(
-        command_queue: Box<dyn CommandQueue>,
-        sample_rate: usize,
-        sample: OwnedAudioBuffer,
-    ) -> Self {
+    pub fn new(context: &dyn Context, sample_rate: usize, sample: OwnedAudioBuffer) -> Self {
         let id = Id::generate();
 
         let (event_transmitter, event_receiver) = Channel::bounded(EVENT_CHANNEL_CAPACITY);
@@ -32,7 +28,7 @@ impl Sampler {
 
         let node = GraphNode::new(
             id,
-            command_queue,
+            context.get_command_queue(),
             input_count,
             output_count,
             processor,

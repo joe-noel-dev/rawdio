@@ -25,7 +25,7 @@ fn play_file(file_to_play: &str) {
     let audio_callack = AudioCallback::new(audio_process, sample_rate);
 
     let channel_count = 2;
-    let (mut sampler, duration) = create_sampler(context.as_mut(), sample);
+    let (mut sampler, duration) = create_sampler(context.as_ref(), sample);
     let gain = create_gain(context.as_mut(), channel_count, duration);
     let envelope = create_envelope(context.as_mut(), channel_count);
 
@@ -52,11 +52,11 @@ fn play_file(file_to_play: &str) {
     drop(audio_callack);
 }
 
-fn create_sampler(context: &mut dyn Context, sample: OwnedAudioBuffer) -> (Sampler, Duration) {
+fn create_sampler(context: &dyn Context, sample: OwnedAudioBuffer) -> (Sampler, Duration) {
     let duration = sample.duration();
 
     (
-        Sampler::new(context.get_command_queue(), sample.sample_rate(), sample),
+        Sampler::new(context, sample.sample_rate(), sample),
         duration,
     )
 }
