@@ -8,6 +8,7 @@ mod pan;
 mod recorder;
 mod sampler;
 mod utility;
+mod waveshaper;
 
 pub use adsr::Adsr;
 pub use biquad::Biquad;
@@ -19,5 +20,6 @@ pub use oscillator::Oscillator;
 pub use pan::Pan;
 pub use recorder::Recorder;
 pub use sampler::Sampler;
+pub use waveshaper::Waveshaper;
 
 use crossbeam::channel as Channel;

@@ -52,7 +52,7 @@ fn main() {
     let options = Options::from_args();
     let tempo = options.tempo;
 
-    let sample_rate = 48_000;
+    let sample_rate = 44_100;
 
     let (mut context, audio_process) = create_engine(sample_rate);
     let _callback = AudioCallback::new(audio_process, sample_rate);
