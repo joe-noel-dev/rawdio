@@ -28,8 +28,7 @@ impl EnvelopeFollower {
             self.release_coefficient
         };
 
-        self.level *= coefficient as f32;
-        self.level += (1.0_f32 - coefficient as f32) * input;
+        self.level = (self.level * coefficient as f32) + input * (1.0_f32 - coefficient as f32);
 
         self.level
     }
