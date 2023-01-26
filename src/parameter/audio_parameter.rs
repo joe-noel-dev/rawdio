@@ -24,7 +24,7 @@ impl AudioParameter {
         maximum_value: f64,
         command_queue: Box<dyn CommandQueue>,
     ) -> (Self, RealtimeAudioParameter) {
-        assert!((minimum_value..maximum_value).contains(&initial_value));
+        assert!((minimum_value..=maximum_value).contains(&initial_value));
         assert!(minimum_value < maximum_value);
 
         let parameter_id = Id::generate();

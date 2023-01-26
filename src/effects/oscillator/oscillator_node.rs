@@ -1,6 +1,9 @@
-use std::collections::HashMap;
-
-use crate::{commands::Id, graph::GraphNode, parameter::AudioParameter, Context, Level};
+use crate::{
+    commands::Id,
+    graph::{DspParameters, GraphNode},
+    parameter::AudioParameter,
+    Context, Level,
+};
 
 use super::oscillator_processor::OscillatorProcessor;
 
@@ -86,10 +89,6 @@ impl Oscillator {
             context.get_command_queue(),
         );
 
-        let parameters = HashMap::from(
-            [realtime_frequency, realtime_gain].map(|parameter| (parameter.get_id(), parameter)),
-        );
-
         let input_count = 0;
 
         let processor = Box::new(OscillatorProcessor::new(
@@ -104,7 +103,7 @@ impl Oscillator {
             input_count,
             output_count,
             processor,
-            parameters,
+            DspParameters::new([realtime_frequency, realtime_gain]),
         );
 
         Self {

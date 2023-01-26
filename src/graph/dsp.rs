@@ -82,18 +82,20 @@ impl Dsp {
     }
 
     pub fn request_parameter_change(&mut self, parameter_change: ParameterChangeRequest) {
-        if let Some(parameter) = self.parameters.get_mut(&parameter_change.parameter_id) {
-            parameter.add_parameter_change(parameter_change.change)
-        }
+        let parameter = self
+            .parameters
+            .get_parameter_mut(parameter_change.parameter_id);
+        parameter.add_parameter_change(parameter_change.change);
     }
 
     pub fn cancel_parameter_changes(&mut self, change_request: CancelChangeRequest) {
-        if let Some(parameter) = self.parameters.get_mut(&change_request.parameter_id) {
-            if let Some(end_time) = change_request.end_time {
-                parameter.cancel_scheduled_changes_ending_after(&end_time);
-            } else {
-                parameter.cancel_scheduled_changes();
-            }
+        let parameter = self
+            .parameters
+            .get_parameter_mut(change_request.parameter_id);
+
+        match change_request.end_time {
+            Some(end_time) => parameter.cancel_scheduled_changes_ending_after(&end_time),
+            None => parameter.cancel_scheduled_changes(),
         }
     }
 }

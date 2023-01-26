@@ -1,8 +1,8 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    commands::Id, effects::Channel, engine::NotifierStatus, BorrowedAudioBuffer, Context,
-    GraphNode, OwnedAudioBuffer, Timestamp,
+    commands::Id, effects::Channel, engine::NotifierStatus, graph::DspParameters,
+    BorrowedAudioBuffer, Context, GraphNode, OwnedAudioBuffer, Timestamp,
 };
 
 use super::{
@@ -30,8 +30,6 @@ impl Recorder {
     ) -> Rc<RefCell<Self>> {
         let id = Id::generate();
 
-        let parameters = HashMap::new();
-
         let (event_transmitter, event_receiver) = Channel::bounded(EVENT_CHANNEL_CAPACITY);
         let (notification_transmitter, notification_receiver) =
             Channel::bounded(NOTIFICATION_CHANNEL_CAPACITY);
@@ -51,7 +49,7 @@ impl Recorder {
             channel_count,
             output_count,
             processor,
-            parameters,
+            DspParameters::empty(),
         );
 
         let recorder = Rc::new(RefCell::new(Self {

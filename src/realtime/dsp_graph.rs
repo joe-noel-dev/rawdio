@@ -459,7 +459,7 @@ mod tests {
             input_count,
             output_count,
             processor,
-            DspParameters::new(),
+            DspParameters::empty(),
         ))
     }
 

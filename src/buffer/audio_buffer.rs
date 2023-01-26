@@ -151,6 +151,39 @@ pub trait AudioBuffer {
     }
 
     fn duplicate_channel(&mut self, source: SampleLocation, to_channel: usize, frame_count: usize);
+
+    fn sample_rate_convert_from(
+        &mut self,
+        audio_buffer: &dyn AudioBuffer,
+        source_location: SampleLocation,
+        destination_location: SampleLocation,
+    ) {
+        let ratio = audio_buffer.sample_rate() as f32 / self.sample_rate() as f32;
+
+        let source_data = audio_buffer.get_channel_data(source_location);
+        let destination_data = self.get_channel_data_mut(destination_location);
+
+        destination_data
+            .iter_mut()
+            .enumerate()
+            .for_each(|(index, sample)| {
+                let source_index = index as f32 * ratio;
+
+                let sample_before = (source_index.floor() as usize).min(source_data.len() - 1);
+                let sample_after = (source_index.ceil() as usize).min(source_data.len() - 1);
+
+                if sample_before == sample_after {
+                    *sample = source_data[sample_before];
+                }
+
+                let sample_before = source_data[sample_before];
+                let sample_after = source_data[sample_after];
+
+                let sample_after_amount = source_index - source_index.floor();
+                *sample = (1.0_f32 - sample_after_amount) * sample_before
+                    + sample_after_amount * sample_after;
+            });
+    }
 }
 
 pub struct FrameIterator {

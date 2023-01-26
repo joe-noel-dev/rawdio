@@ -1,0 +1,9 @@
+pub const OVERDRIVE_PARAMETER_MIN: f64 = 0.0;
+pub const OVERDRIVE_PARAMETER_MAX: f64 = 1.0;
+pub const OVERDRIVE_PARAMETER_DEFAULT: f64 = 0.0;
+pub const OVERDRIVE_GAIN_DB_MIN: f64 = 0.0;
+pub const OVERDRIVE_GAIN_DB_MAX: f64 = 12.0;
+
+pub const MIX_PARAMETER_MIN: f64 = 0.0;
+pub const MIX_PARAMETER_MAX: f64 = 1.0;
+pub const MIX_PARAMETER_DEFAULT: f64 = 1.0;

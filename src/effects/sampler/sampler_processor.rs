@@ -294,7 +294,7 @@ mod tests {
             &input_buffer,
             &mut output_buffer,
             &start_time,
-            &DspParameters::new(),
+            &DspParameters::empty(),
         );
 
         output_buffer

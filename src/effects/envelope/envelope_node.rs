@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use crate::effects::Channel;
 use crate::engine::NotifierStatus;
+use crate::graph::DspParameters;
 use crate::{commands::Id, Context, GraphNode};
 
 use super::envelope_notification::{EnvelopeNotification, EnvelopeNotificationReceiver};
@@ -38,15 +38,13 @@ impl Envelope {
             notification_transmitter,
         ));
 
-        let parameters = HashMap::new();
-
         let node = GraphNode::new(
             id,
             context.get_command_queue(),
             channel_count,
             channel_count,
             processor,
-            parameters,
+            DspParameters::empty(),
         );
 
         let envelope_node = Rc::new(RefCell::new(Envelope {

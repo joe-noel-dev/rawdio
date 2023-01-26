@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use crate::{commands::Id, effects::Channel, CommandQueue, GraphNode, Level};
+use crate::{commands::Id, effects::Channel, graph::DspParameters, CommandQueue, GraphNode, Level};
 
 use super::{
     mixer_event::EventTransmitter, mixer_matrix::MixerMatrix, mixer_processor::MixerProcessor,
@@ -34,7 +32,7 @@ impl Mixer {
             input_count,
             output_count,
             processor,
-            HashMap::new(),
+            DspParameters::empty(),
         );
 
         Self {
