@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use crate::{commands::Id, AudioParameter, Context, GraphNode, Level};
+use crate::{commands::Id, graph::DspParameters, AudioParameter, Context, GraphNode, Level};
 
 use super::{biquad_processor::BiquadProcessor, filter_type::BiquadFilterType};
 
@@ -43,18 +41,13 @@ impl Biquad {
             shelf_gain.get_id(),
         ));
 
-        let parameters = HashMap::from(
-            [realtime_frequency, realtime_q, realtime_shelf_gain]
-                .map(|parameter| (parameter.get_id(), parameter)),
-        );
-
         let node = GraphNode::new(
             id,
             context.get_command_queue(),
             channel_count,
             channel_count,
             processor,
-            parameters,
+            DspParameters::new([realtime_frequency, realtime_q, realtime_shelf_gain]),
         );
 
         Self {

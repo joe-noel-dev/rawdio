@@ -1,6 +1,9 @@
-use std::collections::HashMap;
-
-use crate::{commands::Id, graph::GraphNode, parameter::AudioParameter, Context};
+use crate::{
+    commands::Id,
+    graph::{DspParameters, GraphNode},
+    parameter::AudioParameter,
+    Context,
+};
 
 use super::gain_processor::GainProcessor;
 
@@ -24,7 +27,6 @@ impl Gain {
             context.get_command_queue(),
         );
 
-        let parameters = HashMap::from([(realtime_gain.get_id(), realtime_gain)]);
         let processor = Box::new(GainProcessor::new(gain.get_id()));
 
         Self {
@@ -34,7 +36,7 @@ impl Gain {
                 channel_count,
                 channel_count,
                 processor,
-                parameters,
+                DspParameters::new([realtime_gain]),
             ),
             gain,
         }

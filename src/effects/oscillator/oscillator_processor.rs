@@ -3,7 +3,6 @@ use itertools::izip;
 use crate::{
     commands::Id,
     graph::{DspParameters, DspProcessor},
-    utility::macros::unwrap_or_return,
     AudioBuffer, SampleLocation, Timestamp,
 };
 
@@ -63,8 +62,8 @@ impl DspProcessor for OscillatorProcessor {
     ) {
         let sample_rate = output_buffer.sample_rate();
 
-        let frequency_values = unwrap_or_return!(parameters.get(&self.frequency_id)).get_values();
-        let gain_values = unwrap_or_return!(parameters.get(&self.gain_id)).get_values();
+        let frequency_values = parameters.get_parameter_values(self.frequency_id);
+        let gain_values = parameters.get_parameter_values(self.gain_id);
 
         let channel_count = output_buffer.channel_count();
 

@@ -47,3 +47,7 @@ harness = false
 [[bench]]
 name = "sampler_benches" 
 harness = false
+
+[[bench]]
+name = "waveshaper_benches"
+harness = false

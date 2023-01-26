@@ -178,6 +178,20 @@
       },
       "args": ["--tempo", "127"],
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "example: waveshaper",
+      "cargo": {
+        "args": ["build", "--example=waveshaper", "--package=rawdio"],
+        "filter": {
+          "name": "waveshaper",
+          "kind": "example"
+        }
+      },
+      "args": ["--mix", "1.0"],
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

@@ -25,6 +25,7 @@ pub use effects::Oscillator;
 pub use effects::Pan;
 pub use effects::Recorder;
 pub use effects::Sampler;
+pub use effects::Waveshaper;
 
 pub use engine::create_engine;
 pub use engine::AudioProcess;

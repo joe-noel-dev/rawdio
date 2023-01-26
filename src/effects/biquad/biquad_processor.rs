@@ -1,6 +1,4 @@
-use crate::{
-    commands::Id, graph::DspProcessor, utility::macros::unwrap_or_return, Level, SampleLocation,
-};
+use crate::{commands::Id, graph::DspProcessor, Level, SampleLocation};
 
 use super::{biquad_coefficients::BiquadCoefficients, filter_type::BiquadFilterType};
 
@@ -89,9 +87,9 @@ impl DspProcessor for BiquadProcessor {
         _start_time: &crate::Timestamp,
         parameters: &crate::graph::DspParameters,
     ) {
-        let frequency = unwrap_or_return!(parameters.get(&self.frequency_id)).get_values();
-        let q = unwrap_or_return!(parameters.get(&self.q_id)).get_values();
-        let shelf_gain = unwrap_or_return!(parameters.get(&self.shelf_gain_id)).get_values();
+        let frequency = parameters.get_parameter_values(self.frequency_id);
+        let q = parameters.get_parameter_values(self.q_id);
+        let shelf_gain = parameters.get_parameter_values(self.shelf_gain_id);
 
         let frame_count = output_buffer.frame_count();
         let channel_count = output_buffer.channel_count();
