@@ -179,6 +179,18 @@ impl DspGraph {
     }
 }
 
+fn can_process_dsp(
+    id: &Id,
+    graph: &Graph<Box<Dsp>, Connection>,
+    assigned_buffer_pool: &AssignedBufferPool<Endpoint>,
+) -> bool {
+    graph
+        .node_iter(*id, Direction::Incoming)
+        .all(|incoming_node_id| {
+            assigned_buffer_pool.has(&Endpoint::new(incoming_node_id, EndpointType::Output))
+        })
+}
+
 fn process_dsps(
     ids_to_process: &[Id],
     free_buffer_pool: &mut BufferPool,
@@ -189,6 +201,8 @@ fn process_dsps(
     start_time: &Timestamp,
 ) {
     for dsp_id in ids_to_process {
+        debug_assert!(can_process_dsp(dsp_id, graph, assigned_buffer_pool));
+
         process_dsp(
             free_buffer_pool,
             assigned_buffer_pool,
