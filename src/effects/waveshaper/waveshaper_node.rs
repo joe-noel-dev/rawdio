@@ -16,66 +16,51 @@ pub struct Waveshaper {
 
 impl Waveshaper {
     pub fn tanh(context: &dyn Context, channel_count: usize) -> Self {
-        const NUM_POINTS: usize = 511;
+        let shaper = |input: f32| {
+            const CONSTANT: f32 = 2.0;
+            CONSTANT * (input / CONSTANT).tanh()
+        };
 
-        let constant = 2.0;
-
-        let shape: Vec<f32> = (0..NUM_POINTS)
-            .map(|index| map_index_to_sample_range(index, NUM_POINTS))
-            .map(|x_value| (constant * (x_value / constant).tanh()) as f32)
-            .collect();
-
-        Self::new(context, channel_count, &shape)
+        Self::new(context, channel_count, &shaper)
     }
 
     pub fn soft_saturator(context: &dyn Context, channel_count: usize, threshold: Level) -> Self {
-        let threshold = threshold.as_gain();
+        let threshold = threshold.as_gain() as f32;
         assert!(0.0 <= threshold);
         assert!(threshold <= 1.0);
 
-        const NUM_POINTS: usize = 511;
+        let shaper = move |input: f32| {
+            if input < threshold {
+                input
+            } else {
+                threshold
+                    + (input - threshold)
+                        / (1.0 + ((input - threshold) / (1.0 - threshold)).powf(2.0))
+            }
+        };
 
-        let shape: Vec<f32> = (0..NUM_POINTS)
-            .map(|index| map_index_to_sample_range(index, NUM_POINTS))
-            .map(|x_value| {
-                if x_value < threshold {
-                    x_value
-                } else {
-                    threshold
-                        + (x_value - threshold)
-                            / (1.0 + ((x_value - threshold) / (1.0 - threshold)).powf(2.0))
-                }
-            })
-            .map(|value| value as f32)
-            .collect();
-
-        Self::new(context, channel_count, &shape)
+        Self::new(context, channel_count, &shaper)
     }
 
     pub fn hard_clip(context: &dyn Context, channel_count: usize, threshold: Level) -> Self {
-        const NUM_POINTS: usize = 511;
-        let threshold = threshold.as_gain();
+        let threshold = threshold.as_gain() as f32;
 
-        let shape: Vec<f32> = (0..NUM_POINTS)
-            .map(|index| map_index_to_sample_range(index, NUM_POINTS))
-            .map(|x_value| {
-                if x_value < -threshold {
-                    return -threshold;
-                }
+        let shaper = Box::new(move |input: f32| {
+            if input < -threshold {
+                return -threshold;
+            }
 
-                if x_value > threshold {
-                    return threshold;
-                }
+            if input > threshold {
+                return threshold;
+            }
 
-                x_value
-            })
-            .map(|value| value as f32)
-            .collect();
+            input
+        });
 
-        Self::new(context, channel_count, &shape)
+        Self::new(context, channel_count, &shaper)
     }
 
-    pub fn new(context: &dyn Context, channel_count: usize, wave_shape: &[f32]) -> Self {
+    pub fn new(context: &dyn Context, channel_count: usize, shaper: &dyn Fn(f32) -> f32) -> Self {
         let id = Id::generate();
 
         let (overdrive, realtime_overdrive) = AudioParameter::new(
@@ -95,7 +80,7 @@ impl Waveshaper {
         );
 
         let processor = Box::new(WaveshaperProcessor::new(
-            Vec::from(wave_shape),
+            shaper,
             overdrive.get_id(),
             mix.get_id(),
             context.get_sample_rate(),
@@ -116,11 +101,4 @@ impl Waveshaper {
             mix,
         }
     }
-}
-
-fn map_index_to_sample_range(index: usize, element_count: usize) -> f64 {
-    let normalised = index as f64 / (element_count as f64 - 1.0);
-    const MAX_VALUE: f64 = 1.0;
-    const MIN_VALUE: f64 = -1.0;
-    MIN_VALUE + normalised * (MAX_VALUE - MIN_VALUE)
 }

@@ -13,16 +13,28 @@ const MAX_BUFFER_SIZE: usize = 512;
 const OVERSAMPLING_RATIO: usize = 2;
 
 pub struct WaveshaperProcessor {
-    shape: Vec<f32>,
+    transfer_function: Vec<f32>,
     overdrive_id: Id,
     mix_id: Id,
     oversampling_buffer: OwnedAudioBuffer,
 }
 
 impl WaveshaperProcessor {
-    pub fn new(shape: Vec<f32>, overdrive_id: Id, mix_id: Id, sample_rate: usize) -> Self {
+    pub fn new(
+        shaper: &dyn Fn(f32) -> f32,
+        overdrive_id: Id,
+        mix_id: Id,
+        sample_rate: usize,
+    ) -> Self {
+        const NUM_POINTS: usize = 512 - 1;
+
+        let transfer_function: Vec<f32> = (0..NUM_POINTS)
+            .map(|index| map_index_to_input_value(index, NUM_POINTS))
+            .map(shaper)
+            .collect();
+
         Self {
-            shape,
+            transfer_function,
             overdrive_id,
             mix_id,
             oversampling_buffer: OwnedAudioBuffer::new(
@@ -45,7 +57,7 @@ impl WaveshaperProcessor {
         shape(
             self.oversampling_buffer
                 .get_channel_data_mut(SampleLocation::origin()),
-            &self.shape,
+            &self.transfer_function,
         );
 
         output_buffer.sample_rate_convert_from(
@@ -115,4 +127,11 @@ impl DspProcessor for WaveshaperProcessor {
             }
         });
     }
+}
+
+fn map_index_to_input_value(index: usize, element_count: usize) -> f32 {
+    let normalised = index as f32 / (element_count as f32 - 1.0);
+    const MAX_VALUE: f32 = 1.0;
+    const MIN_VALUE: f32 = -1.0;
+    MIN_VALUE + normalised * (MAX_VALUE - MIN_VALUE)
 }
