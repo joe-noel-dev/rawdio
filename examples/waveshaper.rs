@@ -33,7 +33,8 @@ fn main() {
         ],
     );
 
-    let mut shaper = Waveshaper::tanh(context.as_ref(), channel_count);
+    let threshold = Level::from_db(-6.0);
+    let mut shaper = Waveshaper::soft_saturator(context.as_ref(), channel_count, threshold);
     shaper.mix.set_value_now(options.mix);
 
     shaper.overdrive.set_value_at_time(0.0, Timestamp::zero());

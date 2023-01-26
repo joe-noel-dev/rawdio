@@ -28,6 +28,30 @@ impl Waveshaper {
         Self::new(context, channel_count, &shape)
     }
 
+    pub fn soft_saturator(context: &dyn Context, channel_count: usize, threshold: Level) -> Self {
+        let threshold = threshold.as_gain();
+        assert!(0.0 <= threshold);
+        assert!(threshold <= 1.0);
+
+        const NUM_POINTS: usize = 511;
+
+        let shape: Vec<f32> = (0..NUM_POINTS)
+            .map(|index| map_index_to_sample_range(index, NUM_POINTS))
+            .map(|x_value| {
+                if x_value < threshold {
+                    x_value
+                } else {
+                    threshold
+                        + (x_value - threshold)
+                            / (1.0 + ((x_value - threshold) / (1.0 - threshold)).powf(2.0))
+                }
+            })
+            .map(|value| value as f32)
+            .collect();
+
+        Self::new(context, channel_count, &shape)
+    }
+
     pub fn hard_clip(context: &dyn Context, channel_count: usize, threshold: Level) -> Self {
         const NUM_POINTS: usize = 511;
         let threshold = threshold.as_gain();
