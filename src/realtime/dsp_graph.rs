@@ -24,7 +24,7 @@ pub struct DspGraph {
     maximum_frame_count: usize,
 }
 
-static MAXIMUM_BUFFER_COUNT: usize = 128;
+static MAXIMUM_BUFFER_COUNT: usize = 1024;
 static MAXIMUM_GRAPH_NODE_COUNT: usize = 512;
 static MAXIMUM_GRAPH_EDGE_COUNT: usize = 512;
 static GARBAGE_COLLECTION_CHANNEL_CAPACITY: usize = 512;
