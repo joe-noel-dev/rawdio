@@ -28,6 +28,10 @@ where
         self.assigned_buffers.is_empty()
     }
 
+    pub fn has(&self, id: &Identifier) -> bool {
+        self.assigned_buffers.contains_key(id)
+    }
+
     pub fn remove_next(&mut self) -> Option<(Identifier, OwnedAudioBuffer)> {
         let id = match self.assigned_buffers.keys().next() {
             Some(id) => *id,
