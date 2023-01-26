@@ -41,6 +41,10 @@ name = "gain_benches"
 harness = false
 
 [[bench]]
+name = "graph_benches"
+harness = false
+
+[[bench]]
 name = "oscillator_benches"
 harness = false
 

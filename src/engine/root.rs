@@ -4,8 +4,6 @@ use crate::{realtime::Processor, AudioProcess, Command, CommandQueue, Context, T
 
 use super::context::NotifierStatus;
 
-static COMMAND_QUEUE_CAPACITY: usize = 1024;
-
 pub struct Root {
     sample_rate: usize,
     timestamp: Arc<AtomicI64>,
@@ -70,13 +68,15 @@ struct CommandTransmitter {
 
 impl CommandTransmitter {
     fn new() -> (Self, crossbeam::channel::Receiver<Command>) {
-        let (command_tx, command_rx) = crossbeam::channel::bounded(COMMAND_QUEUE_CAPACITY);
+        let (command_tx, command_rx) = crossbeam::channel::unbounded();
         (Self { command_tx }, command_rx)
     }
 }
 
 impl CommandQueue for CommandTransmitter {
     fn send(&self, command: Command) {
-        let _ = self.command_tx.send(command);
+        if let Err(error) = self.command_tx.send(command) {
+            eprintln!("Error sending command: {error}");
+        };
     }
 }
