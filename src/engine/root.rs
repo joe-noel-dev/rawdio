@@ -75,8 +75,6 @@ impl CommandTransmitter {
 
 impl CommandQueue for CommandTransmitter {
     fn send(&self, command: Command) {
-        if let Err(error) = self.command_tx.send(command) {
-            eprintln!("Error sending command: {error}");
-        };
+        let _ = self.command_tx.send(command);
     }
 }
