@@ -1,5 +1,3 @@
-#![feature(is_sorted)]
-
 mod buffer;
 mod commands;
 mod effects;

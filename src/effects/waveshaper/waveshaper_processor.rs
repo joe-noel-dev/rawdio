@@ -21,8 +21,6 @@ pub struct WaveshaperProcessor {
 
 impl WaveshaperProcessor {
     pub fn new(shape: Vec<f32>, overdrive_id: Id, mix_id: Id, sample_rate: usize) -> Self {
-        debug_assert!(shape.is_sorted());
-
         Self {
             shape,
             overdrive_id,
