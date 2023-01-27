@@ -11,6 +11,11 @@ use super::{
     topological_sort::TopologicalSort,
 };
 
+struct BufferPools {
+    free: BufferPool,
+    assigned: AssignedBufferPool<Endpoint>,
+}
+
 pub struct DspGraph {
     graph: Graph<Box<Dsp>, Connection>,
     topological_sort: TopologicalSort,
@@ -18,8 +23,7 @@ pub struct DspGraph {
     output_endpoint: Option<Endpoint>,
     garbage_collection_tx: GarbaseCollectionSender,
     graph_needs_sort: bool,
-    free_buffer_pool: BufferPool,
-    assigned_buffer_pool: AssignedBufferPool<Endpoint>,
+    buffer_pools: BufferPools,
     maximum_channel_count: usize,
     maximum_frame_count: usize,
 }
@@ -46,13 +50,15 @@ impl DspGraph {
             input_endpoint: None,
             output_endpoint: None,
             garbage_collection_tx,
-            free_buffer_pool: BufferPool::new(
-                MAXIMUM_BUFFER_COUNT,
-                maximum_frame_count,
-                maximum_channel_count,
-                sample_rate,
-            ),
-            assigned_buffer_pool: AssignedBufferPool::with_capacity(MAXIMUM_BUFFER_COUNT),
+            buffer_pools: BufferPools {
+                free: BufferPool::new(
+                    MAXIMUM_BUFFER_COUNT,
+                    maximum_frame_count,
+                    maximum_channel_count,
+                    sample_rate,
+                ),
+                assigned: AssignedBufferPool::with_capacity(MAXIMUM_BUFFER_COUNT),
+            },
             maximum_channel_count,
             maximum_frame_count,
         }
@@ -73,7 +79,7 @@ impl DspGraph {
         self.sort_graph();
 
         if let Some(input_endpoint) = self.input_endpoint {
-            if let Some(mut buffer) = self.free_buffer_pool.remove() {
+            if let Some(mut buffer) = self.buffer_pools.free.remove() {
                 buffer.copy_from(
                     input_buffer,
                     SampleLocation::origin(),
@@ -82,23 +88,15 @@ impl DspGraph {
                     frame_count,
                 );
 
-                self.assigned_buffer_pool.add(buffer, &input_endpoint);
+                self.buffer_pools.assigned.add(buffer, &input_endpoint);
             }
         }
 
-        process_dsps(
-            self.topological_sort.get_sorted_graph(),
-            &mut self.free_buffer_pool,
-            &mut self.assigned_buffer_pool,
-            &mut self.graph,
-            frame_count,
-            output_channel_count,
-            start_time,
-        );
+        self.process_dsps(frame_count, output_channel_count, start_time);
 
         if let Some(output_endpoint) = self.output_endpoint {
-            mix_in_endpoint(
-                &mut self.assigned_buffer_pool,
+            mix_endpoint(
+                &mut self.buffer_pools.assigned,
                 &output_endpoint,
                 output_buffer,
                 output_channel_count,
@@ -107,11 +105,11 @@ impl DspGraph {
             );
         }
 
-        while let Some((_, buffer)) = self.assigned_buffer_pool.remove_next() {
-            self.free_buffer_pool.add(buffer);
+        while let Some((_, buffer)) = self.buffer_pools.assigned.remove_next() {
+            self.buffer_pools.free.add(buffer);
         }
 
-        assert!(self.assigned_buffer_pool.is_empty())
+        debug_assert!(self.buffer_pools.assigned.is_empty());
     }
 
     pub fn add_dsp(&mut self, dsp: Box<Dsp>) {
@@ -177,6 +175,66 @@ impl DspGraph {
     pub fn connect_to_input(&mut self, input_endpoint: Endpoint) {
         self.input_endpoint = Some(input_endpoint);
     }
+
+    fn process_dsps(&mut self, num_frames: usize, num_channels: usize, start_time: &Timestamp) {
+        let sorted_graph = self.topological_sort.get_sorted_graph();
+        for dsp_id in sorted_graph {
+            debug_assert!(can_process_dsp(
+                dsp_id,
+                &self.graph,
+                &self.buffer_pools.assigned
+            ));
+
+            process_dsp(
+                &mut self.buffer_pools,
+                &mut self.graph,
+                *dsp_id,
+                num_frames,
+                num_channels,
+                start_time,
+            );
+        }
+    }
+}
+
+fn process_dsp(
+    buffer_pools: &mut BufferPools,
+    graph: &mut Graph<Box<Dsp>, Connection>,
+    dsp_id: Id,
+    num_frames: usize,
+    num_channels: usize,
+    start_time: &Timestamp,
+) {
+    let output_endpoint = Endpoint::new(dsp_id, EndpointType::Output);
+
+    let mut output_buffer = get_buffer_with_endpoint(&output_endpoint, buffer_pools);
+
+    let (input_buffer, input_endpoint) =
+        prepare_input(buffer_pools, graph, dsp_id, num_frames, num_channels);
+
+    if let Some(dsp) = graph.get_node_mut(dsp_id) {
+        let mut output_slice = MutableBorrowedAudioBuffer::slice_channels_and_frames(
+            &mut output_buffer,
+            num_frames,
+            dsp.output_count(),
+        );
+
+        let input_slice = BorrowedAudioBuffer::slice_channels_and_frames(
+            &input_buffer,
+            num_frames,
+            dsp.input_count(),
+        );
+
+        dsp.process_audio(&input_slice, &mut output_slice, start_time);
+    };
+
+    buffer_pools.assigned.add(output_buffer, &output_endpoint);
+
+    if input_endpoint.endpoint_type == EndpointType::Input {
+        buffer_pools.free.add(input_buffer);
+    } else {
+        buffer_pools.assigned.add(input_buffer, &input_endpoint);
+    }
 }
 
 fn can_process_dsp(
@@ -191,36 +249,12 @@ fn can_process_dsp(
         })
 }
 
-fn process_dsps(
-    ids_to_process: &[Id],
-    free_buffer_pool: &mut BufferPool,
-    assigned_buffer_pool: &mut AssignedBufferPool<Endpoint>,
-    graph: &mut Graph<Box<Dsp>, Connection>,
-    num_frames: usize,
-    num_channels: usize,
-    start_time: &Timestamp,
-) {
-    for dsp_id in ids_to_process {
-        debug_assert!(can_process_dsp(dsp_id, graph, assigned_buffer_pool));
-
-        process_dsp(
-            free_buffer_pool,
-            assigned_buffer_pool,
-            graph,
-            *dsp_id,
-            num_frames,
-            num_channels,
-            start_time,
-        );
-    }
-}
-
 enum MixBehaviour {
     Overwrite,
     Mix,
 }
 
-fn mix_in_endpoint(
+fn mix_endpoint(
     assigned_buffer_pool: &mut AssignedBufferPool<Endpoint>,
     endpoint: &Endpoint,
     output_buffer: &mut dyn AudioBuffer,
@@ -264,7 +298,8 @@ fn copy_output_from_dependencies(
 
     for connected_node_id in graph.node_iter(dsp_id, Direction::Incoming) {
         let endpoint = Endpoint::new(connected_node_id, EndpointType::Output);
-        mix_in_endpoint(
+
+        mix_endpoint(
             assigned_buffer_pool,
             &endpoint,
             destination_buffer,
@@ -279,32 +314,30 @@ fn copy_output_from_dependencies(
 
 fn get_buffer_with_endpoint(
     endpoint: &Endpoint,
-    free_buffer_pool: &mut BufferPool,
-    assigned_buffer_pool: &mut AssignedBufferPool<Endpoint>,
+    buffer_pools: &mut BufferPools,
 ) -> OwnedAudioBuffer {
-    match assigned_buffer_pool.remove(endpoint) {
+    match buffer_pools.assigned.remove(endpoint) {
         Some(buffer) => buffer,
-        None => free_buffer_pool
+        None => buffer_pools
+            .free
             .remove()
             .expect("No buffers available for processing"),
     }
 }
 
 fn prepare_n_input_node(
-    free_buffer_pool: &mut BufferPool,
-    assigned_buffer_pool: &mut AssignedBufferPool<Endpoint>,
-    graph: &mut Graph<Box<Dsp>, Connection>,
+    buffer_pools: &mut BufferPools,
+    graph: &Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
     num_frames: usize,
     num_channels: usize,
 ) -> (OwnedAudioBuffer, Endpoint) {
     let input_endpoint = Endpoint::new(dsp_id, EndpointType::Input);
 
-    let mut node_input_buffer =
-        get_buffer_with_endpoint(&input_endpoint, free_buffer_pool, assigned_buffer_pool);
+    let mut node_input_buffer = get_buffer_with_endpoint(&input_endpoint, buffer_pools);
 
     copy_output_from_dependencies(
-        assigned_buffer_pool,
+        &mut buffer_pools.assigned,
         graph,
         dsp_id,
         &mut node_input_buffer,
@@ -316,22 +349,20 @@ fn prepare_n_input_node(
 }
 
 fn prepare_zero_input_node(
-    free_buffer_pool: &mut BufferPool,
-    assigned_buffer_pool: &mut AssignedBufferPool<Endpoint>,
+    buffer_pools: &mut BufferPools,
     dsp_id: Id,
 ) -> (OwnedAudioBuffer, Endpoint) {
     let input_endpoint = Endpoint::new(dsp_id, EndpointType::Input);
 
     (
-        get_buffer_with_endpoint(&input_endpoint, free_buffer_pool, assigned_buffer_pool),
+        get_buffer_with_endpoint(&input_endpoint, buffer_pools),
         input_endpoint,
     )
 }
 
 fn prepare_single_input_node(
-    free_buffer_pool: &mut BufferPool,
-    assigned_buffer_pool: &mut AssignedBufferPool<Endpoint>,
-    graph: &mut Graph<Box<Dsp>, Connection>,
+    buffer_pools: &mut BufferPools,
+    graph: &Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
 ) -> (OwnedAudioBuffer, Endpoint) {
     let input_endpoint = Endpoint::new(
@@ -340,81 +371,22 @@ fn prepare_single_input_node(
     );
 
     (
-        get_buffer_with_endpoint(&input_endpoint, free_buffer_pool, assigned_buffer_pool),
+        get_buffer_with_endpoint(&input_endpoint, buffer_pools),
         input_endpoint,
     )
 }
 
 fn prepare_input(
-    free_buffer_pool: &mut BufferPool,
-    assigned_buffer_pool: &mut AssignedBufferPool<Endpoint>,
-    graph: &mut Graph<Box<Dsp>, Connection>,
+    buffer_pools: &mut BufferPools,
+    graph: &Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
     num_frames: usize,
     num_channels: usize,
 ) -> (OwnedAudioBuffer, Endpoint) {
     match graph.num_connections(dsp_id, Direction::Incoming) {
-        0 => prepare_zero_input_node(free_buffer_pool, assigned_buffer_pool, dsp_id),
-        1 => prepare_single_input_node(free_buffer_pool, assigned_buffer_pool, graph, dsp_id),
-        _ => prepare_n_input_node(
-            free_buffer_pool,
-            assigned_buffer_pool,
-            graph,
-            dsp_id,
-            num_frames,
-            num_channels,
-        ),
-    }
-}
-
-fn process_dsp(
-    free_buffer_pool: &mut BufferPool,
-    assigned_buffer_pool: &mut AssignedBufferPool<Endpoint>,
-    graph: &mut Graph<Box<Dsp>, Connection>,
-    dsp_id: Id,
-    num_frames: usize,
-    num_channels: usize,
-    start_time: &Timestamp,
-) {
-    let output_endpoint = Endpoint::new(dsp_id, EndpointType::Output);
-
-    let mut node_output_buffer =
-        get_buffer_with_endpoint(&output_endpoint, free_buffer_pool, assigned_buffer_pool);
-
-    let (node_input_buffer, input_endpoint) = prepare_input(
-        free_buffer_pool,
-        assigned_buffer_pool,
-        graph,
-        dsp_id,
-        num_frames,
-        num_channels,
-    );
-
-    if let Some(dsp) = graph.get_node_mut(dsp_id) {
-        let mut node_output_buffer_slice = MutableBorrowedAudioBuffer::slice(
-            &mut node_output_buffer,
-            0,
-            num_frames,
-            0,
-            dsp.output_count(),
-        );
-
-        let node_input_buffer_slice =
-            BorrowedAudioBuffer::slice(&node_input_buffer, 0, num_frames, 0, dsp.input_count());
-
-        dsp.process_audio(
-            &node_input_buffer_slice,
-            &mut node_output_buffer_slice,
-            start_time,
-        );
-    };
-
-    assigned_buffer_pool.add(node_output_buffer, &output_endpoint);
-
-    if input_endpoint.endpoint_type == EndpointType::Input {
-        free_buffer_pool.add(node_input_buffer);
-    } else {
-        assigned_buffer_pool.add(node_input_buffer, &input_endpoint);
+        0 => prepare_zero_input_node(buffer_pools, dsp_id),
+        1 => prepare_single_input_node(buffer_pools, graph, dsp_id),
+        _ => prepare_n_input_node(buffer_pools, graph, dsp_id, num_frames, num_channels),
     }
 }
 
