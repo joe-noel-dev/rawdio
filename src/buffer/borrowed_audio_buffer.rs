@@ -117,6 +117,7 @@ mod tests {
 
         let slice_offset = 50;
         let slice_frame_count = 100;
+
         let slice =
             BorrowedAudioBuffer::slice_frames(&original_buffer, slice_offset, slice_frame_count);
         let expected_location = SampleLocation::new(channel, frame - slice_offset);

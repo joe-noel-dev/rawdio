@@ -66,18 +66,40 @@ impl OwnedAudioBuffer {
         new_buffer
     }
 
-    pub fn white_noise(
-        frame_count: usize,
-        channel_count: usize,
-        sample_rate: usize,
-    ) -> OwnedAudioBuffer {
-        let mut buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+    pub fn white_noise(frame_count: usize, channel_count: usize, sample_rate: usize) -> Self {
+        let mut buffer = Self::new(frame_count, channel_count, sample_rate);
 
         let mut random_generator = rand::thread_rng();
 
         for frame in buffer.frame_iter() {
             let sample_value = random_generator.gen_range(-1.0..=1.0);
             buffer.set_sample(frame, sample_value);
+        }
+
+        buffer
+    }
+
+    pub fn sine(
+        frame_count: usize,
+        channel_count: usize,
+        sample_rate: usize,
+        frequency: f64,
+        amplitude: f64,
+    ) -> Self {
+        debug_assert!(channel_count > 0);
+
+        let mut buffer = Self::new(frame_count, channel_count, sample_rate);
+
+        let channel = buffer.get_channel_data_mut(SampleLocation::origin());
+
+        for (index, sample) in channel.iter_mut().enumerate() {
+            let time = index as f64 / sample_rate as f64;
+            *sample = (amplitude * (std::f64::consts::TAU * frequency * time).sin()) as f32;
+        }
+
+        for channel in 1..channel_count {
+            let source_location = SampleLocation::channel(0);
+            buffer.duplicate_channel(source_location, channel, frame_count);
         }
 
         buffer
