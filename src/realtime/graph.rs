@@ -138,7 +138,7 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
         NodeIterator::new(node_id, direction, &self.nodes, &self.edges)
     }
 
-    pub fn num_connections(&self, node_id: Id, direction: Direction) -> usize {
+    pub fn connection_count(&self, node_id: Id, direction: Direction) -> usize {
         self.node_iter(node_id, direction).count()
     }
 
@@ -146,7 +146,7 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
         self.nodes.keys()
     }
 
-    pub fn num_nodes(&self) -> usize {
+    pub fn node_count(&self) -> usize {
         self.nodes.len()
     }
 }

@@ -80,15 +80,15 @@ impl Timestamp {
         self.seconds.to_num::<f64>() * sample_rate as f64
     }
 
-    pub fn incremented_by_samples(&self, num_samples: usize, sample_rate: usize) -> Self {
+    pub fn incremented_by_samples(&self, sample_count: usize, sample_rate: usize) -> Self {
         Self {
-            seconds: self.seconds + FixedPoint::from_num(num_samples as f64 / sample_rate as f64),
+            seconds: self.seconds + FixedPoint::from_num(sample_count as f64 / sample_rate as f64),
         }
     }
 
-    pub fn incremented_by_seconds(&self, num_seconds: f64) -> Self {
+    pub fn incremented_by_seconds(&self, seconds: f64) -> Self {
         Self {
-            seconds: self.seconds + FixedPoint::from_num(num_seconds),
+            seconds: self.seconds + FixedPoint::from_num(seconds),
         }
     }
 

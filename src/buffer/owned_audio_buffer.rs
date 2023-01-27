@@ -171,19 +171,19 @@ mod tests {
 
     #[test]
     fn starts_empty() {
-        let num_frames = 1000;
-        let num_channels = 2;
+        let frame_count = 1000;
+        let channel_count = 2;
         let sample_rate = 44100;
-        let buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+        let buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
         assert!(is_empty(&buffer));
     }
 
     #[test]
     fn clear_resets_all_samples() {
-        let num_frames = 1000;
-        let num_channels = 2;
+        let frame_count = 1000;
+        let channel_count = 2;
         let sample_rate = 44100;
-        let mut buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+        let mut buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
         fill_with_noise(&mut buffer);
         assert!(!is_empty(&buffer));
@@ -193,10 +193,10 @@ mod tests {
 
     #[test]
     fn set_and_get_a_sample() {
-        let num_frames = 1000;
-        let num_channels = 2;
+        let frame_count = 1000;
+        let channel_count = 2;
         let sample_rate = 44100;
-        let mut buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+        let mut buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
         let frame_index = 53;
         let channel_index = 1;

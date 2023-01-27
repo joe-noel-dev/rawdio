@@ -14,8 +14,8 @@ impl<'a> BorrowedAudioBuffer<'a> {
         frame_offset: usize,
         frame_count: usize,
     ) -> Self {
-        let num_channels = buffer.channel_count();
-        Self::slice(buffer, frame_offset, frame_count, 0, num_channels)
+        let channel_count = buffer.channel_count();
+        Self::slice(buffer, frame_offset, frame_count, 0, channel_count)
     }
 
     pub fn slice_channels(
@@ -23,8 +23,8 @@ impl<'a> BorrowedAudioBuffer<'a> {
         channel_offset: usize,
         channel_count: usize,
     ) -> Self {
-        let num_frames = buffer.frame_count();
-        Self::slice(buffer, 0, num_frames, channel_offset, channel_count)
+        let frame_count = buffer.frame_count();
+        Self::slice(buffer, 0, frame_count, channel_offset, channel_count)
     }
 
     pub fn slice_channels_and_frames(
@@ -102,10 +102,11 @@ mod tests {
 
     #[test]
     fn translates_location_when_getting_samples() {
-        let num_frames = 1_000;
-        let num_channels = 2;
+        let frame_count = 1_000;
+        let channel_count = 2;
+
         let sample_rate = 44_100;
-        let mut original_buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+        let mut original_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
         let channel = 0;
         let frame = 54;
@@ -115,9 +116,9 @@ mod tests {
         original_buffer.set_sample(location, value);
 
         let slice_offset = 50;
-        let slice_num_frames = 100;
+        let slice_frame_count = 100;
         let slice =
-            BorrowedAudioBuffer::slice_frames(&original_buffer, slice_offset, slice_num_frames);
+            BorrowedAudioBuffer::slice_frames(&original_buffer, slice_offset, slice_frame_count);
         let expected_location = SampleLocation::new(channel, frame - slice_offset);
         assert_relative_eq!(slice.get_sample(expected_location), value);
     }

@@ -6,17 +6,17 @@ pub trait AudioBuffer {
     fn fill_from_interleaved(
         &mut self,
         interleaved_data: &[f32],
-        num_channels: usize,
-        num_frames: usize,
+        channel_count: usize,
+        frame_count: usize,
     ) {
-        let num_frames = num_frames.min(self.frame_count());
-        let num_channels = num_channels.min(self.channel_count());
+        let frame_count = frame_count.min(self.frame_count());
+        let channel_count = channel_count.min(self.channel_count());
 
-        for channel in 0..num_channels {
+        for channel in 0..channel_count {
             let channel_data = self.get_channel_data_mut(SampleLocation::channel(channel));
 
-            (0..num_frames).for_each(|frame| {
-                let source_offset = frame * num_channels + channel;
+            (0..frame_count).for_each(|frame| {
+                let source_offset = frame * channel_count + channel;
                 let sample_value = interleaved_data[source_offset];
 
                 channel_data[frame] = sample_value;
@@ -27,19 +27,19 @@ pub trait AudioBuffer {
     fn copy_to_interleaved(
         &self,
         interleaved_data: &mut [f32],
-        num_channels: usize,
-        num_frames: usize,
+        channel_count: usize,
+        frame_count: usize,
     ) {
-        let num_channels = num_channels.min(self.channel_count());
-        let num_frames = num_frames.min(self.frame_count());
+        let channel_count = channel_count.min(self.channel_count());
+        let frame_count = frame_count.min(self.frame_count());
 
-        for channel in 0..num_channels {
+        for channel in 0..channel_count {
             let channel_data = self.get_channel_data(SampleLocation::channel(channel));
 
-            (0..num_frames).for_each(|frame| {
+            (0..frame_count).for_each(|frame| {
                 let sample_value = channel_data[frame];
 
-                let destination_offset = frame * num_channels + channel;
+                let destination_offset = frame * channel_count + channel;
                 interleaved_data[destination_offset] = sample_value;
             });
         }
@@ -104,16 +104,16 @@ pub trait AudioBuffer {
         source_buffer: &dyn AudioBuffer,
         source_location: SampleLocation,
         destination_location: SampleLocation,
-        num_channels: usize,
-        num_frames: usize,
+        channel_count: usize,
+        frame_count: usize,
     ) {
-        for channel in 0..num_channels {
+        for channel in 0..channel_count {
             let source = source_buffer.get_channel_data(source_location.offset_channels(channel));
-            let source = &source[0..num_frames];
+            let source = &source[..frame_count];
 
             let destination =
                 self.get_channel_data_mut(destination_location.offset_channels(channel));
-            let destination = &mut destination[0..num_frames];
+            let destination = &mut destination[..frame_count];
 
             for (source_value, destination_value) in source.iter().zip(destination.iter_mut()) {
                 *destination_value += *source_value;
@@ -126,16 +126,16 @@ pub trait AudioBuffer {
         source_buffer: &dyn AudioBuffer,
         source_location: SampleLocation,
         destination_location: SampleLocation,
-        num_channels: usize,
-        num_frames: usize,
+        channel_count: usize,
+        frame_count: usize,
     ) {
-        for channel in 0..num_channels {
+        for channel in 0..channel_count {
             let source = source_buffer.get_channel_data(source_location.offset_channels(channel));
-            let source = &source[0..num_frames];
+            let source = &source[..frame_count];
 
             let destination =
                 self.get_channel_data_mut(destination_location.offset_channels(channel));
-            let destination = &mut destination[0..num_frames];
+            let destination = &mut destination[..frame_count];
 
             destination.copy_from_slice(source);
         }

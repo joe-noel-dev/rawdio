@@ -10,9 +10,9 @@ impl<Identifier> AssignedBufferPool<Identifier>
 where
     Identifier: std::cmp::Eq + std::hash::Hash + Copy,
 {
-    pub fn with_capacity(num_buffers: usize) -> Self {
+    pub fn with_capacity(buffer_count: usize) -> Self {
         Self {
-            assigned_buffers: HashMap::with_capacity(num_buffers),
+            assigned_buffers: HashMap::with_capacity(buffer_count),
         }
     }
 
