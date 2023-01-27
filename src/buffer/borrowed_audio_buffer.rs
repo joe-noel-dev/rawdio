@@ -14,7 +14,6 @@ impl<'a> BorrowedAudioBuffer<'a> {
         frame_offset: usize,
         frame_count: usize,
     ) -> Self {
-        assert!(frame_offset + frame_count <= buffer.frame_count());
         let num_channels = buffer.channel_count();
         Self::slice(buffer, frame_offset, frame_count, 0, num_channels)
     }
@@ -24,9 +23,16 @@ impl<'a> BorrowedAudioBuffer<'a> {
         channel_offset: usize,
         channel_count: usize,
     ) -> Self {
-        assert!(channel_offset + channel_count <= buffer.channel_count());
         let num_frames = buffer.frame_count();
         Self::slice(buffer, 0, num_frames, channel_offset, channel_count)
+    }
+
+    pub fn slice_channels_and_frames(
+        buffer: &'a dyn AudioBuffer,
+        frame_count: usize,
+        channel_count: usize,
+    ) -> Self {
+        Self::slice(buffer, 0, frame_count, 0, channel_count)
     }
 
     pub fn slice(
