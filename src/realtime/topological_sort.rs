@@ -29,8 +29,8 @@ impl TopologicalSort {
         self.ready_to_process.clear();
 
         for node_id in graph.all_node_ids() {
-            let num_incoming_nodes = graph.num_connections(*node_id, Direction::Incoming);
-            self.dependency_count.insert(*node_id, num_incoming_nodes);
+            let incoming_node_count = graph.connection_count(*node_id, Direction::Incoming);
+            self.dependency_count.insert(*node_id, incoming_node_count);
         }
 
         while let Some(next_node_id) = self.node_without_dependencies() {
@@ -46,7 +46,7 @@ impl TopologicalSort {
             }
         }
 
-        assert_eq!(self.order.len(), graph.num_nodes()); // cycle detected
+        assert_eq!(self.order.len(), graph.node_count()); // cycle detected
 
         &self.order
     }

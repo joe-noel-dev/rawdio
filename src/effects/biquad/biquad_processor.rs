@@ -54,7 +54,7 @@ fn calculate_coefficients(
 impl BiquadProcessor {
     pub fn new(
         sample_rate: usize,
-        num_channels: usize,
+        channel_count: usize,
         filter_type: BiquadFilterType,
         frequency_id: Id,
         q_id: Id,
@@ -74,7 +74,7 @@ impl BiquadProcessor {
             shelf_gain_id,
             coefficients: calculate_coefficients(filter_type, &parameters, sample_rate),
             last_parameters: parameters,
-            delays: (0..num_channels).map(|_| [0.0, 0.0, 0.0, 0.0]).collect(),
+            delays: (0..channel_count).map(|_| [0.0, 0.0, 0.0, 0.0]).collect(),
         }
     }
 }

@@ -66,18 +66,40 @@ impl OwnedAudioBuffer {
         new_buffer
     }
 
-    pub fn white_noise(
-        frame_count: usize,
-        channel_count: usize,
-        sample_rate: usize,
-    ) -> OwnedAudioBuffer {
-        let mut buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+    pub fn white_noise(frame_count: usize, channel_count: usize, sample_rate: usize) -> Self {
+        let mut buffer = Self::new(frame_count, channel_count, sample_rate);
 
         let mut random_generator = rand::thread_rng();
 
         for frame in buffer.frame_iter() {
             let sample_value = random_generator.gen_range(-1.0..=1.0);
             buffer.set_sample(frame, sample_value);
+        }
+
+        buffer
+    }
+
+    pub fn sine(
+        frame_count: usize,
+        channel_count: usize,
+        sample_rate: usize,
+        frequency: f64,
+        amplitude: f64,
+    ) -> Self {
+        debug_assert!(channel_count > 0);
+
+        let mut buffer = Self::new(frame_count, channel_count, sample_rate);
+
+        let channel = buffer.get_channel_data_mut(SampleLocation::origin());
+
+        for (index, sample) in channel.iter_mut().enumerate() {
+            let time = index as f64 / sample_rate as f64;
+            *sample = (amplitude * (std::f64::consts::TAU * frequency * time).sin()) as f32;
+        }
+
+        for channel in 1..channel_count {
+            let source_location = SampleLocation::channel(0);
+            buffer.duplicate_channel(source_location, channel, frame_count);
         }
 
         buffer
@@ -171,19 +193,19 @@ mod tests {
 
     #[test]
     fn starts_empty() {
-        let num_frames = 1000;
-        let num_channels = 2;
+        let frame_count = 1000;
+        let channel_count = 2;
         let sample_rate = 44100;
-        let buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+        let buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
         assert!(is_empty(&buffer));
     }
 
     #[test]
     fn clear_resets_all_samples() {
-        let num_frames = 1000;
-        let num_channels = 2;
+        let frame_count = 1000;
+        let channel_count = 2;
         let sample_rate = 44100;
-        let mut buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+        let mut buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
         fill_with_noise(&mut buffer);
         assert!(!is_empty(&buffer));
@@ -193,10 +215,10 @@ mod tests {
 
     #[test]
     fn set_and_get_a_sample() {
-        let num_frames = 1000;
-        let num_channels = 2;
+        let frame_count = 1000;
+        let channel_count = 2;
         let sample_rate = 44100;
-        let mut buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+        let mut buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
         let frame_index = 53;
         let channel_index = 1;

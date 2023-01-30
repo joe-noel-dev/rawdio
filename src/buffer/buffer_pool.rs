@@ -6,14 +6,14 @@ pub struct BufferPool {
 
 impl BufferPool {
     pub fn new(
-        num_buffers: usize,
-        num_frames: usize,
-        num_channels: usize,
+        buffer_count: usize,
+        frame_count: usize,
+        channel_count: usize,
         sample_rate: usize,
     ) -> Self {
         Self {
-            free_buffers: (0..num_buffers)
-                .map(|_| OwnedAudioBuffer::new(num_frames, num_channels, sample_rate))
+            free_buffers: (0..buffer_count)
+                .map(|_| OwnedAudioBuffer::new(frame_count, channel_count, sample_rate))
                 .collect(),
         }
     }

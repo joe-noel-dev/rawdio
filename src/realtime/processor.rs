@@ -2,13 +2,10 @@ use std::sync::{atomic::AtomicI64, atomic::Ordering, Arc};
 
 use crate::{
     commands::Command, AudioBuffer, AudioProcess, BorrowedAudioBuffer, MutableBorrowedAudioBuffer,
-    Timestamp,
+    Timestamp, MAXIMUM_CHANNEL_COUNT, MAXIMUM_FRAME_COUNT,
 };
 
 use super::dsp_graph::DspGraph;
-
-const MAXIMUM_NUMBER_OF_FRAMES: usize = 512;
-const MAXIMUM_NUMBER_OF_CHANNELS: usize = 2;
 
 type CommandReceiver = crossbeam::channel::Receiver<Command>;
 
@@ -17,7 +14,7 @@ pub struct Processor {
     sample_rate: usize,
     command_rx: CommandReceiver,
 
-    sample_position: usize,
+    frame_position: usize,
     current_time: Arc<AtomicI64>,
     graph: DspGraph,
 }
@@ -32,13 +29,9 @@ impl Processor {
             started: false,
             sample_rate,
             command_rx,
-            sample_position: 0,
+            frame_position: 0,
             current_time,
-            graph: DspGraph::new(
-                MAXIMUM_NUMBER_OF_FRAMES,
-                MAXIMUM_NUMBER_OF_CHANNELS,
-                sample_rate,
-            ),
+            graph: DspGraph::new(MAXIMUM_FRAME_COUNT, MAXIMUM_CHANNEL_COUNT, sample_rate),
         }
     }
 
@@ -52,22 +45,22 @@ impl Processor {
         let current_time = Timestamp::from_raw_i64(self.current_time.load(Ordering::Acquire));
 
         while offset < output_buffer.frame_count() {
-            let num_frames = std::cmp::min(
+            let frame_count = std::cmp::min(
                 output_buffer.frame_count() - offset,
                 self.get_maximum_number_of_frames(),
             );
 
-            let input_slice = BorrowedAudioBuffer::slice_frames(input_buffer, offset, num_frames);
+            let input_slice = BorrowedAudioBuffer::slice_frames(input_buffer, offset, frame_count);
 
             let mut output_slice =
-                MutableBorrowedAudioBuffer::slice_frames(output_buffer, offset, num_frames);
+                MutableBorrowedAudioBuffer::slice_frames(output_buffer, offset, frame_count);
 
             let start_time = current_time.incremented_by_samples(offset, self.sample_rate);
 
             self.graph
                 .process(&input_slice, &mut output_slice, &start_time);
 
-            offset += num_frames;
+            offset += frame_count;
         }
     }
 }
@@ -84,9 +77,9 @@ impl AudioProcess for Processor {
             return;
         }
 
-        let num_frames = output_buffer.frame_count();
+        let frame_count = output_buffer.frame_count();
         self.process_graph(input_buffer, output_buffer);
-        self.update_position(num_frames);
+        self.update_position(frame_count);
     }
 }
 
@@ -120,14 +113,13 @@ impl Processor {
     }
 
     fn get_maximum_number_of_frames(&self) -> usize {
-        MAXIMUM_NUMBER_OF_FRAMES
+        MAXIMUM_FRAME_COUNT
     }
 
-    fn update_position(&mut self, num_samples: usize) {
-        self.sample_position += num_samples;
+    fn update_position(&mut self, frame_count: usize) {
+        self.frame_position += frame_count;
 
-        let seconds =
-            Timestamp::from_seconds(self.sample_position as f64 / self.sample_rate as f64);
+        let seconds = Timestamp::from_seconds(self.frame_position as f64 / self.sample_rate as f64);
         self.current_time
             .store(seconds.as_raw_i64(), Ordering::Release);
     }

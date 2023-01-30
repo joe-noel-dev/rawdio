@@ -1,4 +1,4 @@
-use crate::{commands::Id, Timestamp};
+use crate::{commands::Id, Timestamp, MAXIMUM_FRAME_COUNT};
 
 use super::{
     parameter_change::ValueChangeMethod, parameter_value::ParameterValue, ParameterChange,
@@ -6,7 +6,6 @@ use super::{
 
 use std::sync::atomic::Ordering;
 
-const MAXIMUM_FRAME_COUNT: usize = 512;
 const MAXIMUM_PENDING_PARAMETER_CHANGES: usize = 16;
 
 pub struct RealtimeAudioParameter {

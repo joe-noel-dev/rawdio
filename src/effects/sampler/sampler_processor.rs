@@ -57,14 +57,15 @@ impl DspProcessor for SamplerDspProcess {
             );
 
             debug_assert!(end_frame <= output_buffer.frame_count());
-            let num_frames = end_frame - position;
+
+            let frame_count = end_frame - position;
 
             let mut slice =
-                MutableBorrowedAudioBuffer::slice_frames(output_buffer, position, num_frames);
+                MutableBorrowedAudioBuffer::slice_frames(output_buffer, position, frame_count);
             self.process_sample(&mut slice);
 
-            position += num_frames;
-            current_time = current_time.incremented_by_samples(num_frames, self.sample_rate);
+            position += frame_count;
+            current_time = current_time.incremented_by_samples(frame_count, self.sample_rate);
 
             if let Some(event) = event {
                 self.process_event(&event);
@@ -115,10 +116,10 @@ impl SamplerDspProcess {
         Timestamp::from_samples(sample_position, self.sample_rate)
     }
 
-    fn get_render_interval(&self, num_samples_remaining_in_frame: usize) -> Timestamp {
+    fn get_render_interval(&self, samples_remaining: usize) -> Timestamp {
         let end_of_frame = self
             .position
-            .incremented_by_samples(num_samples_remaining_in_frame, self.sample_rate);
+            .incremented_by_samples(samples_remaining, self.sample_rate);
 
         let end_of_sample = self.next_loop_position();
 
@@ -145,34 +146,33 @@ impl SamplerDspProcess {
         let mut frame_position = 0;
 
         while frame_position < output_buffer.frame_count() {
-            let num_samples_remaining_in_frame = output_buffer.frame_count() - frame_position;
+            let samples_remaining = output_buffer.frame_count() - frame_position;
 
-            let render_interval = self.get_render_interval(num_samples_remaining_in_frame);
+            let render_interval = self.get_render_interval(samples_remaining);
             let render_interval = render_interval.as_samples(self.sample_rate).round() as usize;
 
-            let num_frames_to_render =
-                std::cmp::min(render_interval, num_samples_remaining_in_frame);
+            let render_frame_count = std::cmp::min(render_interval, samples_remaining);
 
-            if num_frames_to_render == 0 && self.is_looping() {
+            if render_frame_count == 0 && self.is_looping() {
                 self.finish_sample();
                 continue;
             }
 
-            if num_frames_to_render == 0 && !self.is_looping() {
+            if render_frame_count == 0 && !self.is_looping() {
                 break;
             }
 
             self.process_voices(&mut MutableBorrowedAudioBuffer::slice_frames(
                 output_buffer,
                 frame_position,
-                num_frames_to_render,
+                render_frame_count,
             ));
 
-            frame_position += num_frames_to_render;
+            frame_position += render_frame_count;
 
             self.position = self
                 .position
-                .incremented_by_samples(num_frames_to_render, self.sample_rate);
+                .incremented_by_samples(render_frame_count, self.sample_rate);
         }
     }
 
@@ -270,24 +270,24 @@ mod tests {
     use super::*;
 
     fn create_sample_with_value(
-        num_frames: usize,
-        num_channels: usize,
+        frame_count: usize,
+        channel_count: usize,
         sample_rate: usize,
         value: f32,
     ) -> OwnedAudioBuffer {
-        let mut sample = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+        let mut sample = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
         sample.fill_with_value(value);
         sample
     }
 
     fn process_sampler(
         sampler: &mut SamplerDspProcess,
-        num_frames: usize,
-        num_channels: usize,
+        frame_count: usize,
+        channel_count: usize,
         sample_rate: usize,
     ) -> OwnedAudioBuffer {
-        let mut output_buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
-        let input_buffer = OwnedAudioBuffer::new(num_frames, num_channels, sample_rate);
+        let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+        let input_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
         let start_time = Timestamp::zero();
 
         sampler.process_audio(
@@ -310,11 +310,11 @@ mod tests {
 
     #[test]
     fn fades_in() {
-        let num_frames = 10_000;
+        let frame_count = 10_000;
         let sample_rate = 44_100;
-        let num_channels = 1;
+        let channel_count = 1;
 
-        let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+        let sample = create_sample_with_value(frame_count, channel_count, sample_rate, 1.0);
         let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
@@ -323,7 +323,7 @@ mod tests {
             Timestamp::from_samples(100.0, sample_rate),
         ));
 
-        let output_buffer = process_sampler(&mut sampler, num_frames, num_channels, sample_rate);
+        let output_buffer = process_sampler(&mut sampler, frame_count, channel_count, sample_rate);
 
         expect_sample(0.0, &output_buffer, 0, 0);
         expect_sample(0.5, &output_buffer, sampler.fade.len() / 2, 0);
@@ -332,11 +332,11 @@ mod tests {
 
     #[test]
     fn fades_out() {
-        let num_frames = 10_000;
+        let frame_count = 10_000;
         let sample_rate = 44_100;
-        let num_channels = 1;
+        let channel_count = 1;
 
-        let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+        let sample = create_sample_with_value(frame_count, channel_count, sample_rate, 1.0);
         let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
@@ -346,7 +346,7 @@ mod tests {
             sample_rate,
         )));
 
-        let output = process_sampler(&mut sampler, 10_000, num_channels, sample_rate);
+        let output = process_sampler(&mut sampler, 10_000, channel_count, sample_rate);
 
         expect_sample(1.0, &output, 5_000, 0);
         expect_sample(0.5, &output, 5_000 + sampler.fade.len() / 2, 0);
@@ -355,11 +355,11 @@ mod tests {
 
     #[test]
     fn fade_out_beyond_sample() {
-        let num_frames = 10_000;
+        let frame_count = 10_000;
         let sample_rate = 48_000;
-        let num_channels = 2;
+        let channel_count = 2;
 
-        let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+        let sample = create_sample_with_value(frame_count, channel_count, sample_rate, 1.0);
         let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
@@ -369,14 +369,14 @@ mod tests {
 
         let _ = process_sampler(
             &mut sampler,
-            num_frames - fade_length / 2,
-            num_channels,
+            frame_count - fade_length / 2,
+            channel_count,
             sample_rate,
         );
 
         let _ = event_transmitter.send(SamplerEvent::stop_now());
 
-        let output = process_sampler(&mut sampler, 2 * fade_length, num_channels, sample_rate);
+        let output = process_sampler(&mut sampler, 2 * fade_length, channel_count, sample_rate);
 
         expect_sample(1.0, &output, 0, 0);
         expect_sample(0.0, &output, sampler.fade.len(), 0);
@@ -384,11 +384,11 @@ mod tests {
 
     #[test]
     fn start_event() {
-        let num_frames = 10_000;
+        let frame_count = 10_000;
         let sample_rate = 48_000;
-        let num_channels = 2;
+        let channel_count = 2;
 
-        let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+        let sample = create_sample_with_value(frame_count, channel_count, sample_rate, 1.0);
         let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
@@ -399,18 +399,18 @@ mod tests {
             Timestamp::zero(),
         ));
 
-        let output = process_sampler(&mut sampler, num_frames, num_channels, sample_rate);
+        let output = process_sampler(&mut sampler, frame_count, channel_count, sample_rate);
         expect_sample(0.0, &output, start_time_in_samples - 1, 0);
         expect_sample(1.0, &output, start_time_in_samples, 0);
     }
 
     #[test]
     fn stop_event() {
-        let num_frames = 10_000;
+        let frame_count = 10_000;
         let sample_rate = 48_000;
-        let num_channels = 2;
+        let channel_count = 2;
 
-        let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+        let sample = create_sample_with_value(frame_count, channel_count, sample_rate, 1.0);
         let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
 
@@ -423,18 +423,18 @@ mod tests {
 
         let _ = event_transmitter.send(SamplerEvent::start_now());
 
-        let output = process_sampler(&mut sampler, num_frames, num_channels, sample_rate);
+        let output = process_sampler(&mut sampler, frame_count, channel_count, sample_rate);
         expect_sample(1.0, &output, stop_time_in_samples, 0);
         expect_sample(0.0, &output, stop_time_in_samples + sampler.fade.len(), 0);
     }
 
     #[test]
     fn loops_samples() {
-        let num_frames = 10_000;
+        let frame_count = 10_000;
         let sample_rate = 48_000;
-        let num_channels = 2;
+        let channel_count = 2;
 
-        let mut sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+        let mut sample = create_sample_with_value(frame_count, channel_count, sample_rate, 1.0);
         sample.set_sample(SampleLocation::new(0, 4999), 0.4999);
 
         let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
@@ -447,7 +447,7 @@ mod tests {
             Timestamp::from_samples(5_000.0, sample_rate),
         ));
 
-        let output = process_sampler(&mut sampler, 50_000, num_channels, sample_rate);
+        let output = process_sampler(&mut sampler, 50_000, channel_count, sample_rate);
         expect_sample(0.4999, &output, 4_999, 0);
         expect_sample(0.4999, &output, 8_999, 0);
         expect_sample(0.4999, &output, 12_999, 0);
@@ -455,11 +455,11 @@ mod tests {
 
     #[test]
     fn loops_and_frame_length_aligned() {
-        let num_frames = 10_000;
+        let frame_count = 10_000;
         let sample_rate = 48_000;
-        let num_channels = 2;
+        let channel_count = 2;
 
-        let mut sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+        let mut sample = create_sample_with_value(frame_count, channel_count, sample_rate, 1.0);
         sample.set_sample(SampleLocation::new(0, 9999), 0.123);
 
         let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
@@ -472,24 +472,24 @@ mod tests {
             Timestamp::from_samples(10_000.0, sample_rate),
         ));
 
-        let output = process_sampler(&mut sampler, 20_000, num_channels, sample_rate);
+        let output = process_sampler(&mut sampler, 20_000, channel_count, sample_rate);
         expect_sample(0.123, &output, 9_999, 0);
         expect_sample(0.123, &output, 19_999, 0);
-        let output = process_sampler(&mut sampler, 20_000, num_channels, sample_rate);
+        let output = process_sampler(&mut sampler, 20_000, channel_count, sample_rate);
         expect_sample(0.123, &output, 9_999, 0);
         expect_sample(0.123, &output, 19_999, 0);
-        let output = process_sampler(&mut sampler, 20_000, num_channels, sample_rate);
+        let output = process_sampler(&mut sampler, 20_000, channel_count, sample_rate);
         expect_sample(0.123, &output, 9_999, 0);
         expect_sample(0.123, &output, 19_999, 0);
     }
 
     #[test]
     fn between_sample_looping() {
-        let num_frames = 10_000;
+        let frame_count = 10_000;
         let sample_rate = 48_000;
-        let num_channels = 2;
+        let channel_count = 2;
 
-        let sample = create_sample_with_value(num_frames, num_channels, sample_rate, 1.0);
+        let sample = create_sample_with_value(frame_count, channel_count, sample_rate, 1.0);
 
         let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
         let mut sampler = SamplerDspProcess::new(sample_rate, sample, event_receiver);
@@ -504,9 +504,9 @@ mod tests {
             Timestamp::from_samples(12.2, sample_rate),
         ));
 
-        let _ = process_sampler(&mut sampler, 1_170, num_channels, sample_rate);
+        let _ = process_sampler(&mut sampler, 1_170, channel_count, sample_rate);
         assert_eq!(99, sampler.completed_loops);
-        let _ = process_sampler(&mut sampler, 1, num_channels, sample_rate);
+        let _ = process_sampler(&mut sampler, 1, channel_count, sample_rate);
         assert_eq!(100, sampler.completed_loops);
     }
 }

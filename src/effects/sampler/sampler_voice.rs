@@ -61,7 +61,7 @@ impl Voice {
             match self.phase {
                 Phase::Stopped => break,
                 Phase::FadingIn(fade_position) => {
-                    let num_frames = self.render_fade(
+                    let frame_count = self.render_fade(
                         output,
                         destination_offset,
                         sample,
@@ -70,10 +70,10 @@ impl Voice {
                         true,
                     );
 
-                    self.position += num_frames;
-                    destination_offset += num_frames;
+                    self.position += frame_count;
+                    destination_offset += frame_count;
 
-                    let fade_position = fade_position + num_frames;
+                    let fade_position = fade_position + frame_count;
 
                     if fade_position < fade.len() {
                         self.phase = Phase::FadingIn(fade_position);
@@ -88,7 +88,7 @@ impl Voice {
                     destination_offset = output.frame_count();
                 }
                 Phase::FadingOut(fade_position) => {
-                    let num_frames = self.render_fade(
+                    let frame_count = self.render_fade(
                         output,
                         destination_offset,
                         sample,
@@ -97,10 +97,10 @@ impl Voice {
                         false,
                     );
 
-                    self.position += num_frames;
-                    destination_offset += num_frames;
+                    self.position += frame_count;
+                    destination_offset += frame_count;
 
-                    let fade_position = fade_position + num_frames;
+                    let fade_position = fade_position + frame_count;
                     if fade_position < fade.len() {
                         self.phase = Phase::FadingOut(fade_position);
                     } else {
@@ -117,13 +117,13 @@ impl Voice {
         destination_offset: usize,
         source: &dyn AudioBuffer,
     ) {
-        let num_channels = min(source.channel_count(), output.channel_count());
+        let channel_count = min(source.channel_count(), output.channel_count());
 
         if self.position >= source.frame_count() {
             return;
         }
 
-        let num_frames = std::cmp::min(
+        let frame_count = std::cmp::min(
             output.frame_count() - destination_offset,
             source.frame_count() - self.position,
         );
@@ -135,8 +135,8 @@ impl Voice {
             source,
             source_location,
             destination_location,
-            num_channels,
-            num_frames,
+            channel_count,
+            frame_count,
         );
     }
 
@@ -149,14 +149,14 @@ impl Voice {
         fade_position: usize,
         fade_in: bool,
     ) -> usize {
-        let num_channels = min(source.channel_count(), output.channel_count());
+        let channel_count = min(source.channel_count(), output.channel_count());
 
-        let num_frames = std::cmp::min(
+        let frame_count = std::cmp::min(
             fade.len() - fade_position,
             output.frame_count() - destination_offset,
         );
 
-        for frame in 0..num_frames {
+        for frame in 0..frame_count {
             if frame + self.position >= source.frame_count() {
                 break;
             }
@@ -167,7 +167,7 @@ impl Voice {
                 fade.fade_out_value(fade_position + frame)
             };
 
-            for channel in 0..num_channels {
+            for channel in 0..channel_count {
                 let source_location = SampleLocation {
                     channel,
                     frame: self.position + frame,
@@ -184,6 +184,6 @@ impl Voice {
             }
         }
 
-        num_frames
+        frame_count
     }
 }

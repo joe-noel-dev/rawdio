@@ -7,9 +7,11 @@ use super::{
 use crate::{
     effects::{utility::EventProcessor, Channel},
     graph::DspProcessor,
-    Level, SampleLocation, Timestamp,
+    Level, SampleLocation, Timestamp, MAXIMUM_FRAME_COUNT,
 };
 use std::time::Duration;
+
+const ENVELOPE_BUFFER_SIZE: usize = MAXIMUM_FRAME_COUNT;
 
 pub struct AdsrProcessor {
     event_processor: EventProcessor<AdsrEvent>,
@@ -18,7 +20,6 @@ pub struct AdsrProcessor {
 }
 
 const MAX_PENDING_EVENTS: usize = 64;
-const ENVELOPE_BUFFER_SIZE: usize = 1024;
 
 impl AdsrProcessor {
     pub fn new(event_receiver: Channel::Receiver<AdsrEvent>, sample_rate: usize) -> Self {
