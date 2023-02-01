@@ -1,3 +1,5 @@
+#![feature(portable_simd)]
+
 mod buffer;
 mod commands;
 mod effects;

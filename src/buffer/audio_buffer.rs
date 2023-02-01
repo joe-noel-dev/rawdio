@@ -1,6 +1,9 @@
-use std::time::Duration;
+use std::{simd::Simd, time::Duration};
 
 use crate::SampleLocation;
+
+const VECTOR_SIZE: usize = 4;
+type F32Simd = Simd<f32, VECTOR_SIZE>;
 
 pub trait AudioBuffer {
     fn fill_from_interleaved(
@@ -138,6 +141,53 @@ pub trait AudioBuffer {
             let destination = &mut destination[..frame_count];
 
             destination.copy_from_slice(source);
+        }
+    }
+
+    fn apply_gain(&mut self, gain: &[f64]) {
+        debug_assert_eq!(gain.len(), self.frame_count());
+
+        if gain.iter().all(|gain| gain.abs() < 1e-9) {
+            self.clear();
+            return;
+        }
+
+        if gain.iter().all(|gain| (gain - 1.0).abs() < 1e-9) {
+            return;
+        }
+
+        for channel in 0..self.channel_count() {
+            let channel_data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
+
+            let mut position = 0;
+            let mut remaining = channel_data.len();
+
+            while remaining >= VECTOR_SIZE {
+                let channel_slice = &mut channel_data[position..position + VECTOR_SIZE];
+
+                let samples = F32Simd::from_slice(channel_slice);
+
+                let mut gain_slice = [0.0_f32; VECTOR_SIZE];
+                (0..VECTOR_SIZE).for_each(|index| {
+                    gain_slice[index] = gain[position + index] as f32;
+                });
+
+                let gain = F32Simd::from_array(gain_slice);
+
+                let result = samples * gain;
+
+                channel_slice.copy_from_slice(result.as_array());
+
+                position += VECTOR_SIZE;
+                remaining -= VECTOR_SIZE;
+            }
+
+            for (sample, gain) in channel_data[position..]
+                .iter_mut()
+                .zip(gain[position..].iter())
+            {
+                *sample *= *gain as f32;
+            }
         }
     }
 

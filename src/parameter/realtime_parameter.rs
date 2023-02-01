@@ -114,8 +114,8 @@ impl RealtimeAudioParameter {
         (value * self.coefficient) + self.increment
     }
 
-    pub fn get_values(&self) -> &[f64] {
-        &self.value_buffer
+    pub fn get_values(&self, frame_count: usize) -> &[f64] {
+        &self.value_buffer[..frame_count]
     }
 
     pub fn set_value(&mut self, value: f64) {
@@ -159,10 +159,11 @@ mod tests {
         for frame in (start_sample..end_sample).step_by(MAXIMUM_FRAME_COUNT) {
             let frame_end_sample = (frame + MAXIMUM_FRAME_COUNT).min(end_sample);
             let current_time = from_time.incremented_by_samples(frame, sample_rate);
+            let frame_count = frame_end_sample - frame;
 
-            parameter.process(&current_time, frame_end_sample - frame, sample_rate);
+            parameter.process(&current_time, frame_count, sample_rate);
 
-            values.extend_from_slice(parameter.get_values());
+            values.extend_from_slice(parameter.get_values(frame_count));
         }
 
         values

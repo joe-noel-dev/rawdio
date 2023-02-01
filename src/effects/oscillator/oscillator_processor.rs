@@ -62,22 +62,22 @@ impl DspProcessor for OscillatorProcessor {
     ) {
         let sample_rate = output_buffer.sample_rate();
 
-        let frequency_values = parameters.get_parameter_values(self.frequency_id);
-        let gain_values = parameters.get_parameter_values(self.gain_id);
+        let frequency_values =
+            parameters.get_parameter_values(self.frequency_id, output_buffer.frame_count());
+        let gain_values =
+            parameters.get_parameter_values(self.gain_id, output_buffer.frame_count());
 
         let channel_count = output_buffer.channel_count();
 
         let location = SampleLocation::channel(0);
         let channel_data = output_buffer.get_channel_data_mut(location);
 
-        for (sample, frequency, gain) in izip!(
-            channel_data.iter_mut(),
-            frequency_values.iter(),
-            gain_values.iter()
-        ) {
+        for (sample, frequency) in izip!(channel_data.iter_mut(), frequency_values.iter()) {
             self.increment_phase(*frequency, sample_rate);
-            *sample = (*gain * self.get_value()) as f32;
+            *sample = self.get_value() as f32;
         }
+
+        output_buffer.apply_gain(gain_values);
 
         (1..channel_count).for_each(|channel| {
             let location = SampleLocation::channel(0);

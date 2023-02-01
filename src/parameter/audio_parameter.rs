@@ -156,14 +156,12 @@ mod tests {
             for frame in (start_sample..end_sample).step_by(frame_size) {
                 let frame_end_sample = (frame + frame_size).min(end_sample);
                 let current_time = start_time.incremented_by_samples(frame, sample_rate);
+                let frame_count = frame_end_sample - frame;
 
-                self.realtime_parameter.process(
-                    &current_time,
-                    frame_end_sample - frame,
-                    sample_rate,
-                );
+                self.realtime_parameter
+                    .process(&current_time, frame_count, sample_rate);
 
-                values.extend_from_slice(self.realtime_parameter.get_values());
+                values.extend_from_slice(self.realtime_parameter.get_values(frame_count));
             }
 
             values

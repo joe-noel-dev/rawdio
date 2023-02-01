@@ -105,8 +105,9 @@ impl DspProcessor for WaveshaperProcessor {
         _start_time: &crate::Timestamp,
         parameters: &crate::graph::DspParameters,
     ) {
-        let overdrive = parameters.get_parameter_values(self.overdrive_id);
-        let mix = parameters.get_parameter_values(self.mix_id);
+        let overdrive =
+            parameters.get_parameter_values(self.overdrive_id, output_buffer.frame_count());
+        let mix = parameters.get_parameter_values(self.mix_id, output_buffer.frame_count());
 
         (0..output_buffer.channel_count()).for_each(|channel| {
             let location = SampleLocation::channel(channel);
