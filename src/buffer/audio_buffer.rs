@@ -141,6 +141,27 @@ pub trait AudioBuffer {
         }
     }
 
+    fn apply_gain(&mut self, gain: &[f64]) {
+        debug_assert_eq!(gain.len(), self.frame_count());
+
+        if gain.iter().all(|gain| gain.abs() < 1e-9) {
+            self.clear();
+            return;
+        }
+
+        if gain.iter().all(|gain| (gain - 1.0).abs() < 1e-9) {
+            return;
+        }
+
+        for channel in 0..self.channel_count() {
+            let channel_data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
+
+            for (sample, gain) in channel_data.iter_mut().zip(gain.iter()) {
+                *sample *= *gain as f32;
+            }
+        }
+    }
+
     fn frame_iter(&self) -> FrameIterator {
         FrameIterator {
             channel: 0,

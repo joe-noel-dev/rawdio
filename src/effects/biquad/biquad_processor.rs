@@ -87,9 +87,11 @@ impl DspProcessor for BiquadProcessor {
         _start_time: &crate::Timestamp,
         parameters: &crate::graph::DspParameters,
     ) {
-        let frequency = parameters.get_parameter_values(self.frequency_id);
-        let q = parameters.get_parameter_values(self.q_id);
-        let shelf_gain = parameters.get_parameter_values(self.shelf_gain_id);
+        let frequency =
+            parameters.get_parameter_values(self.frequency_id, output_buffer.frame_count());
+        let q = parameters.get_parameter_values(self.q_id, output_buffer.frame_count());
+        let shelf_gain =
+            parameters.get_parameter_values(self.shelf_gain_id, output_buffer.frame_count());
 
         let frame_count = output_buffer.frame_count();
         let channel_count = output_buffer.channel_count();

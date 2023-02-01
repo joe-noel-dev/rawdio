@@ -25,7 +25,7 @@ impl DspProcessor for PanProcessor {
         debug_assert_eq!(input_buffer.channel_count(), 2);
         debug_assert_eq!(output_buffer.channel_count(), 2);
 
-        let pan_values = parameters.get_parameter_values(self.pan_id);
+        let pan_values = parameters.get_parameter_values(self.pan_id, output_buffer.frame_count());
 
         (0..output_buffer.frame_count()).for_each(|frame| {
             let pan = pan_values[frame];
