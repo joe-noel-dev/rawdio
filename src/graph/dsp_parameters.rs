@@ -29,8 +29,8 @@ impl DspParameters {
         self.parameters.get_mut(&id).expect("Missing parameter")
     }
 
-    pub fn get_parameter_values(&self, id: Id) -> &[f64] {
-        self.get_parameter(id).get_values()
+    pub fn get_parameter_values(&self, id: Id, frame_count: usize) -> &[f64] {
+        self.get_parameter(id).get_values(frame_count)
     }
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (&Id, &mut RealtimeAudioParameter)> {
