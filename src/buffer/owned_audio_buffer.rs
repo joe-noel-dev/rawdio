@@ -1,6 +1,7 @@
 use crate::{AudioBuffer, SampleLocation};
 use rand::Rng;
 
+#[repr(align(64))]
 #[derive(Clone)]
 pub struct OwnedAudioBuffer {
     data: Vec<f32>,
@@ -145,19 +146,8 @@ impl AudioBuffer for OwnedAudioBuffer {
                 || (destination_start + frame_count <= source_start)
         );
 
-        if source_start < destination_start {
-            let (presplit, postsplit) = self.data.split_at_mut(destination_start);
-            let source_data = &presplit[source_start..source_start + frame_count];
-            let destination_data = &mut postsplit[0..frame_count];
-            destination_data.copy_from_slice(source_data);
-        } else {
-            let destination_start = destination_start - source_start;
-            let (presplit, postsplit) = self.data.split_at_mut(source_start);
-            let source_data = &presplit[0..frame_count];
-            let destination_data =
-                &mut postsplit[destination_start..destination_start + frame_count];
-            destination_data.copy_from_slice(source_data);
-        }
+        self.data
+            .copy_within(source_start..source_start + frame_count, destination_start);
     }
 }
 
