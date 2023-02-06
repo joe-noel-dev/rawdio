@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use crate::SampleLocation;
 
+use super::mix::mix;
+
 pub trait AudioBuffer {
     fn fill_from_interleaved(
         &mut self,
@@ -115,9 +117,7 @@ pub trait AudioBuffer {
                 self.get_channel_data_mut(destination_location.offset_channels(channel));
             let destination = &mut destination[..frame_count];
 
-            for (source_value, destination_value) in source.iter().zip(destination.iter_mut()) {
-                *destination_value += *source_value;
-            }
+            mix(source, destination);
         }
     }
 

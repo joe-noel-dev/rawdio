@@ -1,6 +1,7 @@
 mod audio_buffer;
 mod borrowed_audio_buffer;
 mod buffer_pool;
+mod mix;
 mod mutable_borrowed_audio_buffer;
 mod owned_audio_buffer;
 mod sample_location;
