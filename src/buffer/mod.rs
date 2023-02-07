@@ -1,10 +1,10 @@
 mod audio_buffer;
 mod borrowed_audio_buffer;
 mod buffer_pool;
-mod mix;
 mod mutable_borrowed_audio_buffer;
 mod owned_audio_buffer;
 mod sample_location;
+mod simd;
 
 pub use audio_buffer::AudioBuffer;
 pub use borrowed_audio_buffer::BorrowedAudioBuffer;

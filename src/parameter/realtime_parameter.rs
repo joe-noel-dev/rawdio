@@ -8,12 +8,38 @@ use std::sync::atomic::Ordering;
 
 const MAXIMUM_PENDING_PARAMETER_CHANGES: usize = 16;
 
+#[repr(align(64))]
+struct ParameterBuffer {
+    values: Vec<f32>,
+}
+
+impl ParameterBuffer {
+    fn reset(&mut self) {
+        self.values.clear()
+    }
+
+    fn add_value(&mut self, value: f32) {
+        self.values.push(value)
+    }
+
+    fn get_values(&self, frame_count: usize) -> &[f32] {
+        &self.values[..frame_count]
+    }
+}
+
+impl Default for ParameterBuffer {
+    fn default() -> Self {
+        Self {
+            values: Vec::with_capacity(MAXIMUM_FRAME_COUNT),
+        }
+    }
+}
+
 pub struct RealtimeAudioParameter {
     parameter_id: Id,
     value: ParameterValue,
     parameter_changes: Vec<ParameterChange>,
-    value_buffer: [f32; MAXIMUM_FRAME_COUNT],
-
+    parameter_buffer: ParameterBuffer,
     increment: f64,
     coefficient: f64,
     current_change: ParameterChange,
@@ -27,7 +53,7 @@ impl RealtimeAudioParameter {
             parameter_id,
             value,
             parameter_changes: Vec::with_capacity(MAXIMUM_PENDING_PARAMETER_CHANGES),
-            value_buffer: [0.0; MAXIMUM_FRAME_COUNT],
+            parameter_buffer: ParameterBuffer::default(),
             increment: 0.0,
             coefficient: 1.0,
             current_change: ParameterChange {
@@ -52,7 +78,7 @@ impl RealtimeAudioParameter {
     }
 
     pub fn process(&mut self, time: &Timestamp, frame_count: usize, sample_rate: usize) {
-        assert!(frame_count <= self.value_buffer.len());
+        self.parameter_buffer.reset();
 
         self.remove_expired_changes(time);
 
@@ -61,7 +87,8 @@ impl RealtimeAudioParameter {
             let frame_time = time.incremented_by_samples(frame, sample_rate);
 
             value = self.process_change(&frame_time, sample_rate, value);
-            self.value_buffer[frame] = value as f32;
+
+            self.parameter_buffer.add_value(value as f32);
         }
 
         self.set_value(value);
@@ -115,7 +142,7 @@ impl RealtimeAudioParameter {
     }
 
     pub fn get_values(&self, frame_count: usize) -> &[f32] {
-        &self.value_buffer[..frame_count]
+        self.parameter_buffer.get_values(frame_count)
     }
 
     pub fn set_value(&mut self, value: f64) {
