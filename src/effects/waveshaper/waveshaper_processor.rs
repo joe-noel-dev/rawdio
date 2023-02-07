@@ -68,31 +68,31 @@ impl WaveshaperProcessor {
     }
 }
 
-fn overdrive_to_gain(overdrive: f64) -> f64 {
+fn overdrive_to_gain(overdrive: f32) -> f32 {
     let gain_db =
-        OVERDRIVE_GAIN_DB_MIN + overdrive * (OVERDRIVE_GAIN_DB_MAX - OVERDRIVE_GAIN_DB_MIN);
-    Level::from_db(gain_db).as_gain()
+        OVERDRIVE_GAIN_DB_MIN + overdrive as f64 * (OVERDRIVE_GAIN_DB_MAX - OVERDRIVE_GAIN_DB_MIN);
+    Level::from_db(gain_db).as_gain_f32()
 }
 
-fn apply_overdrive(overdrive: &[f64], samples: &mut [f32]) {
+fn apply_overdrive(overdrive: &[f32], samples: &mut [f32]) {
     samples
         .iter_mut()
         .zip(overdrive.iter())
-        .for_each(|(sample, overdrive)| *sample *= overdrive_to_gain(*overdrive) as f32);
+        .for_each(|(sample, overdrive)| *sample *= overdrive_to_gain(*overdrive));
 }
 
-fn reverse_overdrive(overdrive: &[f64], samples: &mut [f32]) {
+fn reverse_overdrive(overdrive: &[f32], samples: &mut [f32]) {
     samples
         .iter_mut()
         .zip(overdrive.iter())
-        .for_each(|(sample, overdrive)| *sample /= overdrive_to_gain(*overdrive) as f32);
+        .for_each(|(sample, overdrive)| *sample /= overdrive_to_gain(*overdrive));
 }
 
-fn mix_input(input: &[f32], output: &mut [f32], mix: &[f64]) {
+fn mix_input(input: &[f32], output: &mut [f32], mix: &[f32]) {
     izip!(input.iter(), output.iter_mut(), mix.iter()).for_each(
         |(&input_sample, output_sample, &mix_coefficient)| {
-            *output_sample = *output_sample * mix_coefficient as f32
-                + input_sample * (1.0 - mix_coefficient as f32);
+            *output_sample =
+                *output_sample * mix_coefficient + input_sample * (1.0 - mix_coefficient);
         },
     );
 }

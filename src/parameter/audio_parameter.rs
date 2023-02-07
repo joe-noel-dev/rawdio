@@ -146,7 +146,7 @@ mod tests {
             start_time: Timestamp,
             end_time: Timestamp,
             sample_rate: usize,
-        ) -> Vec<f64> {
+        ) -> Vec<f32> {
             let mut values = Vec::new();
 
             let start_sample = start_time.as_samples(sample_rate).ceil() as usize;
@@ -231,7 +231,7 @@ mod tests {
                 10.0
             };
 
-            assert_relative_eq!(*value, expected_value, epsilon = 1e-3);
+            assert_relative_eq!(*value, expected_value as f32, epsilon = 1e-3);
         }
     }
 
@@ -301,7 +301,7 @@ mod tests {
                 1.0 - current_seconds % 1.0
             };
 
-            assert_relative_eq!(*value, expected, epsilon = 1e-3);
+            assert_relative_eq!(*value, expected as f32, epsilon = 1e-3);
         }
     }
 

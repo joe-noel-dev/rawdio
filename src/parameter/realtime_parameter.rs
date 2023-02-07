@@ -12,7 +12,7 @@ pub struct RealtimeAudioParameter {
     parameter_id: Id,
     value: ParameterValue,
     parameter_changes: Vec<ParameterChange>,
-    value_buffer: [f64; MAXIMUM_FRAME_COUNT],
+    value_buffer: [f32; MAXIMUM_FRAME_COUNT],
 
     increment: f64,
     coefficient: f64,
@@ -61,7 +61,7 @@ impl RealtimeAudioParameter {
             let frame_time = time.incremented_by_samples(frame, sample_rate);
 
             value = self.process_change(&frame_time, sample_rate, value);
-            self.value_buffer[frame] = value;
+            self.value_buffer[frame] = value as f32;
         }
 
         self.set_value(value);
@@ -114,7 +114,7 @@ impl RealtimeAudioParameter {
         (value * self.coefficient) + self.increment
     }
 
-    pub fn get_values(&self, frame_count: usize) -> &[f64] {
+    pub fn get_values(&self, frame_count: usize) -> &[f32] {
         &self.value_buffer[..frame_count]
     }
 
@@ -150,7 +150,7 @@ mod tests {
         from_time: Timestamp,
         to_time: Timestamp,
         sample_rate: usize,
-    ) -> Vec<f64> {
+    ) -> Vec<f32> {
         let mut values = Vec::new();
 
         let start_sample = from_time.as_samples(sample_rate).ceil() as usize;

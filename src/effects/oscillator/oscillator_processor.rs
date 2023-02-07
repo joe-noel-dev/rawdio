@@ -23,8 +23,8 @@ impl OscillatorProcessor {
         }
     }
 
-    fn increment_phase(&mut self, frequency: f64, sample_rate: usize) {
-        self.phase += frequency / (sample_rate as f64);
+    fn increment_phase(&mut self, frequency: f32, sample_rate: usize) {
+        self.phase += (frequency as f64) / (sample_rate as f64);
         while self.phase > 1.0 {
             self.phase -= 1.0;
         }

@@ -98,9 +98,9 @@ impl DspProcessor for BiquadProcessor {
 
         for frame in 0..frame_count {
             let parameters = Parameters {
-                frequency: frequency[frame],
-                q: q[frame],
-                shelf_gain: shelf_gain[frame],
+                frequency: frequency[frame] as f64,
+                q: q[frame] as f64,
+                shelf_gain: shelf_gain[frame] as f64,
             };
 
             if parameters != self.last_parameters {
