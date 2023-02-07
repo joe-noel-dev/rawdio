@@ -1,8 +1,6 @@
+use super::simd::{apply_gain, mix};
+use crate::SampleLocation;
 use std::time::Duration;
-
-use crate::{buffer::simd::apply_gain, SampleLocation};
-
-use super::simd::mix;
 
 pub trait AudioBuffer {
     fn fill_from_interleaved(
