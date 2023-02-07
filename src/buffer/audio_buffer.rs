@@ -1,8 +1,8 @@
 use std::time::Duration;
 
-use crate::SampleLocation;
+use crate::{buffer::simd::apply_gain, SampleLocation};
 
-use super::mix::mix;
+use super::simd::mix;
 
 pub trait AudioBuffer {
     fn fill_from_interleaved(
@@ -155,10 +155,7 @@ pub trait AudioBuffer {
 
         for channel in 0..self.channel_count() {
             let channel_data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
-
-            for (sample, gain) in channel_data.iter_mut().zip(gain.iter()) {
-                *sample *= *gain;
-            }
+            apply_gain(channel_data, gain);
         }
     }
 

@@ -26,3 +26,30 @@ pub fn mix(source: &[f32], destination: &mut [f32]) {
         }
     }
 }
+
+pub fn apply_gain(data: &mut [f32], gain: &[f32]) {
+    debug_assert_eq!(data.len(), gain.len());
+
+    const VECTOR_SIZE: usize = 16;
+
+    let (gain_pre, gain_main, gain_post) = gain.as_simd::<VECTOR_SIZE>();
+    let (data_pre, data_main, data_post) = data.as_simd_mut::<VECTOR_SIZE>();
+
+    if gain_pre.len() == data_pre.len() {
+        for (gain, sample) in zip(gain_pre, data_pre) {
+            *sample *= *gain;
+        }
+
+        for (gain, sample) in zip(gain_main, data_main) {
+            *sample *= *gain;
+        }
+
+        for (gain, sample) in zip(gain_post, data_post) {
+            *sample *= *gain;
+        }
+    } else {
+        for (gain, sample) in zip(gain, data) {
+            *sample *= *gain;
+        }
+    }
+}
