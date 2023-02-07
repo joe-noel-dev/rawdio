@@ -39,8 +39,8 @@ impl DspProcessor for PanProcessor {
             let l_input = input_buffer.get_sample(l_location);
             let r_input = input_buffer.get_sample(r_location);
 
-            let l_value = l_input * l_gain as f32;
-            let r_value = r_input * r_gain as f32;
+            let l_value = l_input * l_gain;
+            let r_value = r_input * r_gain;
 
             output_buffer.set_sample(l_location, l_value);
             output_buffer.set_sample(r_location, r_value);
