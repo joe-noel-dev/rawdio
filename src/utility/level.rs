@@ -40,6 +40,10 @@ impl Level {
         self.gain
     }
 
+    pub fn as_gain_f32(&self) -> f32 {
+        self.gain as f32
+    }
+
     pub fn clamp(&self, min_value: &Self, max_value: &Self) -> Self {
         Self {
             gain: self.gain.clamp(min_value.gain, max_value.gain),

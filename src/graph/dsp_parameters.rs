@@ -29,7 +29,7 @@ impl DspParameters {
         self.parameters.get_mut(&id).expect("Missing parameter")
     }
 
-    pub fn get_parameter_values(&self, id: Id, frame_count: usize) -> &[f64] {
+    pub fn get_parameter_values(&self, id: Id, frame_count: usize) -> &[f32] {
         self.get_parameter(id).get_values(frame_count)
     }
 
