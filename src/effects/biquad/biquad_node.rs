@@ -7,6 +7,7 @@ pub struct Biquad {
     pub frequency: AudioParameter,
     pub q: AudioParameter,
     pub shelf_gain: AudioParameter,
+    pub gain: AudioParameter,
 }
 
 impl Biquad {
@@ -32,6 +33,14 @@ impl Biquad {
             context.get_command_queue(),
         );
 
+        let (gain, realtime_gain) = AudioParameter::new(
+            id,
+            Level::unity().as_gain(),
+            0.0,
+            Level::from_db(100.0).as_gain(),
+            context.get_command_queue(),
+        );
+
         let processor = Box::new(BiquadProcessor::new(
             context.get_sample_rate(),
             channel_count,
@@ -39,6 +48,7 @@ impl Biquad {
             frequency.get_id(),
             q.get_id(),
             shelf_gain.get_id(),
+            gain.get_id(),
         ));
 
         let node = GraphNode::new(
@@ -47,7 +57,12 @@ impl Biquad {
             channel_count,
             channel_count,
             processor,
-            DspParameters::new([realtime_frequency, realtime_q, realtime_shelf_gain]),
+            DspParameters::new([
+                realtime_frequency,
+                realtime_q,
+                realtime_shelf_gain,
+                realtime_gain,
+            ]),
         );
 
         Self {
@@ -55,6 +70,7 @@ impl Biquad {
             frequency,
             q,
             shelf_gain,
+            gain,
         }
     }
 }
