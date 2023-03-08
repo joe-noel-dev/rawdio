@@ -8,6 +8,7 @@ pub struct BiquadProcessor {
     frequency_id: Id,
     q_id: Id,
     shelf_gain_id: Id,
+    gain_id: Id,
     coefficients: BiquadCoefficients,
     last_parameters: Parameters,
     delays: Vec<[f64; 4]>,
@@ -59,6 +60,7 @@ impl BiquadProcessor {
         frequency_id: Id,
         q_id: Id,
         shelf_gain_id: Id,
+        gain_id: Id,
     ) -> Self {
         let parameters = Parameters {
             frequency: 1_000.0,
@@ -72,6 +74,7 @@ impl BiquadProcessor {
             frequency_id,
             q_id,
             shelf_gain_id,
+            gain_id,
             coefficients: calculate_coefficients(filter_type, &parameters, sample_rate),
             last_parameters: parameters,
             delays: (0..channel_count).map(|_| [0.0, 0.0, 0.0, 0.0]).collect(),
@@ -92,6 +95,7 @@ impl DspProcessor for BiquadProcessor {
         let q = parameters.get_parameter_values(self.q_id, output_buffer.frame_count());
         let shelf_gain =
             parameters.get_parameter_values(self.shelf_gain_id, output_buffer.frame_count());
+        let gain = parameters.get_parameter_values(self.gain_id, output_buffer.frame_count());
 
         let frame_count = output_buffer.frame_count();
         let channel_count = output_buffer.channel_count();
@@ -136,6 +140,8 @@ impl DspProcessor for BiquadProcessor {
                 output_buffer.set_sample(location, out as f32);
             }
         }
+
+        output_buffer.apply_gain(gain);
     }
 }
 
