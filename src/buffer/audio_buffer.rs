@@ -63,6 +63,12 @@ pub trait AudioBuffer {
         self.fill_with_value(0.0_f32);
     }
 
+    fn clear_range(&mut self, channel: usize, frame: usize, frame_count: usize) {
+        let data = self.get_channel_data_mut(SampleLocation::new(channel, frame));
+        let data = &mut data[..frame_count];
+        data.fill(0.0_f32);
+    }
+
     fn fill_channel_with_value(&mut self, channel: usize, value: f32) {
         let data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
         data.fill(value);
@@ -137,6 +143,18 @@ pub trait AudioBuffer {
 
             destination.copy_from_slice(source);
         }
+    }
+
+    fn copy_within(
+        &mut self,
+        channel_index: usize,
+        from_frame: usize,
+        to_frame: usize,
+        frame_count: usize,
+    ) {
+        let data = self.get_channel_data_mut(SampleLocation::new(channel_index, 0));
+
+        data.copy_within(from_frame..from_frame + frame_count, to_frame);
     }
 
     fn apply_gain(&mut self, gain: &[f32]) {

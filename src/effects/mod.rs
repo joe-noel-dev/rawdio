@@ -1,5 +1,6 @@
 mod adsr;
 mod biquad;
+mod convolution;
 mod envelope;
 mod gain;
 mod mixer;
