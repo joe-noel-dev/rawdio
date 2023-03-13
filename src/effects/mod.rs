@@ -14,6 +14,7 @@ mod waveshaper;
 pub use adsr::Adsr;
 pub use biquad::Biquad;
 pub use biquad::BiquadFilterType;
+pub use convolution::Convolution;
 pub use envelope::Envelope;
 pub use gain::Gain;
 pub use mixer::Mixer;

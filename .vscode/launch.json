@@ -192,6 +192,24 @@
       },
       "args": ["--mix", "1.0"],
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "example: convolution",
+      "cargo": {
+        "args": ["build", "--example=convolution", "--package=rawdio"],
+        "filter": {
+          "name": "convolution",
+          "kind": "example"
+        }
+      },
+      "args": [
+        "/Users/joe.noel/OneDrive - Focusrite Group/test-audio/samples/drums-96000-24.wav",
+        "/Users/joe.noel/OneDrive - Focusrite Group/test-audio/impulses/stairway-university-york/stereo/stairwell_ortf_short.wav",
+        "processed.wav"
+      ],
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

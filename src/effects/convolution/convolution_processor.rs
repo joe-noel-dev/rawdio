@@ -1,13 +1,13 @@
-use crate::{AudioBuffer, OwnedAudioBuffer, SampleLocation};
+use crate::{graph::DspProcessor, AudioBuffer, OwnedAudioBuffer, SampleLocation};
 
-struct ConvolutionProcessor {
+pub struct ConvolutionProcessor {
     impulse: OwnedAudioBuffer,
     overflow: OwnedAudioBuffer,
     overflow_in_use: usize,
 }
 
 impl ConvolutionProcessor {
-    fn new(impulse: OwnedAudioBuffer) -> Self {
+    pub fn new(impulse: OwnedAudioBuffer) -> Self {
         let overflow = OwnedAudioBuffer::new(
             impulse.frame_count(),
             impulse.channel_count(),
@@ -28,15 +28,15 @@ impl ConvolutionProcessor {
         let frames_to_copy = std::cmp::min(self.overflow_in_use, output.frame_count());
         self.overflow_in_use -= frames_to_copy;
 
-        for channel in 0..output.channel_count() {
-            output.copy_from(
-                &self.overflow,
-                SampleLocation::origin(),
-                SampleLocation::origin(),
-                output.channel_count(),
-                frames_to_copy,
-            );
+        output.copy_from(
+            &self.overflow,
+            SampleLocation::origin(),
+            SampleLocation::origin(),
+            output.channel_count(),
+            frames_to_copy,
+        );
 
+        for channel in 0..output.channel_count() {
             self.overflow.copy_within(
                 channel,
                 frames_to_copy,
@@ -75,7 +75,7 @@ impl ConvolutionProcessor {
                 };
 
                 for (inpulse_frame, inpulse_sample) in impulse_data.iter().enumerate() {
-                    if result_frame >= inpulse_frame
+                    if inpulse_frame < result_frame
                         && result_frame - inpulse_frame < input_data.len()
                     {
                         *output_sample +=
@@ -90,6 +90,18 @@ impl ConvolutionProcessor {
         } else {
             0
         };
+    }
+}
+
+impl DspProcessor for ConvolutionProcessor {
+    fn process_audio(
+        &mut self,
+        input_buffer: &dyn AudioBuffer,
+        output_buffer: &mut dyn AudioBuffer,
+        _start_time: &crate::Timestamp,
+        _parameters: &crate::graph::DspParameters,
+    ) {
+        self.process(input_buffer, output_buffer);
     }
 }
 
