@@ -22,7 +22,7 @@ pub fn mix(source: &[f32], destination: &mut [f32]) {
         }
     } else {
         for (input, output) in zip(source, destination) {
-            *output = *input;
+            *output += *input;
         }
     }
 }
