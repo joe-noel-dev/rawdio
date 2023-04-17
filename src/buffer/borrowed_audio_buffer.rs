@@ -1,67 +1,68 @@
 use crate::{AudioBuffer, SampleLocation};
 
+use super::sample_location::SampleRange;
+
+/// An AudioBuffer that borrows audio from a different audio buffer
+///
+/// This can be considered like a slice of another
 pub struct BorrowedAudioBuffer<'a> {
     buffer: &'a dyn AudioBuffer,
-    frame_offset: usize,
-    frame_count: usize,
-    channel_offset: usize,
-    channel_count: usize,
+    range: SampleRange,
 }
 
 impl<'a> BorrowedAudioBuffer<'a> {
+    /// Create a slice of another audio buffer with a subset of the frames
     pub fn slice_frames(
         buffer: &'a dyn AudioBuffer,
         frame_offset: usize,
         frame_count: usize,
     ) -> Self {
         let channel_count = buffer.channel_count();
-        Self::slice(buffer, frame_offset, frame_count, 0, channel_count)
+        Self::slice(
+            buffer,
+            SampleRange::new(0, frame_offset, channel_count, frame_count),
+        )
     }
 
+    /// Create a slice of another audio buffer with a subset of the channels
     pub fn slice_channels(
         buffer: &'a dyn AudioBuffer,
         channel_offset: usize,
         channel_count: usize,
     ) -> Self {
         let frame_count = buffer.frame_count();
-        Self::slice(buffer, 0, frame_count, channel_offset, channel_count)
+        Self::slice(
+            buffer,
+            SampleRange::new(channel_offset, 0, frame_count, channel_count),
+        )
     }
 
+    /// Create a slice of another audio buffer with a subset of the channels and frames
     pub fn slice_channels_and_frames(
         buffer: &'a dyn AudioBuffer,
         frame_count: usize,
         channel_count: usize,
     ) -> Self {
-        Self::slice(buffer, 0, frame_count, 0, channel_count)
+        Self::slice(
+            buffer,
+            SampleRange::channel_and_frame_count(channel_count, frame_count),
+        )
     }
 
-    pub fn slice(
-        buffer: &'a dyn AudioBuffer,
-        frame_offset: usize,
-        frame_count: usize,
-        channel_offset: usize,
-        channel_count: usize,
-    ) -> Self {
-        assert!(frame_offset + frame_count <= buffer.frame_count());
-        assert!(channel_offset + channel_count <= buffer.channel_count());
-
-        Self {
-            buffer,
-            frame_offset,
-            frame_count,
-            channel_offset,
-            channel_count,
-        }
+    /// Create a slice of another audio buffer with a subset of the channels and frames
+    pub fn slice(buffer: &'a dyn AudioBuffer, range: SampleRange) -> Self {
+        assert!(buffer.range_is_valid(&range));
+        Self { buffer, range }
     }
 }
 
 impl<'a> AudioBuffer for BorrowedAudioBuffer<'a> {
     fn channel_count(&self) -> usize {
-        self.channel_count
+        self.range.channel_count
     }
 
     fn frame_count(&self) -> usize {
-        self.frame_count
+        self.range.frame_count
     }
 
     fn sample_rate(&self) -> usize {
@@ -71,10 +72,10 @@ impl<'a> AudioBuffer for BorrowedAudioBuffer<'a> {
     fn get_channel_data(&self, sample_location: SampleLocation) -> &[f32] {
         let data = self.buffer.get_channel_data(
             sample_location
-                .offset_frames(self.frame_offset)
-                .offset_channels(self.channel_offset),
+                .offset_frames(self.range.frame)
+                .offset_channels(self.range.channel),
         );
-        let end = self.frame_count - sample_location.frame;
+        let end = self.range.frame_count - sample_location.frame;
         &data[0..end]
     }
 

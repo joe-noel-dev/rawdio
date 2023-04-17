@@ -1,4 +1,34 @@
 #![feature(portable_simd)]
+#![warn(missing_docs)]
+
+//! rawdio is an audio engine that is inspired by the Web Audio API
+//!  
+//! You can use it to:
+//! - Create a context
+//! - Create DSP nodes
+//! - Connect the nodes together
+//! - Accurately schedule 'events'
+//! - Process the graph with an input and an output
+//!
+//! # Example
+//!
+//! ```rust
+//! use rawdio::{create_engine, AudioProcess, Context, Oscillator, OwnedAudioBuffer};
+//!
+//! let sample_rate = 48_000;
+//! let (mut context, mut process) = create_engine(sample_rate);
+//!
+//! let frequency = 1_000.0;
+//! let channel_count = 2;
+//! let oscillator = Oscillator::sine(context.as_ref(), frequency, channel_count);
+//!
+//! oscillator.node.connect_to_output();
+//!
+//! context.start();
+//!
+//! // Call `process.process(...)`, passing in the input samples, and using the output
+//! // If you wish to use with your sound card, you could use something like cpal (see the examples)
+//! ```
 
 mod buffer;
 mod commands;

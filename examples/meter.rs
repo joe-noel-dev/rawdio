@@ -54,11 +54,7 @@ fn play_file(file_to_play: &str) {
 
 fn create_sampler(context: &dyn Context, sample: OwnedAudioBuffer) -> (Sampler, Duration) {
     let duration = sample.duration();
-
-    (
-        Sampler::new(context, sample.sample_rate(), sample),
-        duration,
-    )
+    (Sampler::new(context, sample), duration)
 }
 
 fn create_gain(context: &mut dyn Context, channel_count: usize, sample_duration: Duration) -> Gain {

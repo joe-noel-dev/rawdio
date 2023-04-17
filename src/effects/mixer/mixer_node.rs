@@ -4,8 +4,21 @@ use super::{
     mixer_event::EventTransmitter, mixer_matrix::MixerMatrix, mixer_processor::MixerProcessor,
 };
 
+/// A node that mixes between its input and output channels
+///
+/// This can be used to change the number of channels in the graph (e.g. mono
+///  to stereo)
+///
+/// You can specify a gain matrix to achieve different up- and down-mixing
+/// combinations
+///
+/// The matrix can only be changed once per audio block, so it is not suitable
+/// for fast gain changes. Use a [crate::Gain] for this purpose.
 pub struct Mixer {
+    /// The node to connect to the audio graph
     pub node: GraphNode,
+
+    /// The matrix for how the inputs will be mixed to the outputs
     pub gain_matrix: MixerMatrix,
     event_transmitter: EventTransmitter,
 }
@@ -13,6 +26,7 @@ pub struct Mixer {
 static EVENT_CHANNEL_CAPACITY: usize = 32;
 
 impl Mixer {
+    /// Create a new mixer node for a given input to output channel combination
     pub fn new(
         command_queue: Box<dyn CommandQueue>,
         input_count: usize,
@@ -42,6 +56,7 @@ impl Mixer {
         }
     }
 
+    /// Set the level for a given input to a given output
     pub fn set_level(&mut self, input_channel: usize, output_channel: usize, level: Level) {
         self.gain_matrix
             .set_level(input_channel, output_channel, level);
@@ -49,6 +64,7 @@ impl Mixer {
         let _ = self.event_transmitter.send(self.gain_matrix.clone());
     }
 
+    /// Create a mixer that converts from mono to stereo
     pub fn mono_to_stereo_splitter(command_queue: Box<dyn CommandQueue>) -> Self {
         let input_count = 1;
         let output_count = 2;

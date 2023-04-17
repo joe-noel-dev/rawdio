@@ -35,7 +35,7 @@ impl Fixture {
                     (0..nodes_per_layer).for_each(|_| {
                         let sample =
                             OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
-                        let mut sampler = Sampler::new(context.as_ref(), sample_rate, sample);
+                        let mut sampler = Sampler::new(context.as_ref(), sample);
 
                         sampler.start_now();
 

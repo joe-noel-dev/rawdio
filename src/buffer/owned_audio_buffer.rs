@@ -1,6 +1,11 @@
+use std::ops::Range;
+
 use crate::{AudioBuffer, SampleLocation};
 use rand::Rng;
 
+/// An audio buffer that owns its audio data
+///
+/// Create an `OwnedAudioBuffer` will allocate a vector with enough space to hold the audio data
 #[repr(align(64))]
 #[derive(Clone)]
 pub struct OwnedAudioBuffer {
@@ -11,6 +16,7 @@ pub struct OwnedAudioBuffer {
 }
 
 impl OwnedAudioBuffer {
+    /// Create an audio buffer with specified number of frames, channels, and at  the specified sample rate
     pub fn new(frame_count: usize, channel_count: usize, sample_rate: usize) -> Self {
         Self {
             data: vec![0.0; frame_count * channel_count],
@@ -20,6 +26,9 @@ impl OwnedAudioBuffer {
         }
     }
 
+    /// Create an audio buffer with audio from the specified slice
+    ///
+    /// The audio from `data` represents a single channel and will be copied to all channels
     pub fn from_slice(data: &[f32], channel_count: usize, sample_rate: usize) -> Self {
         let mut buffer = Self::new(data.len(), 1, sample_rate);
 
@@ -30,6 +39,7 @@ impl OwnedAudioBuffer {
         buffer
     }
 
+    /// Create a buffer by copying the data from another buffer
     pub fn from_buffer(buffer: &dyn AudioBuffer) -> Self {
         let mut new_buffer = Self::new(
             buffer.frame_count(),
@@ -48,6 +58,9 @@ impl OwnedAudioBuffer {
         new_buffer
     }
 
+    /// Create a new buffer with the existing audio data, and copying in the data from `buffer`
+    ///
+    /// `buffer` should have the same number of channels and be at the same sample rate
     pub fn extended_with_buffer(&self, buffer: &dyn AudioBuffer) -> Self {
         assert_eq!(buffer.channel_count(), self.channel_count());
         assert_eq!(buffer.sample_rate(), self.sample_rate());
@@ -77,6 +90,7 @@ impl OwnedAudioBuffer {
         new_buffer
     }
 
+    /// Create a buffer with random audio samples
     pub fn white_noise(frame_count: usize, channel_count: usize, sample_rate: usize) -> Self {
         let mut buffer = Self::new(frame_count, channel_count, sample_rate);
 
@@ -90,6 +104,7 @@ impl OwnedAudioBuffer {
         buffer
     }
 
+    /// Create a new buffer that has been padded to the specified length
     pub fn padded_to_length(&self, frame_count: usize) -> Self {
         let mut buffer = Self::new(frame_count, self.channel_count(), self.sample_rate());
 
@@ -104,6 +119,7 @@ impl OwnedAudioBuffer {
         buffer
     }
 
+    /// Create an audio buffer filled with a sine wave at the specified frequency
     pub fn sine(
         frame_count: usize,
         channel_count: usize,
@@ -130,10 +146,10 @@ impl OwnedAudioBuffer {
         buffer
     }
 
-    fn get_sample_location_bounds(&self, sample_location: &SampleLocation) -> (usize, usize) {
+    fn get_sample_location_range(&self, sample_location: &SampleLocation) -> Range<usize> {
         let start = sample_location.channel * self.frame_count + sample_location.frame;
         let end = (sample_location.channel + 1) * self.frame_count;
-        (start, end)
+        start..end
     }
 }
 
@@ -151,27 +167,22 @@ impl AudioBuffer for OwnedAudioBuffer {
     }
 
     fn get_channel_data(&self, sample_location: SampleLocation) -> &[f32] {
-        let (start, end) = self.get_sample_location_bounds(&sample_location);
-        &self.data[start..end]
+        let range = self.get_sample_location_range(&sample_location);
+        &self.data[range]
     }
 
     fn get_channel_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32] {
-        let (start, end) = self.get_sample_location_bounds(&sample_location);
-        &mut self.data[start..end]
+        let range = self.get_sample_location_range(&sample_location);
+        &mut self.data[range]
     }
 
     fn duplicate_channel(&mut self, source: SampleLocation, to_channel: usize, frame_count: usize) {
-        let (source_start, _) = self.get_sample_location_bounds(&source);
-        let (destination_start, _) =
-            self.get_sample_location_bounds(&source.with_channel(to_channel));
-
-        debug_assert!(
-            (source_start + frame_count <= destination_start)
-                || (destination_start + frame_count <= source_start)
+        let source_range = self.get_sample_location_range(&source);
+        let destination_range = self.get_sample_location_range(&source.with_channel(to_channel));
+        self.data.copy_within(
+            source_range.start..source_range.start + frame_count,
+            destination_range.start,
         );
-
-        self.data
-            .copy_within(source_start..source_start + frame_count, destination_start);
     }
 }
 

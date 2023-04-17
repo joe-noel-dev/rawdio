@@ -1,14 +1,25 @@
-use super::simd::{mix_into, multiply};
+use super::{
+    sample_location::SampleRange,
+    simd::{mix_into, multiply},
+};
 use crate::SampleLocation;
 use std::time::Duration;
 
+/// An `AudioBuffer` represents floating point audio data for a number of channels
+///
+/// Audio is always de-interleaved
 pub trait AudioBuffer {
+    /// Fill the buffer with interleaved audio
+    ///
+    /// The length of `interleaved_data` should be at least `channel_count * frame_count`
     fn fill_from_interleaved(
         &mut self,
         interleaved_data: &[f32],
         channel_count: usize,
         frame_count: usize,
     ) {
+        debug_assert!(interleaved_data.len() >= channel_count * frame_count);
+
         let frame_count = frame_count.min(self.frame_count());
         let channel_count = channel_count.min(self.channel_count());
 
@@ -24,12 +35,17 @@ pub trait AudioBuffer {
         }
     }
 
+    /// Copy the data to an interleaved buffer
+    ///
+    /// The length of `interleaved_data` should be at least `channel_count * frame_count`
     fn copy_to_interleaved(
         &self,
         interleaved_data: &mut [f32],
         channel_count: usize,
         frame_count: usize,
     ) {
+        debug_assert!(interleaved_data.len() >= channel_count * frame_count);
+
         let channel_count = channel_count.min(self.channel_count());
         let frame_count = frame_count.min(self.frame_count());
 
@@ -45,66 +61,101 @@ pub trait AudioBuffer {
         }
     }
 
+    /// Get the number of channels in this buffer
     fn channel_count(&self) -> usize;
 
+    /// Get the number of frames in this buffer
     fn frame_count(&self) -> usize;
 
+    /// Get the sample rate of this buffer
     fn sample_rate(&self) -> usize;
 
+    /// Get the length represented by this buffer in seconds
     fn length_in_seconds(&self) -> f64 {
         self.frame_count() as f64 / self.sample_rate() as f64
     }
 
+    /// Get the duration of this buffer in seconds
     fn duration(&self) -> Duration {
         Duration::from_secs_f64(self.length_in_seconds())
     }
 
+    /// Clear the audio in this buffer
     fn clear(&mut self) {
         self.fill_with_value(0.0_f32);
     }
 
-    fn clear_range(&mut self, channel: usize, frame: usize, frame_count: usize) {
-        let data = self.get_channel_data_mut(SampleLocation::new(channel, frame));
-        let data = &mut data[..frame_count];
-        data.fill(0.0_f32);
+    /// Verify that a sample range is valid
+    fn range_is_valid(&self, range: &SampleRange) -> bool {
+        if range.channel + range.channel_count > self.channel_count() {
+            return false;
+        }
+
+        if range.frame + range.frame_count > self.frame_count() {
+            return false;
+        }
+
+        true
     }
 
+    /// Clear the audio in a range of samples
+    fn clear_range(&mut self, range: &SampleRange) {
+        debug_assert!(self.range_is_valid(range));
+
+        for channel in range.channel..range.channel + range.channel_count {
+            let data = self.get_channel_data_mut(SampleLocation::new(channel, range.frame));
+            let data = &mut data[..range.frame_count];
+            data.fill(0.0_f32);
+        }
+    }
+
+    /// Fill a channel with a value
     fn fill_channel_with_value(&mut self, channel: usize, value: f32) {
         let data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
         data.fill(value);
     }
 
+    /// Fill the entire buffer with a value
     fn fill_with_value(&mut self, value: f32) {
         for channel in 0..self.channel_count() {
             self.fill_channel_with_value(channel, value);
         }
     }
 
+    /// Check if a channel is silent
+    ///
+    /// This can be used to perform optimisations
     fn channel_is_silent(&self, channel: usize) -> bool {
         let location = SampleLocation::new(channel, 0);
         let data = self.get_channel_data(location);
         data.iter().all(|sample| *sample == 0.0_f32)
     }
 
+    /// Get a slice representing the audio data of a particular channel
     fn get_channel_data(&self, sample_location: SampleLocation) -> &[f32];
 
+    /// Get a mutable slice representing the audio data of a particular channel
     fn get_channel_data_mut(&mut self, sample_location: SampleLocation) -> &mut [f32];
 
+    /// Set a sample in the buffer
     fn set_sample(&mut self, sample_location: SampleLocation, value: f32) {
         let data = self.get_channel_data_mut(sample_location);
         data[0] = value;
     }
 
+    /// Add a sample into the buffer
     fn add_sample(&mut self, sample_location: SampleLocation, value: f32) {
         let value_before = self.get_sample(sample_location);
         self.set_sample(sample_location, value + value_before)
     }
 
+    /// Get a sample from the buffer
     fn get_sample(&self, sample_location: SampleLocation) -> f32 {
         let data = self.get_channel_data(sample_location);
         data[0]
     }
 
+    /// Mix audio from one buffer into another buffer
     fn add_from(
         &mut self,
         source_buffer: &dyn AudioBuffer,
@@ -133,6 +184,9 @@ pub trait AudioBuffer {
         }
     }
 
+    /// Copy audio from one buffer into another
+    ///
+    /// This will replace the audio in the destination buffer
     fn copy_from(
         &mut self,
         source_buffer: &dyn AudioBuffer,
@@ -153,18 +207,19 @@ pub trait AudioBuffer {
         }
     }
 
-    fn copy_within(
-        &mut self,
-        channel_index: usize,
-        from_frame: usize,
-        to_frame: usize,
-        frame_count: usize,
-    ) {
-        let data = self.get_channel_data_mut(SampleLocation::new(channel_index, 0));
-
-        data.copy_within(from_frame..from_frame + frame_count, to_frame);
+    /// Copy audio data within the buffer
+    fn copy_within(&mut self, source_range: &SampleRange, destination_frame: usize) {
+        for channel in source_range.channel_range() {
+            let data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
+            data.copy_within(source_range.frame_range(), destination_frame);
+        }
     }
 
+    /// Apply gain to all channels the buffer
+    ///
+    /// Rather than a fixed gain, this uses a 'table' to represent the gain values
+    ///
+    /// The length of `gain` should be the same as the frame count of the buffer
     fn apply_gain(&mut self, gain: &[f32]) {
         debug_assert_eq!(gain.len(), self.frame_count());
 
@@ -183,6 +238,10 @@ pub trait AudioBuffer {
         }
     }
 
+    /// Get an iterator to iteraotr over every sample in the buffer
+    ///
+    /// Incrementing the iterator will go to the next frame in the same channel.
+    /// When it reaches the end of the channel, it will go onto the next channel.
     fn frame_iter(&self) -> FrameIterator {
         FrameIterator {
             channel: 0,
@@ -192,8 +251,12 @@ pub trait AudioBuffer {
         }
     }
 
+    /// Duplicate the audio data from one channel to a different channel
     fn duplicate_channel(&mut self, source: SampleLocation, to_channel: usize, frame_count: usize);
 
+    /// Copy audio from a different audio buffer at a different sample rate
+    ///
+    /// This will perform an interpolation-based sample rate conversion
     fn sample_rate_convert_from(
         &mut self,
         audio_buffer: &dyn AudioBuffer,
@@ -227,6 +290,7 @@ pub trait AudioBuffer {
             });
     }
 
+    /// Fill a channel from a slice
     fn fill_from_slice(&mut self, audio_data: &[f32], location: SampleLocation) {
         self.get_channel_data_mut(location)
             .copy_from_slice(audio_data);

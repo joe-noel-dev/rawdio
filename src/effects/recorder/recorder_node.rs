@@ -11,7 +11,14 @@ use super::{
     recorder_processor::RecorderProcessor,
 };
 
+/// A node that records its input
+///
+/// The recorder node doesn't produce output so should be at the end of the
+/// chain
+///
+/// Call `take_recording()` to get the recording from the node
 pub struct Recorder {
+    /// The node to connect to the audio graph
     pub node: GraphNode,
     event_transmitter: RecorderEventTransmitter,
     notification_receiver: RecorderNotificationReceiver,
@@ -23,6 +30,7 @@ static EVENT_CHANNEL_CAPACITY: usize = 32;
 static NOTIFICATION_CHANNEL_CAPACITY: usize = 32;
 
 impl Recorder {
+    /// Create a new recorder node
     pub fn new(
         context: &mut dyn Context,
         channel_count: usize,
@@ -74,24 +82,31 @@ impl Recorder {
         recorder
     }
 
+    /// Start recording
     pub fn record_now(&mut self) {
         let _ = self.event_transmitter.send(RecorderEvent::start_now());
     }
 
+    /// Stop recording
     pub fn stop_record_now(&mut self) {
         let _ = self.event_transmitter.send(RecorderEvent::stop_now());
     }
 
+    /// Stop recording at a particular time
     pub fn stop_record_at_time(&mut self, time: Timestamp) {
         let _ = self
             .event_transmitter
             .send(RecorderEvent::stop_at_time(time));
     }
 
+    /// Query if the recorder is currently recording
     pub fn is_recording(&self) -> bool {
         self.is_recording
     }
 
+    /// Take the current recording from the node
+    ///
+    /// This will clear the recording
     pub fn take_recording(&mut self) -> Option<OwnedAudioBuffer> {
         self.current_recording.take()
     }

@@ -5,12 +5,20 @@ use crate::{
 
 use super::convolution_processor::ConvolutionProcessor;
 
+/// A convolution node to convolve the input signal with an impulse response
 pub struct Convolution {
+    /// The node to connect into the audio graph
     pub node: GraphNode,
+
+    /// The proportion of the wet (processed signal) to include in the output
+    ///
+    /// A value of 1.0 represents a fully wet signal
+    /// A value of 0.0 represents a fully dry signal
     pub wet: AudioParameter,
 }
 
 impl Convolution {
+    /// Create a new convolution node using the given impulse response
     pub fn new(context: &dyn Context, input_count: usize, impulse: OwnedAudioBuffer) -> Self {
         let id = Id::generate();
 

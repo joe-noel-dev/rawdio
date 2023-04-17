@@ -2,15 +2,31 @@ use crate::{commands::Id, graph::DspParameters, AudioParameter, Context, GraphNo
 
 use super::{biquad_processor::BiquadProcessor, filter_type::BiquadFilterType};
 
+/// A biquad filter
+///
+/// This can be used to create a second order filter
 pub struct Biquad {
+    /// The node to connect into the audio graph
     pub node: GraphNode,
+
+    /// The frequency of the filter
+    ///
+    /// Depending on the type, this could be the centre frequency or the cutoff
+    /// frequency
     pub frequency: AudioParameter,
+
+    /// The 'q' value of the filter
     pub q: AudioParameter,
+
+    /// The gain of the shelf slope (only used for shelf frequencies)
     pub shelf_gain: AudioParameter,
+
+    /// Output gain of the filter
     pub gain: AudioParameter,
 }
 
 impl Biquad {
+    /// Create a new filter of a type
     pub fn new(context: &dyn Context, channel_count: usize, filter_type: BiquadFilterType) -> Self {
         let id = Id::generate();
 

@@ -8,7 +8,13 @@ use crate::{commands::Id, Context, GraphNode};
 use super::envelope_notification::{EnvelopeNotification, EnvelopeNotificationReceiver};
 use super::envelope_processor::EnvelopeProcessor;
 
+/// A node that tracks the input signal and outputs the envelope
+///
+/// This can be used to create an audio meter, for example
+///
+/// Call `take_notifications()` to get the output values from the envelope
 pub struct Envelope {
+    /// The node to connect to the audio graph
     pub node: GraphNode,
     notifications: Vec<EnvelopeNotification>,
     notification_receiver: EnvelopeNotificationReceiver,
@@ -17,6 +23,7 @@ pub struct Envelope {
 static NOTIFICATION_CHANNEL_CAPACITY: usize = 64;
 
 impl Envelope {
+    /// Create a new node with the given attack and release times
     pub fn new(
         context: &mut dyn Context,
         channel_count: usize,
@@ -73,6 +80,8 @@ impl Envelope {
         }
     }
 
+    /// Get the values from the envelope since the last time
+    /// `take_notifications()` was called
     pub fn take_notifications(&mut self) -> Vec<EnvelopeNotification> {
         let mut notifications = Vec::new();
         std::mem::swap(&mut notifications, &mut self.notifications);
