@@ -2,6 +2,8 @@
 
 [![Rust](https://github.com/joefocusrite/rawdio/actions/workflows/rust.yml/badge.svg)](https://github.com/joefocusrite/rawdio/actions/workflows/rust.yml)
 
+[![Crates.io](https://img.shields.io/crates/v/rawdio)](https://crates.io/crates/rawdio)
+
 This is an audio engine, inspired by the Web Audio API.
 
 ## Oscillator Example
