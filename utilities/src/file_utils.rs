@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use rawdio::{
     AudioBuffer, AudioProcess, MutableBorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation,
 };
@@ -53,6 +55,7 @@ pub fn render_audio_process_to_file(
     sample_rate: usize,
     output_file: &str,
     mut audio_process: Box<dyn AudioProcess>,
+    length: Duration,
 ) {
     let bits_per_sample = 24;
     let max_value = 2_i32.pow(bits_per_sample - 1) - 1;
@@ -60,7 +63,7 @@ pub fn render_audio_process_to_file(
 
     let mut writer = create_writer(num_channels, sample_rate, bits_per_sample, output_file);
 
-    let length_in_seconds = 4.0;
+    let length_in_seconds = length.as_secs_f64();
     let total_frame_count = sample_rate * length_in_seconds as usize;
 
     let max_frame_count = 1024;
@@ -78,6 +81,9 @@ pub fn render_audio_process_to_file(
             &mut writer,
         );
         position += frames_this_time;
+
+        let progress = 100.0 * position as f64 / total_frame_count as f64;
+        println!("Progress: {:.2}%", progress);
     }
 }
 

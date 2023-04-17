@@ -1,5 +1,7 @@
 extern crate utilities;
 
+use std::time::Duration;
+
 use rawdio::{create_engine, Context, Gain, Oscillator, Pan, Timestamp};
 use structopt::StructOpt;
 use utilities::render_audio_process_to_file;
@@ -26,7 +28,12 @@ fn render_file(output_file: &str) {
 
     context.start();
 
-    render_audio_process_to_file(sample_rate, output_file, audio_process);
+    render_audio_process_to_file(
+        sample_rate,
+        output_file,
+        audio_process,
+        Duration::from_secs(4),
+    );
     context.stop();
 }
 

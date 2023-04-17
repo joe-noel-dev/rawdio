@@ -1,4 +1,4 @@
-use super::simd::{apply_gain, mix};
+use super::simd::{mix_into, multiply};
 use crate::SampleLocation;
 use std::time::Duration;
 
@@ -63,6 +63,12 @@ pub trait AudioBuffer {
         self.fill_with_value(0.0_f32);
     }
 
+    fn clear_range(&mut self, channel: usize, frame: usize, frame_count: usize) {
+        let data = self.get_channel_data_mut(SampleLocation::new(channel, frame));
+        let data = &mut data[..frame_count];
+        data.fill(0.0_f32);
+    }
+
     fn fill_channel_with_value(&mut self, channel: usize, value: f32) {
         let data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
         data.fill(value);
@@ -107,6 +113,14 @@ pub trait AudioBuffer {
         channel_count: usize,
         frame_count: usize,
     ) {
+        if frame_count == 0 {
+            return;
+        }
+
+        if channel_count == 0 {
+            return;
+        }
+
         for channel in 0..channel_count {
             let source = source_buffer.get_channel_data(source_location.offset_channels(channel));
             let source = &source[..frame_count];
@@ -115,7 +129,7 @@ pub trait AudioBuffer {
                 self.get_channel_data_mut(destination_location.offset_channels(channel));
             let destination = &mut destination[..frame_count];
 
-            mix(source, destination);
+            mix_into(source, destination);
         }
     }
 
@@ -139,6 +153,18 @@ pub trait AudioBuffer {
         }
     }
 
+    fn copy_within(
+        &mut self,
+        channel_index: usize,
+        from_frame: usize,
+        to_frame: usize,
+        frame_count: usize,
+    ) {
+        let data = self.get_channel_data_mut(SampleLocation::new(channel_index, 0));
+
+        data.copy_within(from_frame..from_frame + frame_count, to_frame);
+    }
+
     fn apply_gain(&mut self, gain: &[f32]) {
         debug_assert_eq!(gain.len(), self.frame_count());
 
@@ -153,7 +179,7 @@ pub trait AudioBuffer {
 
         for channel in 0..self.channel_count() {
             let channel_data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
-            apply_gain(channel_data, gain);
+            multiply(channel_data, gain);
         }
     }
 
@@ -199,6 +225,11 @@ pub trait AudioBuffer {
                 *sample = (1.0_f32 - sample_after_amount) * sample_before
                     + sample_after_amount * sample_after;
             });
+    }
+
+    fn fill_from_slice(&mut self, audio_data: &[f32], location: SampleLocation) {
+        self.get_channel_data_mut(location)
+            .copy_from_slice(audio_data);
     }
 }
 
