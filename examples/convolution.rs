@@ -30,7 +30,7 @@ fn process_file(options: &Options) {
     let mut wet_gain = Gain::new(context.as_ref(), input_channels);
     let mut output = Gain::new(context.as_ref(), input_channels);
 
-    wet_gain.gain.set_value_now(0.25);
+    wet_gain.gain.set_value_now(0.05);
     dry_gain.gain.set_value_now(1.0);
     output.gain.set_value_now(0.5);
 
