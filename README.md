@@ -54,7 +54,8 @@ More examples can be found [here](./examples)
    to be de-interleaved first.
 
     ```rust
-    let output_buffer = /*create an audio buffer (see `OwnedAudioBuffer`) or use the one supplied by your audio device in its callback*/
+    let input_buffer = /*create an input buffer*/
+    let output_buffer = /*create an audio buffer*/
     process.process (&mut output_buffer);
     ```
 
@@ -75,3 +76,13 @@ cargo test
 ```sh
 cargo bench
 ```
+
+## Where do the buffers come from?
+
+The engine won't make any assumptions about how it is going to be run.
+This means that it can be run in real-time, for example using CPAL.
+Or, it could be run offline, for example processing audio from files using hound.
+There are examples of both of these in the [/examples](examples) directory.
+
+Bear in mind that audio is expected to be de-interleaved.
+Most soundcards and audio files will be interleaved, so it will need to be converted first.
