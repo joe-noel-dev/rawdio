@@ -2,65 +2,41 @@ use std::sync::Arc;
 
 use crate::{
     graph::DspProcessor, AudioBuffer, BorrowedAudioBuffer, MutableBorrowedAudioBuffer,
-    OwnedAudioBuffer, SampleLocation,
+    SampleLocation,
 };
 use itertools::izip;
 use rustfft::{num_complex::Complex, num_traits::Zero, Fft, FftPlanner};
 
+type ComplexAudioBuffer = Vec<Vec<Complex<f32>>>;
+
 pub struct ConvolutionProcessor {
     fft: Arc<dyn Fft<f32>>,
     ifft: Arc<dyn Fft<f32>>,
-    impulse_fft: Vec<Vec<Complex<f32>>>,
-    input_fft: Vec<Vec<Complex<f32>>>,
-    complex_input: Vec<Vec<Complex<f32>>>,
-    complex_output: Vec<Vec<Complex<f32>>>,
+    impulse_fft: ComplexAudioBuffer,
+    input_fft: ComplexAudioBuffer,
+    complex_input: ComplexAudioBuffer,
+    complex_output: ComplexAudioBuffer,
     output_scale: f32,
 }
 
 const MAXIMUM_FRAME_COUNT: usize = 1024;
 
 impl ConvolutionProcessor {
-    pub fn new(impulse: OwnedAudioBuffer) -> Self {
+    pub fn new(impulse: &dyn AudioBuffer) -> Self {
         let convolution_length =
             (impulse.frame_count() + MAXIMUM_FRAME_COUNT - 1).next_power_of_two();
         let output_channel_count = impulse.channel_count();
 
         let mut planner = FftPlanner::new();
         let fft = planner.plan_fft_forward(convolution_length);
-        let ifft = planner.plan_fft_inverse(convolution_length);
-
-        let mut impulse_fft = Vec::new();
-        for channel in 0..output_channel_count {
-            let impulse_data = impulse.get_channel_data(SampleLocation::channel(channel));
-
-            let mut impulse_data: Vec<Complex<f32>> = impulse_data
-                .iter()
-                .map(|sample| Complex::new(*sample, 0.0_f32))
-                .collect();
-
-            impulse_data.resize(convolution_length, Complex::zero());
-
-            fft.process(&mut impulse_data);
-            impulse_fft.push(impulse_data);
-        }
-
-        let mut complex_input = Vec::new();
-        let mut input_fft = Vec::new();
-        let mut complex_output = Vec::new();
-        for _ in 0..output_channel_count {
-            let fft_buffer = vec![Complex::zero(); convolution_length];
-            complex_input.push(fft_buffer.clone());
-            complex_output.push(fft_buffer.clone());
-            input_fft.push(fft_buffer.clone());
-        }
 
         Self {
-            fft,
-            ifft,
-            impulse_fft,
-            input_fft,
-            complex_input,
-            complex_output,
+            fft: fft.clone(),
+            ifft: planner.plan_fft_inverse(convolution_length),
+            impulse_fft: fft_impulse(impulse, fft.as_ref(), convolution_length),
+            input_fft: create_complex_audio_buffer(output_channel_count, convolution_length),
+            complex_input: create_complex_audio_buffer(output_channel_count, convolution_length),
+            complex_output: create_complex_audio_buffer(output_channel_count, convolution_length),
             output_scale: 1.0 / convolution_length as f32,
         }
     }
@@ -160,6 +136,36 @@ impl ConvolutionProcessor {
     }
 }
 
+fn create_complex_audio_buffer(channel_count: usize, length: usize) -> ComplexAudioBuffer {
+    (0..channel_count)
+        .map(|_| vec![Complex::zero(); length])
+        .collect()
+}
+
+fn fft_impulse(
+    impulse: &dyn AudioBuffer,
+    fft: &dyn Fft<f32>,
+    convolution_length: usize,
+) -> ComplexAudioBuffer {
+    let mut impulse_fft = Vec::new();
+
+    for channel in 0..impulse.channel_count() {
+        let impulse_data = impulse.get_channel_data(SampleLocation::channel(channel));
+
+        let mut impulse_data: Vec<Complex<f32>> = impulse_data
+            .iter()
+            .map(|sample| Complex::new(*sample, 0.0_f32))
+            .collect();
+
+        impulse_data.resize(convolution_length, Complex::zero());
+
+        fft.process(&mut impulse_data);
+        impulse_fft.push(impulse_data);
+    }
+
+    impulse_fft
+}
+
 impl DspProcessor for ConvolutionProcessor {
     fn process_audio(
         &mut self,
@@ -179,7 +185,10 @@ mod tests {
 
     use approx::assert_relative_eq;
 
-    use crate::{AudioBuffer, BorrowedAudioBuffer, MutableBorrowedAudioBuffer, SampleLocation};
+    use crate::{
+        AudioBuffer, BorrowedAudioBuffer, MutableBorrowedAudioBuffer, OwnedAudioBuffer,
+        SampleLocation,
+    };
 
     use super::*;
 
@@ -236,7 +245,7 @@ mod tests {
 
         let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
-        let mut processor = ConvolutionProcessor::new(impulse_signal);
+        let mut processor = ConvolutionProcessor::new(&impulse_signal);
 
         processor.process(&input_signal, &mut output_buffer);
 
@@ -260,7 +269,7 @@ mod tests {
 
             let impulse = create_dirac(impulse_length, channel_count, sample_rate);
 
-            let mut processor = ConvolutionProcessor::new(impulse);
+            let mut processor = ConvolutionProcessor::new(&impulse);
 
             let mut processed =
                 OwnedAudioBuffer::new(frame_count + impulse_length - 1, channel_count, sample_rate);
@@ -290,7 +299,7 @@ mod tests {
 
             let input = OwnedAudioBuffer::white_noise(input_length, channel_count, sample_rate);
 
-            let mut processor = ConvolutionProcessor::new(impulse.clone());
+            let mut processor = ConvolutionProcessor::new(&impulse);
 
             let naive_result = naive_convolution(&input, &impulse);
 
@@ -322,7 +331,7 @@ mod tests {
 
             let input = OwnedAudioBuffer::white_noise(input_length, channel_count, sample_rate);
 
-            let mut processor = ConvolutionProcessor::new(impulse.clone());
+            let mut processor = ConvolutionProcessor::new(&impulse);
 
             let naive_result = naive_convolution(&input, &impulse);
 

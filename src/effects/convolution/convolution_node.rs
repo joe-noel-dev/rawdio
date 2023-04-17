@@ -16,7 +16,7 @@ impl Convolution {
 
         let output_count = impulse.channel_count();
 
-        let processor = Box::new(ConvolutionProcessor::new(impulse));
+        let processor = Box::new(ConvolutionProcessor::new(&impulse));
 
         let (wet, realtime_wet) =
             AudioParameter::new(Id::generate(), 1.0, 0.0, 1.0, context.get_command_queue());
