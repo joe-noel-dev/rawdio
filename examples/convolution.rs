@@ -1,4 +1,4 @@
-use rawdio::{create_engine, AudioBuffer, Convolution, Sampler};
+use rawdio::{create_engine, AudioBuffer, Convolution, Gain, Sampler};
 use structopt::StructOpt;
 use utilities::{read_file_into_buffer, render_audio_process_to_file};
 
@@ -22,15 +22,24 @@ fn process_file(options: &Options) {
     let input_channels = input.channel_count();
     let duration = input.duration() + impulse.duration();
 
-    println!("Total duration = {}", duration.as_secs_f64());
-
     let (mut context, audio_process) = create_engine(sample_rate);
 
     let mut sample_player = Sampler::new(context.as_ref(), sample_rate, input);
     let convolution = Convolution::new(context.as_ref(), input_channels, impulse);
+    let mut dry_gain = Gain::new(context.as_ref(), input_channels);
+    let mut wet_gain = Gain::new(context.as_ref(), input_channels);
+    let mut output = Gain::new(context.as_ref(), input_channels);
 
+    wet_gain.gain.set_value_now(0.25);
+    dry_gain.gain.set_value_now(1.0);
+    output.gain.set_value_now(0.5);
+
+    sample_player.node.connect_to(&dry_gain.node);
     sample_player.node.connect_to(&convolution.node);
-    convolution.node.connect_to_output();
+    dry_gain.node.connect_to(&output.node);
+    convolution.node.connect_to(&wet_gain.node);
+    wet_gain.node.connect_to(&output.node);
+    output.node.connect_to_output();
 
     sample_player.start_now();
     context.start();

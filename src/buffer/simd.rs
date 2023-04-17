@@ -1,6 +1,8 @@
 use std::iter::zip;
 
-pub fn mix(source: &[f32], destination: &mut [f32]) {
+use itertools::izip;
+
+pub fn mix_into(source: &[f32], destination: &mut [f32]) {
     debug_assert_eq!(source.len(), destination.len());
 
     const VECTOR_SIZE: usize = 16;
@@ -27,7 +29,63 @@ pub fn mix(source: &[f32], destination: &mut [f32]) {
     }
 }
 
-pub fn apply_gain(data: &mut [f32], gain: &[f32]) {
+pub fn mix(source_1: &[f32], source_2: &[f32], destination: &mut [f32]) {
+    debug_assert_eq!(source_1.len(), source_2.len());
+    debug_assert_eq!(source_1.len(), destination.len());
+
+    const VECTOR_SIZE: usize = 16;
+
+    let (source_1_pre, source_1_main, source_1_post) = source_1.as_simd::<VECTOR_SIZE>();
+    let (source_2_pre, source_2_main, source_2_post) = source_2.as_simd::<VECTOR_SIZE>();
+    let (dest_pre, dest_main, dest_post) = destination.as_simd_mut::<VECTOR_SIZE>();
+
+    if source_1_pre.len() == dest_pre.len() && source_1_pre.len() == source_2_pre.len() {
+        for (input_1, input_2, output) in izip!(source_1_pre, source_2_pre, dest_pre) {
+            *output = *input_1 + *input_2;
+        }
+
+        for (input_1, input_2, output) in izip!(source_1_main, source_2_main, dest_main) {
+            *output = *input_1 + *input_2;
+        }
+
+        for (input_1, input_2, output) in izip!(source_1_post, source_2_post, dest_post) {
+            *output = *input_1 + *input_2;
+        }
+    } else {
+        for (input_1, input_2, output) in izip!(source_1, source_2, destination) {
+            *output = *input_1 + *input_2;
+        }
+    }
+}
+
+pub fn subtract_from(source: &[f32], destination: &mut [f32]) {
+    debug_assert_eq!(source.len(), destination.len());
+
+    const VECTOR_SIZE: usize = 16;
+
+    let (source_pre, source_main, source_post) = source.as_simd::<VECTOR_SIZE>();
+    let (dest_pre, dest_main, dest_post) = destination.as_simd_mut::<VECTOR_SIZE>();
+
+    if source_pre.len() == dest_pre.len() {
+        for (input, output) in zip(source_pre, dest_pre) {
+            *output -= *input;
+        }
+
+        for (input, output) in zip(source_main, dest_main) {
+            *output -= *input;
+        }
+
+        for (input, output) in zip(source_post, dest_post) {
+            *output -= *input;
+        }
+    } else {
+        for (input, output) in zip(source, destination) {
+            *output -= *input;
+        }
+    }
+}
+
+pub fn multiply(data: &mut [f32], gain: &[f32]) {
     debug_assert_eq!(data.len(), gain.len());
 
     const VECTOR_SIZE: usize = 16;

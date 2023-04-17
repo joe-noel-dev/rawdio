@@ -4,7 +4,9 @@ mod buffer_pool;
 mod mutable_borrowed_audio_buffer;
 mod owned_audio_buffer;
 mod sample_location;
-mod simd;
+
+#[allow(dead_code)]
+pub(crate) mod simd;
 
 pub use audio_buffer::AudioBuffer;
 pub use borrowed_audio_buffer::BorrowedAudioBuffer;

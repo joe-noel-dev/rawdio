@@ -81,6 +81,9 @@ pub fn render_audio_process_to_file(
             &mut writer,
         );
         position += frames_this_time;
+
+        let progress = 100.0 * position as f64 / total_frame_count as f64;
+        println!("Progress: {:.2}%", progress);
     }
 }
 

@@ -20,6 +20,16 @@ impl OwnedAudioBuffer {
         }
     }
 
+    pub fn from_slice(data: &[f32], channel_count: usize, sample_rate: usize) -> Self {
+        let mut buffer = Self::new(data.len(), 1, sample_rate);
+
+        for channel in 0..channel_count {
+            buffer.fill_from_slice(data, SampleLocation::channel(channel));
+        }
+
+        buffer
+    }
+
     pub fn from_buffer(buffer: &dyn AudioBuffer) -> Self {
         let mut new_buffer = Self::new(
             buffer.frame_count(),
@@ -76,6 +86,20 @@ impl OwnedAudioBuffer {
             let sample_value = random_generator.gen_range(-1.0..=1.0);
             buffer.set_sample(frame, sample_value);
         }
+
+        buffer
+    }
+
+    pub fn padded_to_length(&self, frame_count: usize) -> Self {
+        let mut buffer = Self::new(frame_count, self.channel_count(), self.sample_rate());
+
+        buffer.copy_from(
+            self,
+            SampleLocation::origin(),
+            SampleLocation::origin(),
+            self.channel_count(),
+            self.frame_count(),
+        );
 
         buffer
     }
