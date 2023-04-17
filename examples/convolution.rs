@@ -24,7 +24,7 @@ fn process_file(options: &Options) {
 
     let (mut context, audio_process) = create_engine(sample_rate);
 
-    let mut sample_player = Sampler::new(context.as_ref(), sample_rate, input);
+    let mut sample_player = Sampler::new(context.as_ref(), input);
     let convolution = Convolution::new(context.as_ref(), input_channels, impulse);
     let mut dry_gain = Gain::new(context.as_ref(), input_channels);
     let mut wet_gain = Gain::new(context.as_ref(), input_channels);

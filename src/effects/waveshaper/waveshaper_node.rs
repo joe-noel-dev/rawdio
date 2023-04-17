@@ -8,13 +8,27 @@ use super::{
     waveshaper_processor::WaveshaperProcessor,
 };
 
+/// A node that will distort the input signal using a specified function
 pub struct Waveshaper {
+    /// The node to connect to the audio graph
     pub node: GraphNode,
+
+    /// The amount of 'drive' to apply to the signal
+    ///
+    /// This is a normalised value (0.0 - 1.0) that will apply gain to the
+    /// signal
     pub overdrive: AudioParameter,
+
+    /// The proportion of wet/processed signal to send to the output
+    ///
+    /// 1.0 represents a fully processed signal
+    /// 0.0 represents a full dry signal
     pub mix: AudioParameter,
 }
 
 impl Waveshaper {
+    /// Create a waveshaper that uses the mathematical tanh function to shape the
+    /// signal
     pub fn tanh(context: &dyn Context, channel_count: usize) -> Self {
         let shaper = |input: f32| {
             const CONSTANT: f32 = 2.0;
@@ -24,6 +38,8 @@ impl Waveshaper {
         Self::new(context, channel_count, &shaper)
     }
 
+    /// Create a waveshaper that uses a soft saturation function to shape the
+    /// input
     pub fn soft_saturator(context: &dyn Context, channel_count: usize, threshold: Level) -> Self {
         let threshold = threshold.as_gain() as f32;
         assert!(0.0 <= threshold);
@@ -42,6 +58,8 @@ impl Waveshaper {
         Self::new(context, channel_count, &shaper)
     }
 
+    /// Create a waveshaper that hard clips the signal when it goes over the
+    /// specified threshold
     pub fn hard_clip(context: &dyn Context, channel_count: usize, threshold: Level) -> Self {
         let threshold = threshold.as_gain() as f32;
 
@@ -60,6 +78,7 @@ impl Waveshaper {
         Self::new(context, channel_count, &shaper)
     }
 
+    /// Create a new waveshaper using a custom shaper function
     pub fn new(context: &dyn Context, channel_count: usize, shaper: &dyn Fn(f32) -> f32) -> Self {
         let id = Id::generate();
 

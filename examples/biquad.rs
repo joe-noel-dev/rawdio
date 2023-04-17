@@ -24,7 +24,7 @@ fn play_file(file_to_play: &str) {
 
     let length_in_seconds = sample.length_in_seconds().ceil() as u64;
     let length_in_samples = sample.frame_count();
-    let mut sampler = Sampler::new(context.as_ref(), sample_rate, sample);
+    let mut sampler = Sampler::new(context.as_ref(), sample);
 
     let channel_count = 2;
     let mut biquad = Biquad::new(context.as_ref(), channel_count, BiquadFilterType::LowPass);

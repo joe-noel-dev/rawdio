@@ -7,6 +7,7 @@ use atomic_float::AtomicF64;
 use super::{parameter_change::ValueChangeMethod, parameter_value::ParameterValue};
 use super::{realtime_parameter::RealtimeAudioParameter, ParameterChange};
 
+/// An parameter that generates a value for every audio sample
 pub struct AudioParameter {
     dsp_id: Id,
     parameter_id: Id,
@@ -17,6 +18,7 @@ pub struct AudioParameter {
 }
 
 impl AudioParameter {
+    /// Create a new audio parameter
     pub fn new(
         dsp_id: Id,
         initial_value: f64,
@@ -44,18 +46,24 @@ impl AudioParameter {
         )
     }
 
+    /// Get the ID of this parameters
     pub fn get_id(&self) -> Id {
         self.parameter_id
     }
 
+    /// Get the last known value of this parameter
     pub fn get_value(&self) -> ParameterValue {
         self.value.clone()
     }
 
+    /// Set the value of this parameter now
     pub fn set_value_now(&mut self, value: f64) {
         self.set_value_at_time(value, Timestamp::zero());
     }
 
+    /// Set the value of this parameter at a particular time
+    ///
+    /// If `at_time` is in the past, it will be handled immediately
     pub fn set_value_at_time(&mut self, mut value: f64, at_time: Timestamp) {
         value = value.clamp(self.minimum_value, self.maximum_value);
         self.command_queue
@@ -70,6 +78,7 @@ impl AudioParameter {
             }));
     }
 
+    /// Linearly to a value over a time window
     pub fn linear_ramp_to_value(&mut self, value: f64, start_time: Timestamp, end_time: Timestamp) {
         let value = value.clamp(self.minimum_value, self.maximum_value);
         self.command_queue
@@ -84,6 +93,9 @@ impl AudioParameter {
             }));
     }
 
+    /// Exponentially ramp to a value over a time window
+    ///
+    /// It is not possible to ramp to or from 0
     pub fn exponential_ramp_to_value(
         &mut self,
         value: f64,
@@ -103,6 +115,7 @@ impl AudioParameter {
             }));
     }
 
+    /// Cancel all scheduled changes
     pub fn cancel_scheduled_changes(&mut self) {
         self.command_queue
             .send(Command::CancelParamaterChanges(CancelChangeRequest {
@@ -112,6 +125,7 @@ impl AudioParameter {
             }));
     }
 
+    /// Cancel all scheduled changes that complete after `end_time`
     pub fn cancel_scheduled_changes_ending_after(&mut self, end_time: Timestamp) {
         self.command_queue
             .send(Command::CancelParamaterChanges(CancelChangeRequest {

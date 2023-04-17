@@ -42,6 +42,16 @@ impl Context for Root {
     }
 }
 
+/// Create an audio context
+///
+/// This returns a pair:
+///
+/// * The `Context` is the root context. This will be required to create most
+///   nodes and should be kept in scope for the lifetime of the application
+///
+/// * The `AudioProcess` is used to generate audio. This might be passed to a
+///   different thread if used in a realtime context, or it might be kept in
+///   the main thread if used offline.
 pub fn create_engine(sample_rate: usize) -> (Box<dyn Context>, Box<dyn AudioProcess + Send>) {
     let (command_transmitter, command_receiver) = CommandTransmitter::new();
     let timestamp = Arc::new(AtomicI64::new(0));

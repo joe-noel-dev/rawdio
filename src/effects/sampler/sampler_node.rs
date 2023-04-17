@@ -8,7 +8,9 @@ use super::{
     sampler_processor::{EventTransmitter, SamplerDspProcess},
 };
 
+/// A node that can play or loop a sample
 pub struct Sampler {
+    /// The node to connect to the audio graph
     pub node: GraphNode,
     event_transmitter: EventTransmitter,
 }
@@ -16,14 +18,15 @@ pub struct Sampler {
 static EVENT_CHANNEL_CAPACITY: usize = 32;
 
 impl Sampler {
-    pub fn new(context: &dyn Context, sample_rate: usize, sample: OwnedAudioBuffer) -> Self {
+    /// Create a new sampler with the given sample
+    pub fn new(context: &dyn Context, sample: OwnedAudioBuffer) -> Self {
         let id = Id::generate();
 
         let (event_transmitter, event_receiver) = Channel::bounded(EVENT_CHANNEL_CAPACITY);
 
         let input_count = 0;
         let output_count = sample.channel_count();
-
+        let sample_rate = sample.sample_rate();
         let processor = Box::new(SamplerDspProcess::new(sample_rate, sample, event_receiver));
 
         let node = GraphNode::new(
@@ -41,14 +44,17 @@ impl Sampler {
         }
     }
 
+    /// Start the sampler playing
     pub fn start_now(&mut self) {
         let _ = self.event_transmitter.send(SamplerEvent::start_now());
     }
 
+    /// Stop the sampler playing
     pub fn stop_now(&mut self) {
         let _ = self.event_transmitter.send(SamplerEvent::stop_now());
     }
 
+    /// Start from the specified time, at the specified position in the sample
     pub fn start_from_position_at_time(
         &mut self,
         start_time: Timestamp,
@@ -59,24 +65,42 @@ impl Sampler {
             .send(SamplerEvent::start(start_time, position_in_sample));
     }
 
+    /// Stop at the specified time
     pub fn stop_at_time(&mut self, stop_time: Timestamp) {
         let _ = self.event_transmitter.send(SamplerEvent::stop(stop_time));
     }
 
+    /// Enable looping
+    ///
+    /// # Arguments
+    ///
+    /// * `loop_start` - The position in the sample to start the loop
+    /// * `loop_end` - The position in the sample to go back to `loop_start`
     pub fn enable_loop(&mut self, loop_start: Timestamp, loop_end: Timestamp) {
         let _ = self
             .event_transmitter
             .send(SamplerEvent::enable_loop(loop_start, loop_end));
     }
 
+    /// Cancel a loop
+    ///
+    /// This will clear the loop points and finish when it reaches the end of the sample
     pub fn cancel_loop(&mut self) {
         let _ = self.event_transmitter.send(SamplerEvent::cancel_loop());
     }
 
+    /// Cancel all scheduled events that haven't occurred yet
     pub fn cancel_all(&mut self) {
         let _ = self.event_transmitter.send(SamplerEvent::cancel_all());
     }
 
+    /// Enable loop at a time
+    ///
+    /// # Arguments
+    ///
+    /// * `enable_at_time` - The time to enable loop points
+    /// * `loop_start` - The position in the loop to start looping
+    /// * `loop_end` - The position in the loop to go back to the start
     pub fn enable_loop_at_time(
         &mut self,
         enable_at_time: Timestamp,
@@ -92,6 +116,7 @@ impl Sampler {
             ));
     }
 
+    /// Cancel the loop at a time
     pub fn cancel_loop_at_time(&mut self, cancel_time: Timestamp) {
         let _ = self
             .event_transmitter
