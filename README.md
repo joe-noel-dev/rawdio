@@ -2,8 +2,6 @@
 
 [![Rust](https://github.com/joefocusrite/rawdio/actions/workflows/rust.yml/badge.svg)](https://github.com/joefocusrite/rawdio/actions/workflows/rust.yml)
 
-!! This is a work in progress !!
-
 This is an audio engine, inspired by the Web Audio API.
 
 ## Oscillator Example
@@ -22,22 +20,23 @@ More examples can be found [here](./examples)
 
     ```rust
     let frequency = 440.0;
-    let mut oscillator = Oscillator::new(context.get_command_queue(), frequency);
+    let output_channel_count = 2;
+    let mut oscillator = Oscillator::sine(context.as_ref(), frequency, output_channel_count);
     ```
 
 1. Set the gain on the oscillator
 
     ```rust
-    let gain = Level::from_db(-3.0);
+    let level = Level::from_db(-3.0);
     oscillator
         .gain
-        .set_value_at_time(gain.as_gain(), Timestamp::zero());
+        .set_value_at_time(level.as_gain(), Timestamp::zero());
     ```
 
 1. Connect to output
 
     ```rust
-    oscillator.connect_to_output();
+    oscillator.node.connect_to_output();
     ```
 
 1. Start the context
@@ -55,7 +54,8 @@ More examples can be found [here](./examples)
    to be de-interleaved first.
 
     ```rust
-    let output_buffer = /*create an audio buffer (see `OwnedAudioBuffer`) or use the one supplied by your audio device in its callback*/
+    let input_buffer = /*create an input buffer*/
+    let output_buffer = /*create an audio buffer*/
     process.process (&mut output_buffer);
     ```
 
@@ -76,3 +76,13 @@ cargo test
 ```sh
 cargo bench
 ```
+
+## Where do the buffers come from?
+
+The engine won't make any assumptions about how it is going to be run.
+This means that it can be run in real-time, for example using CPAL.
+Or, it could be run offline, for example processing audio from files using hound.
+There are examples of both of these in the [/examples](examples) directory.
+
+Bear in mind that audio is expected to be de-interleaved.
+Most soundcards and audio files will be interleaved, so it will need to be converted first.
