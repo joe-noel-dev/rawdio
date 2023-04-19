@@ -1,9 +1,12 @@
+#[path = "./lib/helpers.rs"]
+mod helpers;
+
 use std::{thread, time::Duration};
 
 use rawdio::{create_engine, AudioBuffer, Biquad, BiquadFilterType, Sampler, Timestamp};
 use structopt::StructOpt;
 
-use utilities::{read_file_into_buffer, AudioCallback};
+use helpers::{read_file_into_buffer, AudioCallback};
 
 #[derive(Debug, StructOpt)]
 struct Options {

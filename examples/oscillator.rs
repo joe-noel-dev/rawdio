@@ -1,7 +1,9 @@
-use std::{thread, time};
+#[path = "./lib/helpers.rs"]
+mod helpers;
 
+use helpers::AudioCallback;
 use rawdio::{create_engine, Context, Gain, Level, Mixer, Oscillator, Timestamp};
-use utilities::AudioCallback;
+use std::{thread, time};
 
 fn main() {
     let sample_rate = 44100;

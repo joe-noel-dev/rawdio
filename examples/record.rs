@@ -1,8 +1,10 @@
-use std::{cell::RefCell, rc::Rc, thread, time::Duration};
+#[path = "./lib/helpers.rs"]
+mod helpers;
 
+use helpers::{write_buffer_into_file, AudioCallback};
 use rawdio::{create_engine, Context, Level, Mixer, Recorder, Timestamp};
+use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 use structopt::StructOpt;
-use utilities::{write_buffer_into_file, AudioCallback};
 
 #[derive(Debug, StructOpt)]
 struct Options {

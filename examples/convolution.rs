@@ -1,6 +1,9 @@
+#[path = "./lib/helpers.rs"]
+mod helpers;
+
+use helpers::{read_file_into_buffer, render_audio_process_to_file};
 use rawdio::{create_engine, AudioBuffer, Convolution, Gain, Sampler};
 use structopt::StructOpt;
-use utilities::{read_file_into_buffer, render_audio_process_to_file};
 
 #[derive(Debug, StructOpt)]
 struct Options {

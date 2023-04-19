@@ -1,10 +1,10 @@
-extern crate utilities;
+#[path = "./lib/helpers.rs"]
+mod helpers;
 
-use std::time::Duration;
-
+use helpers::render_audio_process_to_file;
 use rawdio::{create_engine, Context, Gain, Oscillator, Pan, Timestamp};
+use std::time::Duration;
 use structopt::StructOpt;
-use utilities::render_audio_process_to_file;
 
 #[derive(Debug, StructOpt)]
 struct Options {

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::time::Duration;
 
 use cpal::{
@@ -58,6 +60,7 @@ type AudioReceiver = crossbeam::channel::Receiver<f32>;
 impl AudioCallback {
     pub fn new(audio_process: Box<dyn AudioProcess + Send>, sample_rate: usize) -> Self {
         let host = cpal::default_host();
+
         println!("Using audio host: {}\n", host.id().name());
 
         if cfg!(debug_assertions) {
@@ -132,7 +135,7 @@ fn prepare_input_stream(
     let input_error_callback = move |err| eprintln!("Input stream error: {err:?}");
 
     let input_stream = device
-        .build_input_stream(&config.config(), input_callback, input_error_callback)
+        .build_input_stream(&config.config(), input_callback, input_error_callback, None)
         .expect("Error creating input stream");
 
     input_stream.play().expect("Couldn't start input stream");
@@ -212,7 +215,12 @@ fn prepare_output_stream(
     let output_error_callback = move |err| eprintln!("Output stream error: {err:?}");
 
     let stream = device
-        .build_output_stream(&config.config(), output_callback, output_error_callback)
+        .build_output_stream(
+            &config.config(),
+            output_callback,
+            output_error_callback,
+            None,
+        )
         .expect("Couldn't create output stream");
 
     stream.play().expect("Couldn't start output stream");

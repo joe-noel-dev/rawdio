@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::time::Duration;
 
 use rawdio::{
@@ -20,7 +22,7 @@ pub fn read_file_into_buffer(file_path: &str) -> OwnedAudioBuffer {
         if let Ok(sample) = sample {
             let frame = position / num_channels;
             let channel = position % num_channels;
-            let sample_location = SampleLocation::new(channel as usize, frame);
+            let sample_location = SampleLocation::new(channel, frame);
             let sample = (sample as f64 / max_value as f64) as f32;
             output_buffer.set_sample(sample_location, sample);
         }
@@ -83,7 +85,7 @@ pub fn render_audio_process_to_file(
         position += frames_this_time;
 
         let progress = 100.0 * position as f64 / total_frame_count as f64;
-        println!("Progress: {:.2}%", progress);
+        println!("Progress: {progress:.2}%");
     }
 }
 
