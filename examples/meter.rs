@@ -1,3 +1,6 @@
+#[path = "./lib/helpers.rs"]
+mod helpers;
+
 use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 
 use rawdio::{
@@ -5,7 +8,7 @@ use rawdio::{
 };
 use structopt::StructOpt;
 
-use utilities::{read_file_into_buffer, AudioCallback};
+use helpers::{read_file_into_buffer, AudioCallback};
 
 #[derive(Debug, StructOpt)]
 struct Options {

@@ -1,9 +1,10 @@
-use std::time::Duration;
+#[path = "./lib/helpers.rs"]
+mod helpers;
 
+use helpers::AudioCallback;
 use rawdio::{create_engine, Adsr, Context, Oscillator, Timestamp};
+use std::time::Duration;
 use structopt::StructOpt;
-
-use utilities::AudioCallback;
 
 #[derive(StructOpt)]
 struct Options {
