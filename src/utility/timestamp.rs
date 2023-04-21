@@ -77,6 +77,17 @@ impl Timestamp {
         Self::from_seconds(duration.as_secs_f64())
     }
 
+    /// Create a timestamp from a number of beats
+    pub fn from_beats(beats: f64, tempo: f64) -> Self {
+        debug_assert!(tempo > 0.0);
+
+        let beat_frequency = tempo / 60.0;
+
+        Self {
+            seconds: FixedPoint::from_num(beats / beat_frequency),
+        }
+    }
+
     /// Get the number of seconds
     pub fn as_seconds(&self) -> f64 {
         self.seconds.to_num()
@@ -87,11 +98,16 @@ impl Timestamp {
         self.seconds.to_num::<f64>() * sample_rate as f64
     }
 
+    /// Get the number of beats at a tempo
+    pub fn as_beats(&self, tempo: f64) -> f64 {
+        let beat_frequency = tempo / 60.0;
+        self.seconds.to_num::<f64>() * beat_frequency
+    }
+
     /// Increment by a number of samples
     pub fn incremented_by_samples(&self, sample_count: usize, sample_rate: usize) -> Self {
-        Self {
-            seconds: self.seconds + FixedPoint::from_num(sample_count as f64 / sample_rate as f64),
-        }
+        let increment = Self::from_samples(sample_count as f64, sample_rate);
+        self.incremented(&increment)
     }
 
     /// Increment by a number of seconds
@@ -114,11 +130,28 @@ mod tests {
     use approx::assert_relative_eq;
 
     use super::*;
+
     #[test]
-    fn it_increments() {
+    fn increment_by_samples() {
         let sample_rate = 44_100;
         let before = Timestamp::default();
         let after = before.incremented_by_samples(sample_rate, sample_rate);
         assert_relative_eq!(after.as_seconds() - before.as_seconds(), 1.0);
+    }
+
+    #[test]
+    fn convert_from_beats() {
+        let tempo = 120.0;
+        let beats = 10.0;
+        let timestamp = Timestamp::from_beats(beats, tempo);
+        assert_relative_eq!(5.0, timestamp.as_seconds());
+    }
+
+    #[test]
+    fn convert_to_beats() {
+        let timestamp = Timestamp::from_seconds(5.0);
+        let tempo = 120.0;
+        let beats = timestamp.as_beats(tempo);
+        assert_relative_eq!(beats, 10.0);
     }
 }
