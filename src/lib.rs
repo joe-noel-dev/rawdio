@@ -66,6 +66,7 @@ pub use engine::CommandQueue;
 pub use engine::Context;
 
 pub use graph::GraphNode;
+pub use graph::ProcessContext;
 
 pub use parameter::AudioParameter;
 

@@ -24,7 +24,7 @@ impl<Event> EventProcessor<Event> {
         }
     }
 
-    pub fn process_events(&mut self) {
+    pub fn receive_events(&mut self) {
         let mut sort_required = false;
 
         while let Ok(event) = self.receive_channel.try_recv() {

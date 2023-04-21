@@ -416,22 +416,18 @@ mod tests {
     }
 
     impl DspProcessor for Processor {
-        fn process_audio(
-            &mut self,
-            input_buffer: &dyn AudioBuffer,
-            output_buffer: &mut dyn AudioBuffer,
-            _start_time: &Timestamp,
-            _parameters: &DspParameters,
-        ) {
-            output_buffer.add_from(
-                input_buffer,
+        fn process_audio(&mut self, context: &mut crate::ProcessContext) {
+            context.output_buffer.add_from(
+                context.input_buffer,
                 SampleLocation::origin(),
                 SampleLocation::origin(),
-                output_buffer.channel_count(),
-                output_buffer.frame_count(),
+                context.output_buffer.channel_count(),
+                context.output_buffer.frame_count(),
             );
 
-            output_buffer.set_sample(self.location_to_write, self.value_to_write);
+            context
+                .output_buffer
+                .set_sample(self.location_to_write, self.value_to_write);
         }
     }
 
