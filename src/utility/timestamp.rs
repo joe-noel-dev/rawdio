@@ -117,6 +117,12 @@ impl Timestamp {
         }
     }
 
+    /// Increment by a number of beats
+    pub fn incremented_by_beats(&self, beats: f64, tempo: f64) -> Self {
+        let increment = Self::from_beats(beats, tempo);
+        self.incremented(&increment)
+    }
+
     /// Increment by another timestamp
     pub fn incremented(&self, value: &Self) -> Self {
         Self {
@@ -153,5 +159,14 @@ mod tests {
         let tempo = 120.0;
         let beats = timestamp.as_beats(tempo);
         assert_relative_eq!(beats, 10.0);
+    }
+
+    #[test]
+    fn increment_by_beats() {
+        let start = Timestamp::from_seconds(7.0);
+        let tempo = 60.0;
+        let beats = 9.0;
+        let incremented = start.incremented_by_beats(beats, tempo);
+        assert_eq!(incremented.as_seconds(), 16.0);
     }
 }
