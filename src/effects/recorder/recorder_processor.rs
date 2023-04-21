@@ -35,7 +35,6 @@ impl RecorderProcessor {
                 MAX_PENDING_EVENTS,
                 event_receiver,
                 sample_rate,
-                |event| event.time,
             ),
             notification_transmitter,
             buffer_pool: BufferPool::new(BUFFER_COUNT, BUFFER_SIZE, channel_count, sample_rate),

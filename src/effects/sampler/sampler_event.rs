@@ -1,5 +1,6 @@
-use crate::Timestamp;
+use crate::{effects::utility::EventProcessorEvent, Timestamp};
 
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum SampleEventType {
     Start(Timestamp),
     Stop,
@@ -81,5 +82,15 @@ impl SamplerEvent {
             time: Timestamp::zero(),
             event_type: SampleEventType::CancelAll,
         }
+    }
+}
+
+impl EventProcessorEvent for SamplerEvent {
+    fn get_time(&self) -> Timestamp {
+        self.time
+    }
+
+    fn should_clear_queue(&self) -> bool {
+        self.event_type == SampleEventType::CancelAll
     }
 }

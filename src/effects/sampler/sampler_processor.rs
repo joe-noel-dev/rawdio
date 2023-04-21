@@ -87,7 +87,6 @@ impl SamplerDspProcess {
                 MAX_PENDING_EVENTS,
                 event_receiver,
                 sample_rate,
-                |event| event.time,
             ),
             loop_points: None,
             position: Timestamp::zero(),

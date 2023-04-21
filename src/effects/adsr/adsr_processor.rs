@@ -28,7 +28,6 @@ impl AdsrProcessor {
                 MAX_PENDING_EVENTS,
                 event_receiver,
                 sample_rate,
-                |event| event.time,
             ),
             envelope: AdsrEnvelope::new(
                 sample_rate,
