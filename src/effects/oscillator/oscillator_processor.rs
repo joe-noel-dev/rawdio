@@ -1,10 +1,6 @@
 use itertools::izip;
 
-use crate::{
-    commands::Id,
-    graph::{DspParameters, DspProcessor},
-    AudioBuffer, SampleLocation, Timestamp,
-};
+use crate::{commands::Id, graph::DspProcessor, SampleLocation};
 
 pub struct OscillatorProcessor {
     phase: f64,
@@ -53,35 +49,35 @@ fn interpolate(a: f64, b: f64, amount_of_b: f64) -> f64 {
 }
 
 impl DspProcessor for OscillatorProcessor {
-    fn process_audio(
-        &mut self,
-        _input_buffer: &dyn AudioBuffer,
-        output_buffer: &mut dyn AudioBuffer,
-        _start_time: &Timestamp,
-        parameters: &DspParameters,
-    ) {
-        let sample_rate = output_buffer.sample_rate();
+    fn process_audio(&mut self, context: &mut crate::ProcessContext) {
+        let sample_rate = context.output_buffer.sample_rate();
 
-        let frequency_values =
-            parameters.get_parameter_values(self.frequency_id, output_buffer.frame_count());
-        let gain_values =
-            parameters.get_parameter_values(self.gain_id, output_buffer.frame_count());
+        let frequency_values = context
+            .parameters
+            .get_parameter_values(self.frequency_id, context.output_buffer.frame_count());
+        let gain_values = context
+            .parameters
+            .get_parameter_values(self.gain_id, context.output_buffer.frame_count());
 
-        let channel_count = output_buffer.channel_count();
+        let channel_count = context.output_buffer.channel_count();
 
         let location = SampleLocation::channel(0);
-        let channel_data = output_buffer.get_channel_data_mut(location);
+        let channel_data = context.output_buffer.get_channel_data_mut(location);
 
         for (sample, frequency) in izip!(channel_data.iter_mut(), frequency_values.iter()) {
             self.increment_phase(*frequency, sample_rate);
             *sample = self.get_value() as f32;
         }
 
-        output_buffer.apply_gain(gain_values);
+        context.output_buffer.apply_gain(gain_values);
 
         (1..channel_count).for_each(|channel| {
             let location = SampleLocation::channel(0);
-            output_buffer.duplicate_channel(location, channel, output_buffer.frame_count());
+            context.output_buffer.duplicate_channel(
+                location,
+                channel,
+                context.output_buffer.frame_count(),
+            );
         });
     }
 }

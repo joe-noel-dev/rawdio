@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{Level, Timestamp};
+use crate::{effects::utility::EventProcessorEvent, Level, Timestamp};
 
 pub enum AdsrEventType {
     NoteOn,
@@ -15,4 +15,14 @@ pub enum AdsrEventType {
 pub struct AdsrEvent {
     pub time: Timestamp,
     pub event_type: AdsrEventType,
+}
+
+impl EventProcessorEvent for AdsrEvent {
+    fn get_time(&self) -> Timestamp {
+        self.time
+    }
+
+    fn should_clear_queue(&self) -> bool {
+        false
+    }
 }

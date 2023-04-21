@@ -98,31 +98,28 @@ fn mix_input(input: &[f32], output: &mut [f32], mix: &[f32]) {
 }
 
 impl DspProcessor for WaveshaperProcessor {
-    fn process_audio(
-        &mut self,
-        input_buffer: &dyn crate::AudioBuffer,
-        output_buffer: &mut dyn crate::AudioBuffer,
-        _start_time: &crate::Timestamp,
-        parameters: &crate::graph::DspParameters,
-    ) {
-        let overdrive =
-            parameters.get_parameter_values(self.overdrive_id, output_buffer.frame_count());
-        let mix = parameters.get_parameter_values(self.mix_id, output_buffer.frame_count());
+    fn process_audio(&mut self, context: &mut crate::ProcessContext) {
+        let overdrive = context
+            .parameters
+            .get_parameter_values(self.overdrive_id, context.output_buffer.frame_count());
+        let mix = context
+            .parameters
+            .get_parameter_values(self.mix_id, context.output_buffer.frame_count());
 
-        (0..output_buffer.channel_count()).for_each(|channel| {
+        (0..context.output_buffer.channel_count()).for_each(|channel| {
             let location = SampleLocation::channel(channel);
-            let input_data = input_buffer.get_channel_data(location);
+            let input_data = context.input_buffer.get_channel_data(location);
 
             {
-                let output_data = output_buffer.get_channel_data_mut(location);
+                let output_data = context.output_buffer.get_channel_data_mut(location);
                 output_data.copy_from_slice(input_data);
                 apply_overdrive(overdrive, output_data);
             }
 
-            self.apply_shape(output_buffer, channel);
+            self.apply_shape(context.output_buffer, channel);
 
             {
-                let output_data = output_buffer.get_channel_data_mut(location);
+                let output_data = context.output_buffer.get_channel_data_mut(location);
                 reverse_overdrive(overdrive, output_data);
                 mix_input(input_data, output_data, mix);
             }

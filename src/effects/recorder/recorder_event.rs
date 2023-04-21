@@ -1,4 +1,7 @@
-use crate::{effects::Channel, OwnedAudioBuffer, Timestamp};
+use crate::{
+    effects::{utility::EventProcessorEvent, Channel},
+    OwnedAudioBuffer, Timestamp,
+};
 
 pub enum RecorderEventType {
     Start,
@@ -41,5 +44,15 @@ impl RecorderEvent {
             time: Timestamp::zero(),
             event_type: RecorderEventType::ReturnBuffer(buffer),
         }
+    }
+}
+
+impl EventProcessorEvent for RecorderEvent {
+    fn get_time(&self) -> Timestamp {
+        self.time
+    }
+
+    fn should_clear_queue(&self) -> bool {
+        false
     }
 }

@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use crate::{
     effects::{utility::EventProcessor, Channel},
-    graph::{DspParameters, DspProcessor},
-    AudioBuffer, MutableBorrowedAudioBuffer, OwnedAudioBuffer, Timestamp,
+    graph::DspProcessor,
+    AudioBuffer, MutableBorrowedAudioBuffer, OwnedAudioBuffer, ProcessContext, Timestamp,
 };
 
 use super::{
@@ -35,33 +35,31 @@ const FADE_LENGTH: Duration = Duration::from_millis(50);
 const MAX_PENDING_EVENTS: usize = 16;
 
 impl DspProcessor for SamplerDspProcess {
-    fn process_audio(
-        &mut self,
-        _input_buffer: &dyn AudioBuffer,
-        output_buffer: &mut dyn AudioBuffer,
-        start_time: &Timestamp,
-        _parameters: &DspParameters,
-    ) {
-        debug_assert_eq!(self.sample_rate, output_buffer.sample_rate());
+    fn process_audio(&mut self, context: &mut ProcessContext) {
+        debug_assert_eq!(self.sample_rate, context.output_buffer.sample_rate());
 
-        self.event_processor.process_events();
+        self.event_processor.receive_events();
 
-        let mut current_time = *start_time;
+        let mut current_time = *context.start_time;
         let mut position = 0;
 
-        while position < output_buffer.frame_count() {
+        while position < context.output_buffer.frame_count() {
             let (end_frame, event) = self.event_processor.next_event(
-                start_time,
+                context.start_time,
                 &current_time,
-                output_buffer.frame_count(),
+                context.output_buffer.frame_count(),
             );
 
-            debug_assert!(end_frame <= output_buffer.frame_count());
+            debug_assert!(end_frame <= context.output_buffer.frame_count());
 
             let frame_count = end_frame - position;
 
-            let mut slice =
-                MutableBorrowedAudioBuffer::slice_frames(output_buffer, position, frame_count);
+            let mut slice = MutableBorrowedAudioBuffer::slice_frames(
+                context.output_buffer,
+                position,
+                frame_count,
+            );
+
             self.process_sample(&mut slice);
 
             position += frame_count;
@@ -89,7 +87,6 @@ impl SamplerDspProcess {
                 MAX_PENDING_EVENTS,
                 event_receiver,
                 sample_rate,
-                |event| event.time,
             ),
             loop_points: None,
             position: Timestamp::zero(),
@@ -265,7 +262,7 @@ impl SamplerDspProcess {
 
 #[cfg(test)]
 mod tests {
-    use crate::{AudioBuffer, SampleLocation};
+    use crate::{graph::DspParameters, AudioBuffer, SampleLocation};
 
     use super::*;
 
@@ -290,12 +287,12 @@ mod tests {
         let input_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
         let start_time = Timestamp::zero();
 
-        sampler.process_audio(
-            &input_buffer,
-            &mut output_buffer,
-            &start_time,
-            &DspParameters::empty(),
-        );
+        sampler.process_audio(&mut ProcessContext {
+            input_buffer: &input_buffer,
+            output_buffer: &mut output_buffer,
+            start_time: &start_time,
+            parameters: &DspParameters::empty(),
+        });
 
         output_buffer
     }

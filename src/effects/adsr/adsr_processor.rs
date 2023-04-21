@@ -28,7 +28,6 @@ impl AdsrProcessor {
                 MAX_PENDING_EVENTS,
                 event_receiver,
                 sample_rate,
-                |event| event.time,
             ),
             envelope: AdsrEnvelope::new(
                 sample_rate,
@@ -55,7 +54,7 @@ impl AdsrProcessor {
     }
 
     fn prepare_envelope(&mut self, frame_count: usize, start_time: &Timestamp, sample_rate: usize) {
-        self.event_processor.process_events();
+        self.event_processor.receive_events();
 
         let mut current_time = *start_time;
         let mut position = 0;
@@ -84,28 +83,32 @@ impl AdsrProcessor {
 }
 
 impl DspProcessor for AdsrProcessor {
-    fn process_audio(
-        &mut self,
-        input_buffer: &dyn crate::AudioBuffer,
-        output_buffer: &mut dyn crate::AudioBuffer,
-        start_time: &crate::Timestamp,
-        _parameters: &crate::graph::DspParameters,
-    ) {
-        let channel_count =
-            std::cmp::min(input_buffer.channel_count(), output_buffer.channel_count());
-        let frame_count = std::cmp::min(input_buffer.frame_count(), output_buffer.frame_count());
+    fn process_audio(&mut self, context: &mut crate::ProcessContext) {
+        let channel_count = std::cmp::min(
+            context.input_buffer.channel_count(),
+            context.output_buffer.channel_count(),
+        );
+
+        let frame_count = std::cmp::min(
+            context.input_buffer.frame_count(),
+            context.output_buffer.frame_count(),
+        );
 
         debug_assert!(
             frame_count <= ENVELOPE_BUFFER_SIZE,
             "Not designed to work with buffers > ENVELOPE_BUFFER_SIZE"
         );
 
-        self.prepare_envelope(frame_count, start_time, output_buffer.sample_rate());
+        self.prepare_envelope(
+            frame_count,
+            context.start_time,
+            context.output_buffer.sample_rate(),
+        );
 
         for channel in 0..channel_count {
             let location = SampleLocation::channel(channel);
-            let output_channel = output_buffer.get_channel_data_mut(location);
-            let input_channel = input_buffer.get_channel_data(location);
+            let output_channel = context.output_buffer.get_channel_data_mut(location);
+            let input_channel = context.input_buffer.get_channel_data(location);
 
             for (output_sample, input_sample, envelope) in izip!(
                 output_channel.iter_mut(),

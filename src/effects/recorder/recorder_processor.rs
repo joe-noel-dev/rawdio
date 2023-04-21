@@ -1,8 +1,6 @@
 use crate::{
-    buffer::BufferPool,
-    effects::utility::EventProcessor,
-    graph::{DspParameters, DspProcessor},
-    AudioBuffer, OwnedAudioBuffer, SampleLocation, Timestamp,
+    buffer::BufferPool, effects::utility::EventProcessor, graph::DspProcessor, AudioBuffer,
+    OwnedAudioBuffer, ProcessContext, SampleLocation,
 };
 
 use super::{
@@ -37,7 +35,6 @@ impl RecorderProcessor {
                 MAX_PENDING_EVENTS,
                 event_receiver,
                 sample_rate,
-                |event| event.time,
             ),
             notification_transmitter,
             buffer_pool: BufferPool::new(BUFFER_COUNT, BUFFER_SIZE, channel_count, sample_rate),
@@ -140,30 +137,24 @@ impl RecorderProcessor {
 }
 
 impl DspProcessor for RecorderProcessor {
-    fn process_audio(
-        &mut self,
-        input_buffer: &dyn AudioBuffer,
-        _output_buffer: &mut dyn AudioBuffer,
-        start_time: &Timestamp,
-        _parameters: &DspParameters,
-    ) {
-        self.event_processor.process_events();
+    fn process_audio(&mut self, context: &mut ProcessContext) {
+        self.event_processor.receive_events();
 
-        let mut current_time = *start_time;
+        let mut current_time = *context.start_time;
         let mut position = 0;
 
-        while position < input_buffer.frame_count() {
+        while position < context.input_buffer.frame_count() {
             let (end_frame, event) = self.event_processor.next_event(
-                start_time,
+                context.start_time,
                 &current_time,
-                input_buffer.frame_count(),
+                context.input_buffer.frame_count(),
             );
 
-            debug_assert!(end_frame <= input_buffer.frame_count());
+            debug_assert!(end_frame <= context.input_buffer.frame_count());
 
             let frame_count = end_frame - position;
 
-            self.process(input_buffer, position, frame_count);
+            self.process(context.input_buffer, position, frame_count);
 
             position += frame_count;
             current_time = current_time.incremented_by_samples(frame_count, self.sample_rate);

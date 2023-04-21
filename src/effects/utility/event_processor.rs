@@ -1,41 +1,51 @@
 use crate::{effects::Channel, Timestamp};
 
-type GetEventTime<Event> = fn(&Event) -> Timestamp;
+pub trait EventProcessorEvent {
+    fn get_time(&self) -> Timestamp;
+    fn should_clear_queue(&self) -> bool;
+}
 
-pub struct EventProcessor<Event> {
+pub struct EventProcessor<Event>
+where
+    Event: EventProcessorEvent,
+{
     pending_events: Vec<Event>,
     receive_channel: Channel::Receiver<Event>,
     sample_rate: usize,
-    get_event_time: GetEventTime<Event>,
 }
 
-impl<Event> EventProcessor<Event> {
+impl<Event> EventProcessor<Event>
+where
+    Event: EventProcessorEvent,
+{
     pub fn with_capacity(
         capacity: usize,
         receive_channel: Channel::Receiver<Event>,
         sample_rate: usize,
-        get_event_time: GetEventTime<Event>,
     ) -> Self {
         Self {
             pending_events: Vec::with_capacity(capacity),
             receive_channel,
             sample_rate,
-            get_event_time,
         }
     }
 
-    pub fn process_events(&mut self) {
+    pub fn receive_events(&mut self) {
         let mut sort_required = false;
 
         while let Ok(event) = self.receive_channel.try_recv() {
-            self.pending_events.push(event);
-            sort_required = true;
+            if event.should_clear_queue() {
+                self.pending_events.clear();
+            } else {
+                self.pending_events.push(event);
+                sort_required = true;
+            }
         }
 
         if sort_required {
             self.pending_events.sort_by(|a, b| {
-                let a_time = (self.get_event_time)(a);
-                let b_time = (self.get_event_time)(b);
+                let a_time = a.get_time();
+                let b_time = b.get_time();
                 a_time.partial_cmp(&b_time).unwrap()
             });
         }
@@ -43,7 +53,7 @@ impl<Event> EventProcessor<Event> {
 
     fn next_event_before(&mut self, end_time: &Timestamp) -> Option<Event> {
         if let Some(next_event) = self.pending_events.first() {
-            if (self.get_event_time)(next_event) < *end_time {
+            if next_event.get_time() < *end_time {
                 return Some(self.pending_events.remove(0));
             }
         }
@@ -60,8 +70,7 @@ impl<Event> EventProcessor<Event> {
         let frame_end_time = frame_start_time.incremented_by_samples(frame_count, self.sample_rate);
 
         if let Some(next_event) = self.next_event_before(&frame_end_time) {
-            let event_time =
-                std::cmp::max((self.get_event_time)(&next_event), *current_frame_position);
+            let event_time = std::cmp::max(next_event.get_time(), *current_frame_position);
             let position_in_frame = event_time - *frame_start_time;
 
             (

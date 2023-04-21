@@ -167,14 +167,8 @@ fn fft_impulse(
 }
 
 impl DspProcessor for ConvolutionProcessor {
-    fn process_audio(
-        &mut self,
-        input_buffer: &dyn AudioBuffer,
-        output_buffer: &mut dyn AudioBuffer,
-        _start_time: &crate::Timestamp,
-        _parameters: &crate::graph::DspParameters,
-    ) {
-        self.process(input_buffer, output_buffer);
+    fn process_audio(&mut self, context: &mut crate::ProcessContext) {
+        self.process(context.input_buffer, context.output_buffer);
     }
 }
 

@@ -45,25 +45,19 @@ impl EnvelopeProcessor {
 }
 
 impl DspProcessor for EnvelopeProcessor {
-    fn process_audio(
-        &mut self,
-        input_buffer: &dyn crate::AudioBuffer,
-        _output_buffer: &mut dyn crate::AudioBuffer,
-        _start_time: &crate::Timestamp,
-        _parameters: &crate::graph::DspParameters,
-    ) {
+    fn process_audio(&mut self, context: &mut crate::ProcessContext) {
         let mut position = 0;
-        let channel_count = input_buffer.channel_count();
+        let channel_count = context.input_buffer.channel_count();
 
         while position < channel_count {
             let frame_count = std::cmp::min(
-                input_buffer.frame_count(),
+                context.input_buffer.frame_count(),
                 self.notification.samples_until_next_notification(),
             );
 
             for channel in 0..channel_count {
                 let location = SampleLocation::channel(channel);
-                let channel_data = input_buffer.get_channel_data(location);
+                let channel_data = context.input_buffer.get_channel_data(location);
                 let channel_data = &channel_data[position..position + frame_count];
 
                 let envelope = self
@@ -82,7 +76,10 @@ impl DspProcessor for EnvelopeProcessor {
                 }
             }
 
-            if self.notification.advance(input_buffer.frame_count()) {
+            if self
+                .notification
+                .advance(context.input_buffer.frame_count())
+            {
                 self.send_notifications(channel_count);
             }
 

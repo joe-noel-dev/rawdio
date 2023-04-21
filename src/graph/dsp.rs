@@ -13,14 +13,23 @@ pub struct Dsp {
     parameters: DspParameters,
 }
 
+/// The context that is passed to every [DspProcessor]
+pub struct ProcessContext<'a> {
+    /// The input buffer, containing the input channels into this node
+    pub input_buffer: &'a dyn AudioBuffer,
+
+    /// The output buffer, to be filled by this node
+    pub output_buffer: &'a mut dyn AudioBuffer,
+
+    /// The start time of the process block
+    pub start_time: &'a Timestamp,
+
+    /// The audio-rate parameters
+    pub parameters: &'a DspParameters,
+}
+
 pub trait DspProcessor {
-    fn process_audio(
-        &mut self,
-        input_buffer: &dyn AudioBuffer,
-        output_buffer: &mut dyn AudioBuffer,
-        start_time: &Timestamp,
-        parameters: &DspParameters,
-    );
+    fn process_audio(&mut self, context: &mut ProcessContext);
 }
 
 impl Dsp {
@@ -77,8 +86,12 @@ impl Dsp {
             );
         }
 
-        self.processor
-            .process_audio(input_buffer, output_buffer, start_time, &self.parameters);
+        self.processor.process_audio(&mut ProcessContext {
+            input_buffer,
+            output_buffer,
+            start_time,
+            parameters: &self.parameters,
+        });
     }
 
     pub fn request_parameter_change(&mut self, parameter_change: ParameterChangeRequest) {

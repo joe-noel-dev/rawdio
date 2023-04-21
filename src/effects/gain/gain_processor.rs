@@ -1,8 +1,4 @@
-use crate::{
-    commands::Id,
-    graph::{DspParameters, DspProcessor},
-    AudioBuffer, SampleLocation, Timestamp,
-};
+use crate::{commands::Id, graph::DspProcessor, ProcessContext, SampleLocation};
 
 pub struct GainProcessor {
     gain_id: Id,
@@ -15,26 +11,24 @@ impl GainProcessor {
 }
 
 impl DspProcessor for GainProcessor {
-    fn process_audio(
-        &mut self,
-        input_buffer: &dyn AudioBuffer,
-        output_buffer: &mut dyn AudioBuffer,
-        _start_time: &Timestamp,
-        parameters: &DspParameters,
-    ) {
-        let gain = parameters.get_parameter_values(self.gain_id, output_buffer.frame_count());
+    fn process_audio(&mut self, context: &mut ProcessContext) {
+        let gain = context
+            .parameters
+            .get_parameter_values(self.gain_id, context.output_buffer.frame_count());
 
-        let channel_count =
-            std::cmp::min(output_buffer.channel_count(), input_buffer.channel_count());
+        let channel_count = std::cmp::min(
+            context.output_buffer.channel_count(),
+            context.input_buffer.channel_count(),
+        );
 
-        output_buffer.copy_from(
-            input_buffer,
+        context.output_buffer.copy_from(
+            context.input_buffer,
             SampleLocation::origin(),
             SampleLocation::origin(),
             channel_count,
-            output_buffer.frame_count(),
+            context.output_buffer.frame_count(),
         );
 
-        output_buffer.apply_gain(gain);
+        context.output_buffer.apply_gain(gain);
     }
 }

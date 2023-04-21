@@ -83,22 +83,22 @@ impl BiquadProcessor {
 }
 
 impl DspProcessor for BiquadProcessor {
-    fn process_audio(
-        &mut self,
-        input_buffer: &dyn crate::AudioBuffer,
-        output_buffer: &mut dyn crate::AudioBuffer,
-        _start_time: &crate::Timestamp,
-        parameters: &crate::graph::DspParameters,
-    ) {
-        let frequency =
-            parameters.get_parameter_values(self.frequency_id, output_buffer.frame_count());
-        let q = parameters.get_parameter_values(self.q_id, output_buffer.frame_count());
-        let shelf_gain =
-            parameters.get_parameter_values(self.shelf_gain_id, output_buffer.frame_count());
-        let gain = parameters.get_parameter_values(self.gain_id, output_buffer.frame_count());
+    fn process_audio(&mut self, context: &mut crate::ProcessContext) {
+        let frequency = context
+            .parameters
+            .get_parameter_values(self.frequency_id, context.output_buffer.frame_count());
+        let q = context
+            .parameters
+            .get_parameter_values(self.q_id, context.output_buffer.frame_count());
+        let shelf_gain = context
+            .parameters
+            .get_parameter_values(self.shelf_gain_id, context.output_buffer.frame_count());
+        let gain = context
+            .parameters
+            .get_parameter_values(self.gain_id, context.output_buffer.frame_count());
 
-        let frame_count = output_buffer.frame_count();
-        let channel_count = output_buffer.channel_count();
+        let frame_count = context.output_buffer.frame_count();
+        let channel_count = context.output_buffer.channel_count();
 
         for frame in 0..frame_count {
             let parameters = Parameters {
@@ -115,7 +115,7 @@ impl DspProcessor for BiquadProcessor {
 
             for channel in 0..channel_count {
                 let location = SampleLocation::new(channel, frame);
-                let input_sample = input_buffer.get_sample(location) as f64;
+                let input_sample = context.input_buffer.get_sample(location) as f64;
 
                 let x1 = self.delays[channel][0];
                 let x2 = self.delays[channel][1];
@@ -137,11 +137,11 @@ impl DspProcessor for BiquadProcessor {
                     *delay = denormal(*delay);
                 }
 
-                output_buffer.set_sample(location, out as f32);
+                context.output_buffer.set_sample(location, out as f32);
             }
         }
 
-        output_buffer.apply_gain(gain);
+        context.output_buffer.apply_gain(gain);
     }
 }
 
