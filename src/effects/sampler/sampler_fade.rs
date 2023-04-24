@@ -19,6 +19,10 @@ impl Fade {
         Self { values }
     }
 
+    pub fn bypass() -> Self {
+        Self { values: Vec::new() }
+    }
+
     pub fn len(&self) -> usize {
         self.values.len()
     }

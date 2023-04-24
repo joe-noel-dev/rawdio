@@ -36,10 +36,10 @@ where
         while let Ok(event) = self.receive_channel.try_recv() {
             if event.should_clear_queue() {
                 self.pending_events.clear();
-            } else {
-                self.pending_events.push(event);
-                sort_required = true;
             }
+
+            self.pending_events.push(event);
+            sort_required = true;
         }
 
         if sort_required {
@@ -80,9 +80,5 @@ where
         } else {
             (frame_count, None)
         }
-    }
-
-    pub fn cancel_all_pending_events(&mut self) {
-        self.pending_events.clear();
     }
 }

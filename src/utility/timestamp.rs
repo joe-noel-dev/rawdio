@@ -1,4 +1,7 @@
-use std::{ops::Sub, time::Duration};
+use std::{
+    ops::{Add, Sub},
+    time::Duration,
+};
 
 type FixedPoint = fixed::types::I32F32;
 
@@ -36,6 +39,16 @@ impl Sub for Timestamp {
     fn sub(self, rhs: Self) -> Self::Output {
         Self {
             seconds: self.seconds.sub(rhs.seconds),
+        }
+    }
+}
+
+impl Add for Timestamp {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            seconds: self.seconds.add(rhs.seconds),
         }
     }
 }
@@ -106,8 +119,7 @@ impl Timestamp {
 
     /// Increment by a number of samples
     pub fn incremented_by_samples(&self, sample_count: usize, sample_rate: usize) -> Self {
-        let increment = Self::from_samples(sample_count as f64, sample_rate);
-        self.incremented(&increment)
+        *self + Self::from_samples(sample_count as f64, sample_rate)
     }
 
     /// Increment by a number of seconds
@@ -119,15 +131,7 @@ impl Timestamp {
 
     /// Increment by a number of beats
     pub fn incremented_by_beats(&self, beats: f64, tempo: f64) -> Self {
-        let increment = Self::from_beats(beats, tempo);
-        self.incremented(&increment)
-    }
-
-    /// Increment by another timestamp
-    pub fn incremented(&self, value: &Self) -> Self {
-        Self {
-            seconds: self.seconds + value.seconds,
-        }
+        *self + Self::from_beats(beats, tempo)
     }
 }
 
