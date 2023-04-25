@@ -598,4 +598,52 @@ mod tests {
         expect_sample_in_range(1.0, &output, 500..1500, 0);
         expect_sample_in_range(0.0, &output, 1500..10_000, 0);
     }
+
+    #[test]
+    fn loop_from_the_past() {
+        let frame_count = 10_000;
+        let sample_rate = 48_000;
+        let channel_count = 2;
+        let step_range = 3_000..4_000;
+
+        let sample = OwnedAudioBuffer::step(frame_count, channel_count, sample_rate, step_range);
+
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
+
+        let mut sampler = SamplerDspProcess::new_without_fade(sample_rate, sample, event_receiver);
+
+        let _ = process_sampler(&mut sampler, 1000, channel_count, sample_rate);
+
+        let start_at_time = Timestamp::from_samples(500.0, sample_rate);
+        let position_in_sample = Timestamp::from_samples(2_000.0, sample_rate);
+
+        let _ = event_transmitter.send(SamplerEvent::start(start_at_time, position_in_sample));
+
+        let loop_start = Timestamp::from_samples(2_500.0, sample_rate);
+        let loop_end = Timestamp::from_samples(5_000.0, sample_rate);
+
+        let _ = event_transmitter.send(SamplerEvent::enable_loop_at_time(
+            start_at_time,
+            loop_start,
+            loop_end,
+        ));
+
+        let current_time = Timestamp::from_samples(1_000.0, sample_rate);
+
+        let output = process_sampler_from_time(
+            &mut sampler,
+            10_000,
+            channel_count,
+            sample_rate,
+            current_time,
+        );
+
+        expect_sample_in_range(0.0, &output, 0..500, 0);
+        expect_sample_in_range(1.0, &output, 500..1_500, 0);
+        expect_sample_in_range(0.0, &output, 1_500..2_500, 0);
+
+        expect_sample_in_range(0.0, &output, 2_500..3_000, 0);
+        expect_sample_in_range(1.0, &output, 3_000..4_000, 0);
+        expect_sample_in_range(0.0, &output, 4_000..5_000, 0);
+    }
 }
