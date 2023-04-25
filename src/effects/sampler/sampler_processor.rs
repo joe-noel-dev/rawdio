@@ -66,7 +66,7 @@ impl DspProcessor for SamplerDspProcess {
             current_time = current_time.incremented_by_samples(frame_count, self.sample_rate);
 
             if let Some(event) = event {
-                self.process_event(&event);
+                self.process_event(&event, &current_time);
             }
         }
     }
@@ -78,8 +78,22 @@ impl SamplerDspProcess {
         buffer: OwnedAudioBuffer,
         event_receiver: EventReceiver,
     ) -> Self {
+        Self::new_wth_fade(
+            sample_rate,
+            buffer,
+            event_receiver,
+            Fade::new(FADE_LENGTH, sample_rate),
+        )
+    }
+
+    pub fn new_wth_fade(
+        sample_rate: usize,
+        buffer: OwnedAudioBuffer,
+        event_receiver: EventReceiver,
+        fade: Fade,
+    ) -> Self {
         Self {
-            fade: Fade::new(FADE_LENGTH, sample_rate),
+            fade,
             voices: (0..NUM_VOICES).map(|_| Voice::default()).collect(),
             active_voice: None,
             buffer,
@@ -94,6 +108,15 @@ impl SamplerDspProcess {
             completed_loops: 0,
             sample_rate,
         }
+    }
+
+    #[cfg(test)]
+    fn new_without_fade(
+        sample_rate: usize,
+        buffer: OwnedAudioBuffer,
+        event_receiver: EventReceiver,
+    ) -> Self {
+        Self::new_wth_fade(sample_rate, buffer, event_receiver, Fade::bypass())
     }
 
     fn next_loop_position(&self) -> Timestamp {
@@ -181,10 +204,12 @@ impl SamplerDspProcess {
             .for_each(|voice| voice.render(output_buffer, sample, fade));
     }
 
-    fn process_event(&mut self, event: &SamplerEvent) {
+    fn process_event(&mut self, event: &SamplerEvent, current_time: &Timestamp) {
         match event.event_type {
+            SampleEventType::StartImmediate => self.start(Timestamp::zero(), Timestamp::zero()),
             SampleEventType::Start(position_in_sample) => {
-                self.start(position_in_sample);
+                let delay = *current_time - event.time;
+                self.start(position_in_sample, delay);
             }
             SampleEventType::Stop => self.stop(),
             SampleEventType::EnableLoop(loop_start, loop_end) => {
@@ -204,8 +229,8 @@ impl SamplerDspProcess {
     }
 
     fn cancel_all(&mut self) {
-        self.event_processor.cancel_all_pending_events();
         self.stop();
+        self.clear_loop_points();
     }
 
     fn assign_voice(&mut self, start_position: Timestamp) {
@@ -242,10 +267,10 @@ impl SamplerDspProcess {
         self.get_active_voice().map(|voice| voice.get_position())
     }
 
-    fn start(&mut self, from_position: Timestamp) {
-        self.assign_voice(from_position);
+    fn start(&mut self, from_position: Timestamp, delay: Timestamp) {
+        self.assign_voice(from_position + delay);
         self.completed_loops = 0;
-        self.position = Timestamp::zero();
+        self.position = delay;
         self.start_position_in_sample = from_position;
     }
 
@@ -262,9 +287,10 @@ impl SamplerDspProcess {
 
 #[cfg(test)]
 mod tests {
-    use crate::{graph::DspParameters, AudioBuffer, SampleLocation};
-
     use super::*;
+    use crate::{graph::DspParameters, AudioBuffer, SampleLocation};
+    use approx::assert_relative_eq;
+    use std::ops::Range;
 
     fn create_sample_with_value(
         frame_count: usize,
@@ -283,9 +309,24 @@ mod tests {
         channel_count: usize,
         sample_rate: usize,
     ) -> OwnedAudioBuffer {
+        process_sampler_from_time(
+            sampler,
+            frame_count,
+            channel_count,
+            sample_rate,
+            Timestamp::zero(),
+        )
+    }
+
+    fn process_sampler_from_time(
+        sampler: &mut SamplerDspProcess,
+        frame_count: usize,
+        channel_count: usize,
+        sample_rate: usize,
+        start_time: Timestamp,
+    ) -> OwnedAudioBuffer {
         let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
         let input_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
-        let start_time = Timestamp::zero();
 
         sampler.process_audio(&mut ProcessContext {
             input_buffer: &input_buffer,
@@ -298,11 +339,26 @@ mod tests {
     }
 
     fn expect_sample(expected_value: f32, buffer: &dyn AudioBuffer, frame: usize, channel: usize) {
-        approx::assert_relative_eq!(
+        assert_relative_eq!(
             expected_value,
             buffer.get_sample(SampleLocation::new(channel, frame)),
             epsilon = 1e-2
         );
+    }
+
+    fn expect_sample_in_range(
+        expected_value: f32,
+        buffer: &dyn AudioBuffer,
+        frame_range: Range<usize>,
+        channel: usize,
+    ) {
+        for frame in frame_range {
+            assert_relative_eq!(
+                expected_value,
+                buffer.get_sample(SampleLocation::new(channel, frame)),
+                epsilon = 1e-2
+            );
+        }
     }
 
     #[test]
@@ -505,5 +561,86 @@ mod tests {
         assert_eq!(99, sampler.completed_loops);
         let _ = process_sampler(&mut sampler, 1, channel_count, sample_rate);
         assert_eq!(100, sampler.completed_loops);
+    }
+
+    #[test]
+    fn start_in_the_past() {
+        let frame_count = 10_000;
+        let sample_rate = 48_000;
+        let channel_count = 2;
+        let step_range = 3_000..4_000;
+
+        let sample = OwnedAudioBuffer::step(frame_count, channel_count, sample_rate, step_range);
+
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
+
+        let mut sampler = SamplerDspProcess::new_without_fade(sample_rate, sample, event_receiver);
+
+        let _ = process_sampler(&mut sampler, 1000, channel_count, sample_rate);
+
+        let start_at_time = Timestamp::from_samples(500.0, sample_rate);
+        let position_in_sample = Timestamp::from_samples(2_000.0, sample_rate);
+        let _ = event_transmitter.send(SamplerEvent::start(start_at_time, position_in_sample));
+        let current_time = Timestamp::from_samples(1_000.0, sample_rate);
+
+        let output = process_sampler_from_time(
+            &mut sampler,
+            10_000,
+            channel_count,
+            sample_rate,
+            current_time,
+        );
+
+        expect_sample_in_range(0.0, &output, 0..500, 0);
+        expect_sample_in_range(1.0, &output, 500..1500, 0);
+        expect_sample_in_range(0.0, &output, 1500..10_000, 0);
+    }
+
+    #[test]
+    fn loop_from_the_past() {
+        let frame_count = 10_000;
+        let sample_rate = 48_000;
+        let channel_count = 2;
+        let step_range = 3_000..4_000;
+
+        let sample = OwnedAudioBuffer::step(frame_count, channel_count, sample_rate, step_range);
+
+        let (event_transmitter, event_receiver) = crossbeam::channel::unbounded();
+
+        let mut sampler = SamplerDspProcess::new_without_fade(sample_rate, sample, event_receiver);
+
+        let _ = process_sampler(&mut sampler, 1000, channel_count, sample_rate);
+
+        let start_at_time = Timestamp::from_samples(500.0, sample_rate);
+        let position_in_sample = Timestamp::from_samples(2_000.0, sample_rate);
+
+        let _ = event_transmitter.send(SamplerEvent::start(start_at_time, position_in_sample));
+
+        let loop_start = Timestamp::from_samples(2_500.0, sample_rate);
+        let loop_end = Timestamp::from_samples(5_000.0, sample_rate);
+
+        let _ = event_transmitter.send(SamplerEvent::enable_loop_at_time(
+            start_at_time,
+            loop_start,
+            loop_end,
+        ));
+
+        let current_time = Timestamp::from_samples(1_000.0, sample_rate);
+
+        let output = process_sampler_from_time(
+            &mut sampler,
+            10_000,
+            channel_count,
+            sample_rate,
+            current_time,
+        );
+
+        expect_sample_in_range(0.0, &output, 0..500, 0);
+        expect_sample_in_range(1.0, &output, 500..1_500, 0);
+        expect_sample_in_range(0.0, &output, 1_500..2_500, 0);
+
+        expect_sample_in_range(0.0, &output, 2_500..3_000, 0);
+        expect_sample_in_range(1.0, &output, 3_000..4_000, 0);
+        expect_sample_in_range(0.0, &output, 4_000..5_000, 0);
     }
 }

@@ -146,6 +146,33 @@ impl OwnedAudioBuffer {
         buffer
     }
 
+    /// Create an audio buffer that is value 0.0 until frame_count, then 1.0
+    pub fn step(
+        frame_count: usize,
+        channel_count: usize,
+        sample_rate: usize,
+        step_range: Range<usize>,
+    ) -> Self {
+        let mut buffer = Self::new(frame_count, channel_count, sample_rate);
+
+        let channel = buffer.get_channel_data_mut(SampleLocation::origin());
+
+        for (index, sample) in channel.iter_mut().enumerate() {
+            *sample = if step_range.contains(&index) {
+                1.0
+            } else {
+                0.0
+            };
+        }
+
+        for channel in 1..channel_count {
+            let source_location = SampleLocation::channel(0);
+            buffer.duplicate_channel(source_location, channel, frame_count);
+        }
+
+        buffer
+    }
+
     fn get_sample_location_range(&self, sample_location: &SampleLocation) -> Range<usize> {
         let start = sample_location.channel * self.frame_count + sample_location.frame;
         let end = (sample_location.channel + 1) * self.frame_count;

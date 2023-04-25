@@ -3,6 +3,7 @@ use crate::{effects::utility::EventProcessorEvent, Timestamp};
 #[derive(Debug, PartialEq, PartialOrd)]
 pub enum SampleEventType {
     Start(Timestamp),
+    StartImmediate,
     Stop,
 
     EnableLoop(Timestamp, Timestamp),
@@ -27,7 +28,7 @@ impl SamplerEvent {
     pub fn start_now() -> Self {
         Self {
             time: Timestamp::zero(),
-            event_type: SampleEventType::Start(Timestamp::zero()),
+            event_type: SampleEventType::StartImmediate,
         }
     }
 
