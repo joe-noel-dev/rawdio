@@ -110,6 +110,7 @@ impl SamplerDspProcess {
         }
     }
 
+    #[cfg(test)]
     fn new_without_fade(
         sample_rate: usize,
         buffer: OwnedAudioBuffer,
@@ -205,13 +206,9 @@ impl SamplerDspProcess {
 
     fn process_event(&mut self, event: &SamplerEvent, current_time: &Timestamp) {
         match event.event_type {
-            SampleEventType::Start(position_in_sample, adjust_position) => {
-                let delay = if adjust_position {
-                    *current_time - event.time
-                } else {
-                    Timestamp::zero()
-                };
-
+            SampleEventType::StartImmediate => self.start(Timestamp::zero(), Timestamp::zero()),
+            SampleEventType::Start(position_in_sample) => {
+                let delay = *current_time - event.time;
                 self.start(position_in_sample, delay);
             }
             SampleEventType::Stop => self.stop(),
