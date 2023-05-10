@@ -58,6 +58,16 @@ impl Level {
             gain: self.gain.clamp(min_value.gain, max_value.gain),
         }
     }
+
+    /// Check if the value represents zero gain
+    pub fn is_zero(&self) -> bool {
+        self.gain.abs() < 1e-9
+    }
+
+    /// Check if the value represents unity gain
+    pub fn is_unity(&self) -> bool {
+        (self.gain - 1.0).abs() < 1e-9
+    }
 }
 
 #[cfg(test)]

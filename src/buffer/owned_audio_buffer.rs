@@ -224,17 +224,9 @@ mod tests {
         generator.gen_range(-1.0_f32..=1.0_f32)
     }
 
-    fn fill_with_noise(buffer: &mut dyn AudioBuffer) {
-        for channel in 0..buffer.channel_count() {
-            for frame in 0..buffer.frame_count() {
-                buffer.set_sample(SampleLocation::new(channel, frame), random_sample());
-            }
-        }
-    }
-
     fn is_empty(buffer: &dyn AudioBuffer) -> bool {
         for channel in 0..buffer.channel_count() {
-            let data = buffer.get_channel_data(SampleLocation::new(channel, 0));
+            let data = buffer.get_channel_data(SampleLocation::channel(channel));
             if !data.iter().all(|value| value.abs() < 1e-6) {
                 return false;
             }
@@ -257,9 +249,8 @@ mod tests {
         let frame_count = 1000;
         let channel_count = 2;
         let sample_rate = 44100;
-        let mut buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+        let mut buffer = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
 
-        fill_with_noise(&mut buffer);
         assert!(!is_empty(&buffer));
         buffer.clear();
         assert!(is_empty(&buffer));

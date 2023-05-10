@@ -32,6 +32,7 @@
 
 mod buffer;
 mod commands;
+mod dsp;
 mod effects;
 mod engine;
 mod graph;

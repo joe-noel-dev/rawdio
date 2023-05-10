@@ -448,7 +448,7 @@ mod tests {
     #[test]
     fn renders_when_connected_to_output() {
         let value = 0.456;
-        let location = SampleLocation::new(0, 27);
+        let location = SampleLocation::frame(27);
 
         let dsp = make_dsp(value, location);
 

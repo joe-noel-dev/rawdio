@@ -47,7 +47,7 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
 }
 
 fn create_splitter(context: &dyn Context) -> Mixer {
-    Mixer::mono_to_stereo_splitter(context.get_command_queue())
+    Mixer::mono_to_stereo_splitter(context)
 }
 
 fn create_gain(context: &dyn Context) -> Gain {

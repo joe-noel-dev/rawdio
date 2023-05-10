@@ -1,8 +1,8 @@
-use super::{
-    sample_location::SampleRange,
-    simd::{mix_into, multiply},
+use super::sample_location::SampleRange;
+use crate::{
+    dsp::{mix_into, mix_into_with_gain, multiply, multiply_by_value},
+    SampleLocation,
 };
-use crate::SampleLocation;
 use std::time::Duration;
 
 /// An `AudioBuffer` represents floating point audio data for a number of channels
@@ -111,7 +111,7 @@ pub trait AudioBuffer {
 
     /// Fill a channel with a value
     fn fill_channel_with_value(&mut self, channel: usize, value: f32) {
-        let data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
+        let data = self.get_channel_data_mut(SampleLocation::channel(channel));
         data.fill(value);
     }
 
@@ -126,7 +126,7 @@ pub trait AudioBuffer {
     ///
     /// This can be used to perform optimisations
     fn channel_is_silent(&self, channel: usize) -> bool {
-        let location = SampleLocation::new(channel, 0);
+        let location = SampleLocation::channel(channel);
         let data = self.get_channel_data(location);
         data.iter().all(|sample| *sample == 0.0_f32)
     }
@@ -184,6 +184,36 @@ pub trait AudioBuffer {
         }
     }
 
+    /// Mix audio from one buffer into another buffer, apply a constant gain to each sample
+    fn add_from_with_gain(
+        &mut self,
+        source_buffer: &dyn AudioBuffer,
+        source_location: SampleLocation,
+        destination_location: SampleLocation,
+        channel_count: usize,
+        frame_count: usize,
+        gain: f32,
+    ) {
+        if frame_count == 0 {
+            return;
+        }
+
+        if channel_count == 0 {
+            return;
+        }
+
+        for channel in 0..channel_count {
+            let source = source_buffer.get_channel_data(source_location.offset_channels(channel));
+            let source = &source[..frame_count];
+
+            let destination =
+                self.get_channel_data_mut(destination_location.offset_channels(channel));
+            let destination = &mut destination[..frame_count];
+
+            mix_into_with_gain(source, destination, gain);
+        }
+    }
+
     /// Copy audio from one buffer into another
     ///
     /// This will replace the audio in the destination buffer
@@ -210,7 +240,7 @@ pub trait AudioBuffer {
     /// Copy audio data within the buffer
     fn copy_within(&mut self, source_range: &SampleRange, destination_frame: usize) {
         for channel in source_range.channel_range() {
-            let data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
+            let data = self.get_channel_data_mut(SampleLocation::channel(channel));
             data.copy_within(source_range.frame_range(), destination_frame);
         }
     }
@@ -233,8 +263,27 @@ pub trait AudioBuffer {
         }
 
         for channel in 0..self.channel_count() {
-            let channel_data = self.get_channel_data_mut(SampleLocation::new(channel, 0));
+            let channel_data = self.get_channel_data_mut(SampleLocation::channel(channel));
             multiply(channel_data, gain);
+        }
+    }
+
+    /// Apply a single gain value to a whole channel
+    fn apply_gain_value(&mut self, range: &SampleRange, gain: f32) {
+        for channel in range.channel_range() {
+            let channel_data = self.get_channel_data_mut(SampleLocation::new(channel, range.frame));
+            let channel_data = &mut channel_data[..range.frame_count];
+
+            if gain.abs() < 1e-9 {
+                channel_data.fill(0.0);
+                return;
+            }
+
+            if (gain - 1.0).abs() < 1e-9 {
+                return;
+            }
+
+            multiply_by_value(channel_data, gain);
         }
     }
 
