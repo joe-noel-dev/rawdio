@@ -128,8 +128,8 @@ impl Voice {
             source.frame_count() - self.position,
         );
 
-        let source_location = SampleLocation::new(0, self.position);
-        let destination_location = SampleLocation::new(0, destination_offset);
+        let source_location = SampleLocation::frame(self.position);
+        let destination_location = SampleLocation::frame(destination_offset);
 
         output.add_from(
             source,

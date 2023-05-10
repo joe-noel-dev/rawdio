@@ -67,11 +67,7 @@ fn create_mixer(
     input_channel_count: usize,
     output_channel_count: usize,
 ) -> Mixer {
-    let mut mixer = Mixer::new(
-        context.get_command_queue(),
-        input_channel_count,
-        output_channel_count,
-    );
+    let mut mixer = Mixer::new(context, input_channel_count, output_channel_count);
 
     (0..output_channel_count).for_each(|output_channel| {
         (0..input_channel_count).for_each(|input_channel| {

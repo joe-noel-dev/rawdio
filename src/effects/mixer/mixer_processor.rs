@@ -30,14 +30,33 @@ impl DspProcessor for MixerProcessor {
             for input_channel in 0..context.input_buffer.channel_count() {
                 let gain = self.gain_matrix.get_level(input_channel, output_channel);
 
-                let output_location = SampleLocation::origin().with_channel(output_channel);
-                let input_location = SampleLocation::origin().with_channel(input_channel);
+                if gain.is_zero() {
+                    continue;
+                }
 
-                let output = context.output_buffer.get_channel_data_mut(output_location);
-                let input = context.input_buffer.get_channel_data(input_location);
+                let destination_location = SampleLocation::channel(output_channel);
+                let source_location = SampleLocation::channel(input_channel);
 
-                for (output_sample, input_sample) in output.iter_mut().zip(input.iter()) {
-                    *output_sample = *input_sample * gain.as_gain() as f32;
+                let frame_count = context.output_buffer.frame_count();
+                let channel_count = 1;
+
+                if gain.is_unity() {
+                    context.output_buffer.add_from(
+                        context.input_buffer,
+                        source_location,
+                        destination_location,
+                        channel_count,
+                        frame_count,
+                    );
+                } else {
+                    context.output_buffer.add_from_with_gain(
+                        context.input_buffer,
+                        source_location,
+                        destination_location,
+                        channel_count,
+                        frame_count,
+                        gain.as_gain_f32(),
+                    );
                 }
             }
         }

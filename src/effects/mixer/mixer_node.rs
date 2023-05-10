@@ -1,4 +1,4 @@
-use crate::{commands::Id, effects::Channel, graph::DspParameters, CommandQueue, GraphNode, Level};
+use crate::{commands::Id, effects::Channel, graph::DspParameters, Context, GraphNode, Level};
 
 use super::{
     mixer_event::EventTransmitter, mixer_matrix::MixerMatrix, mixer_processor::MixerProcessor,
@@ -27,11 +27,7 @@ static EVENT_CHANNEL_CAPACITY: usize = 32;
 
 impl Mixer {
     /// Create a new mixer node for a given input to output channel combination
-    pub fn new(
-        command_queue: Box<dyn CommandQueue>,
-        input_count: usize,
-        output_count: usize,
-    ) -> Self {
+    pub fn new(context: &dyn Context, input_count: usize, output_count: usize) -> Self {
         let id = Id::generate();
 
         let gain_matrix = MixerMatrix::new(input_count, output_count);
@@ -42,7 +38,7 @@ impl Mixer {
 
         let node = GraphNode::new(
             id,
-            command_queue,
+            context.get_command_queue(),
             input_count,
             output_count,
             processor,
@@ -65,11 +61,11 @@ impl Mixer {
     }
 
     /// Create a mixer that converts from mono to stereo
-    pub fn mono_to_stereo_splitter(command_queue: Box<dyn CommandQueue>) -> Self {
+    pub fn mono_to_stereo_splitter(context: &dyn Context) -> Self {
         let input_count = 1;
         let output_count = 2;
 
-        let mut mixer = Self::new(command_queue, input_count, output_count);
+        let mut mixer = Self::new(context, input_count, output_count);
 
         mixer.set_level(0, 0, Level::unity());
         mixer.set_level(0, 1, Level::unity());
