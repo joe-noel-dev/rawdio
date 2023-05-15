@@ -11,6 +11,7 @@ use super::{
 };
 
 const OVERSAMPLING_RATIO: usize = 2;
+const INTERNAL_CHANNEL_COUNT: usize = 1;
 
 pub struct WaveshaperProcessor {
     transfer_function: Vec<f32>,
@@ -39,7 +40,7 @@ impl WaveshaperProcessor {
             mix_id,
             oversampling_buffer: OwnedAudioBuffer::new(
                 MAXIMUM_FRAME_COUNT * OVERSAMPLING_RATIO,
-                1,
+                INTERNAL_CHANNEL_COUNT,
                 sample_rate * OVERSAMPLING_RATIO,
             ),
         }
@@ -52,6 +53,7 @@ impl WaveshaperProcessor {
             output_buffer,
             location,
             SampleLocation::origin(),
+            INTERNAL_CHANNEL_COUNT,
         );
 
         shape(
@@ -64,6 +66,7 @@ impl WaveshaperProcessor {
             &self.oversampling_buffer,
             SampleLocation::origin(),
             location,
+            INTERNAL_CHANNEL_COUNT,
         );
     }
 }
