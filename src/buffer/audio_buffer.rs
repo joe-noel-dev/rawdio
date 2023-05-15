@@ -311,32 +311,37 @@ pub trait AudioBuffer {
         audio_buffer: &dyn AudioBuffer,
         source_location: SampleLocation,
         destination_location: SampleLocation,
+        channel_count: usize,
     ) {
         let ratio = audio_buffer.sample_rate() as f32 / self.sample_rate() as f32;
 
-        let source_data = audio_buffer.get_channel_data(source_location);
-        let destination_data = self.get_channel_data_mut(destination_location);
+        for channel_offset in 0..channel_count {
+            let source_data =
+                audio_buffer.get_channel_data(source_location.offset_channels(channel_offset));
+            let destination_data =
+                self.get_channel_data_mut(destination_location.offset_channels(channel_offset));
 
-        destination_data
-            .iter_mut()
-            .enumerate()
-            .for_each(|(index, sample)| {
-                let source_index = index as f32 * ratio;
+            destination_data
+                .iter_mut()
+                .enumerate()
+                .for_each(|(index, sample)| {
+                    let source_index = index as f32 * ratio;
 
-                let sample_before = (source_index.floor() as usize).min(source_data.len() - 1);
-                let sample_after = (source_index.ceil() as usize).min(source_data.len() - 1);
+                    let sample_before = (source_index.floor() as usize).min(source_data.len() - 1);
+                    let sample_after = (source_index.ceil() as usize).min(source_data.len() - 1);
 
-                if sample_before == sample_after {
-                    *sample = source_data[sample_before];
-                }
+                    if sample_before == sample_after {
+                        *sample = source_data[sample_before];
+                    }
 
-                let sample_before = source_data[sample_before];
-                let sample_after = source_data[sample_after];
+                    let sample_before = source_data[sample_before];
+                    let sample_after = source_data[sample_after];
 
-                let sample_after_amount = source_index - source_index.floor();
-                *sample = (1.0_f32 - sample_after_amount) * sample_before
-                    + sample_after_amount * sample_after;
-            });
+                    let sample_after_amount = source_index - source_index.floor();
+                    *sample = (1.0_f32 - sample_after_amount) * sample_before
+                        + sample_after_amount * sample_after;
+                });
+        }
     }
 
     /// Fill a channel from a slice
