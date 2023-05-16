@@ -18,11 +18,15 @@ pub struct Sampler {
 static EVENT_CHANNEL_CAPACITY: usize = 32;
 
 impl Sampler {
-    /// Create a new sampler with the given sample
-    pub fn new(context: &dyn Context, sample: OwnedAudioBuffer) -> Self {
+    /// Create a Sampler with a specified capacity of events in the event queue
+    pub fn new_with_event_capacity(
+        context: &dyn Context,
+        sample: OwnedAudioBuffer,
+        capacity: usize,
+    ) -> Self {
         let id = Id::generate();
 
-        let (event_transmitter, event_receiver) = Channel::bounded(EVENT_CHANNEL_CAPACITY);
+        let (event_transmitter, event_receiver) = Channel::bounded(capacity);
 
         let input_count = 0;
         let output_count = sample.channel_count();
@@ -42,6 +46,11 @@ impl Sampler {
             node,
             event_transmitter,
         }
+    }
+
+    /// Create a new sampler with the given sample
+    pub fn new(context: &dyn Context, sample: OwnedAudioBuffer) -> Self {
+        Self::new_with_event_capacity(context, sample, EVENT_CHANNEL_CAPACITY)
     }
 
     /// Start the sampler playing

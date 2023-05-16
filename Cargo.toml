@@ -1,6 +1,6 @@
 [package]
 name = "rawdio"
-version = "0.8.0" 
+version = "0.9.0"
 edition = "2021"
 license = "MIT"
 description = "An Audio Engine, inspired by the Web Audio API"
