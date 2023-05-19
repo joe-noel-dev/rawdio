@@ -41,15 +41,17 @@ impl AdsrProcessor {
     }
 
     fn process_event(&mut self, event: AdsrEvent) {
-        match event.event_type {
+        match event.get_event_type() {
             AdsrEventType::NoteOn => self.envelope.open(),
             AdsrEventType::NoteOff => self.envelope.close(),
-            AdsrEventType::SetAttack(attack_time) => self.envelope.set_attack_time(attack_time),
-            AdsrEventType::SetDecay(decay_time) => self.envelope.set_decay_time(decay_time),
+            AdsrEventType::SetAttack(attack_time) => self.envelope.set_attack_time(*attack_time),
+            AdsrEventType::SetDecay(decay_time) => self.envelope.set_decay_time(*decay_time),
             AdsrEventType::SetSustain(sustain_level) => {
-                self.envelope.set_sustain_level(sustain_level)
+                self.envelope.set_sustain_level(*sustain_level)
             }
-            AdsrEventType::SetRelease(release_time) => self.envelope.set_release_time(release_time),
+            AdsrEventType::SetRelease(release_time) => {
+                self.envelope.set_release_time(*release_time)
+            }
         }
     }
 

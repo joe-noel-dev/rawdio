@@ -3,6 +3,7 @@ use crate::{effects::Channel, Timestamp};
 pub trait EventProcessorEvent {
     fn get_time(&self) -> Timestamp;
     fn should_clear_queue(&self) -> bool;
+    fn sequence_number(&self) -> usize;
 }
 
 pub struct EventProcessor<Event>
@@ -43,11 +44,11 @@ where
         }
 
         if sort_required {
-            self.pending_events.sort_by(|a, b| {
-                let a_time = a.get_time();
-                let b_time = b.get_time();
-                a_time.partial_cmp(&b_time).unwrap()
-            });
+            self.pending_events
+                .sort_by(|a, b| match a.get_time().cmp(&b.get_time()) {
+                    std::cmp::Ordering::Equal => a.sequence_number().cmp(&b.sequence_number()),
+                    comparison => comparison,
+                });
         }
     }
 

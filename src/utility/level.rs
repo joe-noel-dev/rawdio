@@ -1,7 +1,7 @@
 pub const MINUS_INFINITY_DECIBELS: f64 = -128.0;
 
 /// A level that can be used to convert from linear to decibel representation
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, PartialOrd)]
 pub struct Level {
     gain: f64,
 }

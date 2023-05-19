@@ -1,7 +1,10 @@
 use std::time::Duration;
 
 use crate::{
-    effects::{utility::EventProcessor, Channel},
+    effects::{
+        utility::{EventProcessor, EventProcessorEvent},
+        Channel,
+    },
     graph::DspProcessor,
     AudioBuffer, MutableBorrowedAudioBuffer, OwnedAudioBuffer, ProcessContext, Timestamp,
 };
@@ -205,15 +208,17 @@ impl SamplerDspProcess {
     }
 
     fn process_event(&mut self, event: &SamplerEvent, current_time: &Timestamp) {
-        match event.event_type {
+        println!("Event: {event:?}");
+
+        match event.get_event_type() {
             SampleEventType::StartImmediate => self.start(Timestamp::zero(), Timestamp::zero()),
             SampleEventType::Start(position_in_sample) => {
-                let delay = *current_time - event.time;
-                self.start(position_in_sample, delay);
+                let delay = *current_time - event.get_time();
+                self.start(*position_in_sample, delay);
             }
             SampleEventType::Stop => self.stop(),
             SampleEventType::EnableLoop(loop_start, loop_end) => {
-                self.set_loop_points(loop_start, loop_end)
+                self.set_loop_points(*loop_start, *loop_end)
             }
             SampleEventType::CancelLoop => self.clear_loop_points(),
             SampleEventType::CancelAll => self.cancel_all(),
