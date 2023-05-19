@@ -55,12 +55,12 @@ impl Sampler {
 
     /// Start the sampler playing
     pub fn start_now(&mut self) {
-        let _ = self.event_transmitter.send(SamplerEvent::start_now());
+        self.send_event(SamplerEvent::start_now());
     }
 
     /// Stop the sampler playing
     pub fn stop_now(&mut self) {
-        let _ = self.event_transmitter.send(SamplerEvent::stop_now());
+        self.send_event(SamplerEvent::stop_now());
     }
 
     /// Start from the specified time, at the specified position in the sample
@@ -69,14 +69,12 @@ impl Sampler {
         start_time: Timestamp,
         position_in_sample: Timestamp,
     ) {
-        let _ = self
-            .event_transmitter
-            .send(SamplerEvent::start(start_time, position_in_sample));
+        self.send_event(SamplerEvent::start(start_time, position_in_sample));
     }
 
     /// Stop at the specified time
     pub fn stop_at_time(&mut self, stop_time: Timestamp) {
-        let _ = self.event_transmitter.send(SamplerEvent::stop(stop_time));
+        self.send_event(SamplerEvent::stop(stop_time));
     }
 
     /// Enable looping
@@ -86,21 +84,19 @@ impl Sampler {
     /// * `loop_start` - The position in the sample to start the loop
     /// * `loop_end` - The position in the sample to go back to `loop_start`
     pub fn enable_loop(&mut self, loop_start: Timestamp, loop_end: Timestamp) {
-        let _ = self
-            .event_transmitter
-            .send(SamplerEvent::enable_loop(loop_start, loop_end));
+        self.send_event(SamplerEvent::enable_loop(loop_start, loop_end));
     }
 
     /// Cancel a loop
     ///
     /// This will clear the loop points and finish when it reaches the end of the sample
     pub fn cancel_loop(&mut self) {
-        let _ = self.event_transmitter.send(SamplerEvent::cancel_loop());
+        self.send_event(SamplerEvent::cancel_loop());
     }
 
     /// Cancel all scheduled events that haven't occurred yet
     pub fn cancel_all(&mut self) {
-        let _ = self.event_transmitter.send(SamplerEvent::cancel_all());
+        self.send_event(SamplerEvent::cancel_all());
     }
 
     /// Enable loop at a time
@@ -116,19 +112,20 @@ impl Sampler {
         loop_start: Timestamp,
         loop_end: Timestamp,
     ) {
-        let _ = self
-            .event_transmitter
-            .send(SamplerEvent::enable_loop_at_time(
-                enable_at_time,
-                loop_start,
-                loop_end,
-            ));
+        self.send_event(SamplerEvent::enable_loop_at_time(
+            enable_at_time,
+            loop_start,
+            loop_end,
+        ));
     }
 
     /// Cancel the loop at a time
     pub fn cancel_loop_at_time(&mut self, cancel_time: Timestamp) {
-        let _ = self
-            .event_transmitter
-            .send(SamplerEvent::cancel_loop_at_time(cancel_time));
+        self.send_event(SamplerEvent::cancel_loop_at_time(cancel_time));
+    }
+
+    fn send_event(&mut self, event: SamplerEvent) {
+        debug_assert!(!self.event_transmitter.is_full());
+        let _ = self.event_transmitter.send(event);
     }
 }
