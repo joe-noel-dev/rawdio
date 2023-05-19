@@ -1,10 +1,14 @@
-use std::time::Duration;
+use std::{
+    sync::atomic::{AtomicUsize, Ordering},
+    time::Duration,
+};
 
 use crate::{effects::utility::EventProcessorEvent, Level, Timestamp};
 
+#[derive(PartialEq, PartialOrd)]
 pub enum AdsrEventType {
-    NoteOn,
     NoteOff,
+    NoteOn,
 
     SetAttack(Duration),
     SetDecay(Duration),
@@ -12,9 +16,30 @@ pub enum AdsrEventType {
     SetRelease(Duration),
 }
 
+fn next_sequence_number() -> usize {
+    static SEQUENCE_NUMBER: AtomicUsize = AtomicUsize::new(0);
+    SEQUENCE_NUMBER.fetch_add(1, Ordering::Relaxed)
+}
+
+#[derive(PartialEq, PartialOrd)]
 pub struct AdsrEvent {
-    pub time: Timestamp,
-    pub event_type: AdsrEventType,
+    sequence_number: usize,
+    time: Timestamp,
+    event_type: AdsrEventType,
+}
+
+impl AdsrEvent {
+    pub fn new(time: Timestamp, event_type: AdsrEventType) -> Self {
+        Self {
+            sequence_number: next_sequence_number(),
+            time,
+            event_type,
+        }
+    }
+
+    pub fn get_event_type(&self) -> &AdsrEventType {
+        &self.event_type
+    }
 }
 
 impl EventProcessorEvent for AdsrEvent {
@@ -24,5 +49,9 @@ impl EventProcessorEvent for AdsrEvent {
 
     fn should_clear_queue(&self) -> bool {
         false
+    }
+
+    fn sequence_number(&self) -> usize {
+        self.sequence_number
     }
 }

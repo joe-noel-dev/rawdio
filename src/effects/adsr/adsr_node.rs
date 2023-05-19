@@ -42,38 +42,36 @@ impl Adsr {
 
     /// Trigger a note on at a particular time
     pub fn note_on_at_time(&mut self, time: Timestamp) {
-        let _ = self.event_transmitter.send(AdsrEvent {
-            time,
-            event_type: AdsrEventType::NoteOn,
-        });
+        let _ = self
+            .event_transmitter
+            .send(AdsrEvent::new(time, AdsrEventType::NoteOn));
     }
 
     /// Trigger a note off at a particular time
     pub fn note_off_at_time(&mut self, time: Timestamp) {
-        let _ = self.event_transmitter.send(AdsrEvent {
-            time,
-            event_type: AdsrEventType::NoteOff,
-        });
+        let _ = self
+            .event_transmitter
+            .send(AdsrEvent::new(time, AdsrEventType::NoteOff));
     }
 
     /// Set the attack time
     ///
     /// This is the time from the note on until the gain reaches unity
     pub fn set_attack_time(&mut self, attack_time: Duration) {
-        let _ = self.event_transmitter.send(AdsrEvent {
-            time: Timestamp::zero(),
-            event_type: AdsrEventType::SetAttack(attack_time),
-        });
+        let _ = self.event_transmitter.send(AdsrEvent::new(
+            Timestamp::zero(),
+            AdsrEventType::SetAttack(attack_time),
+        ));
     }
 
     /// Set the decay time
     ///
     /// This is the time after the end of the attack time to reach the steady-state sustain level
     pub fn set_decay_time(&mut self, decay_time: Duration) {
-        let _ = self.event_transmitter.send(AdsrEvent {
-            time: Timestamp::zero(),
-            event_type: AdsrEventType::SetDecay(decay_time),
-        });
+        let _ = self.event_transmitter.send(AdsrEvent::new(
+            Timestamp::zero(),
+            AdsrEventType::SetDecay(decay_time),
+        ));
     }
 
     /// Set the sustain level
@@ -81,20 +79,20 @@ impl Adsr {
     /// This is the level that will be sustained after the attack and decay phase
     /// until a note off
     pub fn set_sustain_level(&mut self, sustain_level: Level) {
-        let _ = self.event_transmitter.send(AdsrEvent {
-            time: Timestamp::zero(),
-            event_type: AdsrEventType::SetSustain(sustain_level),
-        });
+        let _ = self.event_transmitter.send(AdsrEvent::new(
+            Timestamp::zero(),
+            AdsrEventType::SetSustain(sustain_level),
+        ));
     }
 
     /// Set the release time
     ///
     /// This is the time after a note off until gain of 0 is reached
     pub fn set_release_time(&mut self, release_time: Duration) {
-        let _ = self.event_transmitter.send(AdsrEvent {
-            time: Timestamp::zero(),
-            event_type: AdsrEventType::SetRelease(release_time),
-        });
+        let _ = self.event_transmitter.send(AdsrEvent::new(
+            Timestamp::zero(),
+            AdsrEventType::SetRelease(release_time),
+        ));
     }
 
     /// Convenience method to set the attack, decay, sustain, and release in one go
