@@ -208,8 +208,6 @@ impl SamplerDspProcess {
     }
 
     fn process_event(&mut self, event: &SamplerEvent, current_time: &Timestamp) {
-        println!("Event: {event:?}");
-
         match event.get_event_type() {
             SampleEventType::StartImmediate => self.start(Timestamp::zero(), Timestamp::zero()),
             SampleEventType::Start(position_in_sample) => {

@@ -125,7 +125,6 @@ impl Sampler {
     }
 
     fn send_event(&mut self, event: SamplerEvent) {
-        println!("Sending {event:?}");
         debug_assert!(!self.event_transmitter.is_full());
         let _ = self.event_transmitter.send(event);
     }
