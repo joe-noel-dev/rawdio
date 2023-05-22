@@ -1,7 +1,9 @@
 use std::time::Duration;
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use rawdio::{create_engine, AudioProcess, Convolution, OwnedAudioBuffer};
+use rawdio::{
+    create_engine_with_options, AudioProcess, Convolution, EngineOptions, OwnedAudioBuffer,
+};
 
 #[allow(dead_code)]
 struct Fixture {
@@ -15,7 +17,8 @@ impl Fixture {
     pub fn new(impulse_duration: Duration) -> Self {
         let sample_rate = 48_000;
 
-        let (mut context, process) = create_engine(sample_rate);
+        let (mut context, process) =
+            create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
         let frame_count = 4_096;
         let channel_count = 2;

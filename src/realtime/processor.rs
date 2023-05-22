@@ -2,7 +2,7 @@ use std::sync::{atomic::AtomicI64, atomic::Ordering, Arc};
 
 use crate::{
     commands::Command, AudioBuffer, AudioProcess, BorrowedAudioBuffer, MutableBorrowedAudioBuffer,
-    Timestamp, MAXIMUM_CHANNEL_COUNT, MAXIMUM_FRAME_COUNT,
+    Timestamp, MAXIMUM_FRAME_COUNT,
 };
 
 use super::dsp_graph::DspGraph;
@@ -22,6 +22,7 @@ pub struct Processor {
 impl Processor {
     pub fn new(
         sample_rate: usize,
+        maximum_channel_count: usize,
         command_rx: CommandReceiver,
         current_time: Arc<AtomicI64>,
     ) -> Self {
@@ -31,7 +32,7 @@ impl Processor {
             command_rx,
             frame_position: 0,
             current_time,
-            graph: DspGraph::new(MAXIMUM_FRAME_COUNT, MAXIMUM_CHANNEL_COUNT, sample_rate),
+            graph: DspGraph::new(MAXIMUM_FRAME_COUNT, maximum_channel_count, sample_rate),
         }
     }
 

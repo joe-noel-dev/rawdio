@@ -1,8 +1,8 @@
 use approx::assert_relative_eq;
 use itertools::izip;
 use rawdio::{
-    create_engine, AudioBuffer, AudioProcess, Context, Level, Mixer, OwnedAudioBuffer,
-    SampleLocation,
+    create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions, Level, Mixer,
+    OwnedAudioBuffer, SampleLocation,
 };
 
 struct Fixture {
@@ -26,7 +26,8 @@ impl Fixture {
     fn new(channel_count: usize) -> Self {
         let sample_rate = 44100;
 
-        let (mut context, process) = create_engine(sample_rate);
+        let (mut context, process) =
+            create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
         let mixer = Mixer::new(context.as_ref(), channel_count, channel_count);
 

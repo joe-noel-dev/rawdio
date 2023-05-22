@@ -1,14 +1,15 @@
 use std::time::Duration;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rawdio::{create_engine, Adsr, Level, OwnedAudioBuffer, Timestamp};
+use rawdio::{create_engine_with_options, Adsr, EngineOptions, Level, OwnedAudioBuffer, Timestamp};
 
 fn adsr_benchmarks(c: &mut Criterion) {
     c.benchmark_group("ADSR");
 
     c.bench_function("process adsr", |bencher| {
         let sample_rate = 48_000;
-        let (mut context, mut process) = create_engine(sample_rate);
+        let (mut context, mut process) =
+            create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
         let frame_count = 4_096;
         let channel_count = 2;

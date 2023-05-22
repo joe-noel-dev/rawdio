@@ -42,7 +42,38 @@ impl Context for Root {
     }
 }
 
-/// Create an audio context
+/// Options to control the engine
+pub struct EngineOptions {
+    sample_rate: usize,
+    maximum_channel_count: usize,
+}
+
+impl Default for EngineOptions {
+    fn default() -> Self {
+        Self {
+            sample_rate: 44_100,
+            maximum_channel_count: 2,
+        }
+    }
+}
+
+impl EngineOptions {
+    /// Specify the sample rate of the engine
+    pub fn with_sample_rate(mut self, sample_rate: usize) -> Self {
+        self.sample_rate = sample_rate;
+        self
+    }
+
+    /// Specify the maximum channel count between any two nodes in the engine
+    ///
+    /// A bigger channel count will use more memory
+    pub fn with_maximum_channel_count(mut self, maximum_channel_count: usize) -> Self {
+        self.maximum_channel_count = maximum_channel_count;
+        self
+    }
+}
+
+/// Create an engine with the default options
 ///
 /// This returns a pair:
 ///
@@ -52,17 +83,36 @@ impl Context for Root {
 /// * The `AudioProcess` is used to generate audio. This might be passed to a
 ///   different thread if used in a realtime context, or it might be kept in
 ///   the main thread if used offline.
-pub fn create_engine(sample_rate: usize) -> (Box<dyn Context>, Box<dyn AudioProcess + Send>) {
+pub fn create_engine() -> (Box<dyn Context>, Box<dyn AudioProcess + Send>) {
+    create_engine_with_options(EngineOptions::default())
+}
+
+/// Create an audio engine with custom options
+///
+/// This returns a pair:
+///
+/// * The `Context` is the root context. This will be required to create most
+///   nodes and should be kept in scope for the lifetime of the application
+///
+/// * The `AudioProcess` is used to generate audio. This might be passed to a
+///   different thread if used in a realtime context, or it might be kept in
+///   the main thread if used offline.
+pub fn create_engine_with_options(
+    options: EngineOptions,
+) -> (Box<dyn Context>, Box<dyn AudioProcess + Send>) {
     let (command_transmitter, command_receiver) = CommandTransmitter::new();
+
     let timestamp = Arc::new(AtomicI64::new(0));
+
     let processor = Box::new(Processor::new(
-        sample_rate,
+        options.sample_rate,
+        options.maximum_channel_count,
         command_receiver,
         Arc::clone(&timestamp),
     ));
 
     let engine = Box::new(Root {
-        sample_rate,
+        sample_rate: options.sample_rate,
         timestamp,
         command_transmitter,
         notifiers: Vec::new(),

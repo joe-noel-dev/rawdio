@@ -15,8 +15,7 @@
 //! ```rust
 //! use rawdio::{create_engine, AudioProcess, Context, Oscillator, OwnedAudioBuffer};
 //!
-//! let sample_rate = 48_000;
-//! let (mut context, mut process) = create_engine(sample_rate);
+//! let (mut context, mut process) = create_engine();
 //!
 //! let frequency = 1_000.0;
 //! let channel_count = 2;
@@ -62,9 +61,11 @@ pub use effects::Sampler;
 pub use effects::Waveshaper;
 
 pub use engine::create_engine;
+pub use engine::create_engine_with_options;
 pub use engine::AudioProcess;
 pub use engine::CommandQueue;
 pub use engine::Context;
+pub use engine::EngineOptions;
 
 pub use graph::GraphNode;
 pub use graph::ProcessContext;
@@ -75,4 +76,3 @@ pub use utility::Level;
 pub use utility::Timestamp;
 
 pub(crate) const MAXIMUM_FRAME_COUNT: usize = 512;
-pub(crate) const MAXIMUM_CHANNEL_COUNT: usize = 2;

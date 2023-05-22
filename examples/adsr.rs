@@ -6,14 +6,18 @@ use std::{
     time::{self, Duration},
 };
 
-use rawdio::{create_engine, Adsr, Context, Gain, Level, Mixer, Oscillator, Timestamp};
+use rawdio::{
+    create_engine_with_options, Adsr, Context, EngineOptions, Gain, Level, Mixer, Oscillator,
+    Timestamp,
+};
 
 use helpers::AudioCallback;
 
 fn main() {
     let sample_rate = 44100;
-    let (mut context, audio_process) = create_engine(sample_rate);
-    let _audio_callack = AudioCallback::new(audio_process, sample_rate);
+    let (mut context, process) =
+        create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
+    let _audio_callack = AudioCallback::new(process, sample_rate);
 
     let mut oscillators = create_oscillators(context.as_ref());
     let mut adsr = create_adsr(context.as_ref());

@@ -2,13 +2,17 @@
 mod helpers;
 
 use helpers::AudioCallback;
-use rawdio::{create_engine, Context, Level, Oscillator, Pan, Timestamp};
+use rawdio::{
+    create_engine_with_options, Context, EngineOptions, Level, Oscillator, Pan, Timestamp,
+};
 use std::{thread, time};
 
 fn main() {
     let sample_rate = 44100;
-    let (mut context, audio_process) = create_engine(sample_rate);
-    let audio_callack = AudioCallback::new(audio_process, sample_rate);
+    let (mut context, process) =
+        create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
+
+    let audio_callack = AudioCallback::new(process, sample_rate);
 
     let oscillator = create_oscillator(context.as_ref());
     let pan = create_pan(context.as_ref());

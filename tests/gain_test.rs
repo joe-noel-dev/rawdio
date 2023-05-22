@@ -1,7 +1,7 @@
 use approx::assert_relative_eq;
 use rawdio::{
-    create_engine, AudioBuffer, AudioProcess, Context, Gain, Level, OwnedAudioBuffer,
-    SampleLocation, Timestamp,
+    create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions, Gain, Level,
+    OwnedAudioBuffer, SampleLocation, Timestamp,
 };
 
 struct Fixture {
@@ -38,7 +38,8 @@ impl Fixture {
     fn new(channel_count: usize) -> Self {
         let sample_rate = 44100;
 
-        let (mut context, process) = create_engine(sample_rate);
+        let (mut context, process) =
+            create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
         let gain = Gain::new(context.as_ref(), channel_count);
 
