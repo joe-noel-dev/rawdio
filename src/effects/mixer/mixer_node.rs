@@ -72,4 +72,18 @@ impl Mixer {
 
         mixer
     }
+
+    /// Create a unity mixer that passes channels through unchanged
+    ///
+    /// This is useful as an output node to connect to a multi-channel soundcard,
+    /// for example
+    pub fn unity(context: &dyn Context, channel_count: usize) -> Self {
+        let mut mixer = Self::new(context, channel_count, channel_count);
+
+        for channel in 0..channel_count {
+            mixer.set_level(channel, channel, Level::unity());
+        }
+
+        mixer
+    }
 }
