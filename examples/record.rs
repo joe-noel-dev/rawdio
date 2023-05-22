@@ -2,7 +2,9 @@
 mod helpers;
 
 use helpers::{write_buffer_into_file, AudioCallback};
-use rawdio::{create_engine, Context, Level, Mixer, Recorder, Timestamp};
+use rawdio::{
+    create_engine_with_options, Context, EngineOptions, Level, Mixer, Recorder, Timestamp,
+};
 use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 use structopt::StructOpt;
 
@@ -20,9 +22,10 @@ fn main() {
     let sample_rate = 44100;
     let channel_count = 2;
 
-    let (mut context, audio_process) = create_engine(sample_rate);
+    let (mut context, process) =
+        create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
-    let audio_callback = AudioCallback::new(audio_process, sample_rate);
+    let audio_callback = AudioCallback::new(process, sample_rate);
 
     let recorder = create_recorder(context.as_mut(), channel_count, record_duration);
 

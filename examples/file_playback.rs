@@ -3,7 +3,9 @@ mod helpers;
 
 use std::{thread, time};
 
-use rawdio::{create_engine, AudioBuffer, Gain, Level, Sampler, Timestamp};
+use rawdio::{
+    create_engine_with_options, AudioBuffer, EngineOptions, Gain, Level, Sampler, Timestamp,
+};
 use structopt::StructOpt;
 
 use helpers::{read_file_into_buffer, AudioCallback};
@@ -22,8 +24,10 @@ fn play_file(file_to_play: &str) {
     let sample = read_file_into_buffer(file_to_play);
     let sample_rate = sample.sample_rate();
 
-    let (mut context, audio_process) = create_engine(sample_rate);
-    let audio_callback = AudioCallback::new(audio_process, sample_rate);
+    let (mut context, process) =
+        create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
+
+    let audio_callback = AudioCallback::new(process, sample_rate);
 
     let length_in_seconds = sample.length_in_seconds().ceil() as u64;
     let length_in_samples = sample.frame_count();

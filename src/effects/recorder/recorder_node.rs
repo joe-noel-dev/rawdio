@@ -53,7 +53,7 @@ impl Recorder {
 
         let node = GraphNode::new(
             id,
-            context.get_command_queue(),
+            context,
             channel_count,
             output_count,
             processor,

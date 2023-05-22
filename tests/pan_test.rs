@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use itertools::Itertools;
 use rawdio::{
-    create_engine, AudioBuffer, AudioProcess, Context, OwnedAudioBuffer, Pan, SampleLocation,
-    Timestamp,
+    create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions,
+    OwnedAudioBuffer, Pan, SampleLocation, Timestamp,
 };
 
 struct Fixture {
@@ -51,7 +51,9 @@ impl Fixture {
 impl Default for Fixture {
     fn default() -> Self {
         let sample_rate = 48_000;
-        let (mut context, audio_process) = create_engine(sample_rate);
+
+        let (mut context, process) =
+            create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
         let channel_count = 2;
 
@@ -64,7 +66,7 @@ impl Default for Fixture {
 
         Self {
             _context: context,
-            audio_process,
+            audio_process: process,
             pan,
             sample_rate,
             channel_count,

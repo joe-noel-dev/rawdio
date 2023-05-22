@@ -2,7 +2,7 @@
 mod helpers;
 
 use helpers::AudioCallback;
-use rawdio::{create_engine, Level, Oscillator, Timestamp, Waveshaper};
+use rawdio::{create_engine_with_options, EngineOptions, Level, Oscillator, Timestamp, Waveshaper};
 use std::{thread, time};
 use structopt::StructOpt;
 
@@ -17,8 +17,10 @@ fn main() {
 
     let options = Options::from_args();
 
-    let (mut context, audio_process) = create_engine(sample_rate);
-    let _audio_callback = AudioCallback::new(audio_process, sample_rate);
+    let (mut context, process) =
+        create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
+
+    let _audio_callback = AudioCallback::new(process, sample_rate);
 
     let channel_count = 2;
 

@@ -35,7 +35,7 @@ impl Sampler {
 
         let node = GraphNode::new(
             id,
-            context.get_command_queue(),
+            context,
             input_count,
             output_count,
             processor,

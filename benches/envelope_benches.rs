@@ -1,7 +1,9 @@
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use rawdio::{create_engine, AudioProcess, Context, Envelope, OwnedAudioBuffer};
+use rawdio::{
+    create_engine_with_options, AudioProcess, Context, EngineOptions, Envelope, OwnedAudioBuffer,
+};
 
 struct Fixture {
     audio_process: Box<dyn AudioProcess + Send>,
@@ -14,7 +16,8 @@ struct Fixture {
 impl Fixture {
     pub fn new(attack_time: Duration, release_time: Duration, notification_frequency: f64) -> Self {
         let sample_rate = 48_000;
-        let (mut context, process) = create_engine(sample_rate);
+        let (mut context, process) =
+            create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
         let frame_count = 4096;
         let channel_count = 2;

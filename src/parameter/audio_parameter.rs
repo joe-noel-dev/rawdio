@@ -118,7 +118,7 @@ impl AudioParameter {
     /// Cancel all scheduled changes
     pub fn cancel_scheduled_changes(&mut self) {
         self.command_queue
-            .send(Command::CancelParamaterChanges(CancelChangeRequest {
+            .send(Command::CancelParameterChanges(CancelChangeRequest {
                 dsp_id: self.dsp_id,
                 parameter_id: self.parameter_id,
                 end_time: None,
@@ -128,7 +128,7 @@ impl AudioParameter {
     /// Cancel all scheduled changes that complete after `end_time`
     pub fn cancel_scheduled_changes_ending_after(&mut self, end_time: Timestamp) {
         self.command_queue
-            .send(Command::CancelParamaterChanges(CancelChangeRequest {
+            .send(Command::CancelParameterChanges(CancelChangeRequest {
                 dsp_id: self.dsp_id,
                 parameter_id: self.parameter_id,
                 end_time: Some(end_time),

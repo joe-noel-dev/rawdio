@@ -1,14 +1,18 @@
 use std::time::Duration;
 
 use itertools::izip;
-use rawdio::{create_engine, AudioBuffer, OwnedAudioBuffer, Recorder, SampleLocation, Timestamp};
+use rawdio::{
+    create_engine_with_options, AudioBuffer, EngineOptions, OwnedAudioBuffer, Recorder,
+    SampleLocation, Timestamp,
+};
 
 fn record_sampler(
     sample_rate: usize,
     channel_count: usize,
     buffer: &OwnedAudioBuffer,
 ) -> OwnedAudioBuffer {
-    let (mut context, mut process) = create_engine(sample_rate);
+    let (mut context, mut process) =
+        create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
     let recorder = Recorder::new(context.as_mut(), channel_count, sample_rate);
 

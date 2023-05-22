@@ -2,7 +2,7 @@
 mod helpers;
 
 use helpers::{read_file_into_buffer, render_audio_process_to_file};
-use rawdio::{create_engine, AudioBuffer, Convolution, Gain, Sampler};
+use rawdio::{create_engine_with_options, AudioBuffer, Convolution, EngineOptions, Gain, Sampler};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -25,7 +25,8 @@ fn process_file(options: &Options) {
     let input_channels = input.channel_count();
     let duration = input.duration() + impulse.duration();
 
-    let (mut context, audio_process) = create_engine(sample_rate);
+    let (mut context, process) =
+        create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
     let mut sample_player = Sampler::new(context.as_ref(), input);
     let convolution = Convolution::new(context.as_ref(), input_channels, impulse);
@@ -47,7 +48,7 @@ fn process_file(options: &Options) {
     sample_player.start_now();
     context.start();
 
-    render_audio_process_to_file(sample_rate, &options.output, audio_process, duration);
+    render_audio_process_to_file(sample_rate, &options.output, process, duration);
 
     context.stop();
 }

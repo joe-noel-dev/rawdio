@@ -2,7 +2,9 @@
 mod helpers;
 
 use helpers::render_audio_process_to_file;
-use rawdio::{create_engine, Context, Gain, Oscillator, Pan, Timestamp};
+use rawdio::{
+    create_engine_with_options, Context, EngineOptions, Gain, Oscillator, Pan, Timestamp,
+};
 use std::time::Duration;
 use structopt::StructOpt;
 
@@ -18,7 +20,9 @@ fn main() {
 
 fn render_file(output_file: &str) {
     let sample_rate = 44100;
-    let (mut context, audio_process) = create_engine(sample_rate);
+
+    let (mut context, process) =
+        create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
     let mut oscillators = create_oscillators(context.as_ref());
     let mut gain = create_gain(context.as_ref());
@@ -28,12 +32,8 @@ fn render_file(output_file: &str) {
 
     context.start();
 
-    render_audio_process_to_file(
-        sample_rate,
-        output_file,
-        audio_process,
-        Duration::from_secs(4),
-    );
+    render_audio_process_to_file(sample_rate, output_file, process, Duration::from_secs(4));
+
     context.stop();
 }
 

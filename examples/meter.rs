@@ -4,7 +4,8 @@ mod helpers;
 use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 
 use rawdio::{
-    create_engine, AudioBuffer, Context, Envelope, Gain, OwnedAudioBuffer, Sampler, Timestamp,
+    create_engine_with_options, AudioBuffer, Context, EngineOptions, Envelope, Gain,
+    OwnedAudioBuffer, Sampler, Timestamp,
 };
 use structopt::StructOpt;
 
@@ -24,8 +25,10 @@ fn play_file(file_to_play: &str) {
     let sample = read_file_into_buffer(file_to_play);
     let sample_rate = sample.sample_rate();
 
-    let (mut context, audio_process) = create_engine(sample_rate);
-    let audio_callack = AudioCallback::new(audio_process, sample_rate);
+    let (mut context, process) =
+        create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
+
+    let audio_callack = AudioCallback::new(process, sample_rate);
 
     let channel_count = 2;
     let (mut sampler, duration) = create_sampler(context.as_ref(), sample);
