@@ -92,13 +92,18 @@ impl DspGraph {
             }
         }
 
-        self.process_dsps(frame_count, output_channel_count, start_time);
+        self.process_dsps(frame_count, start_time);
 
         if let Some(output_endpoint) = self.output_endpoint {
+            let source_channel = 0;
+            let destination_channel = 0;
+
             mix_endpoint(
                 &mut self.buffer_pools.assigned,
                 &output_endpoint,
                 output_buffer,
+                source_channel,
+                destination_channel,
                 output_channel_count,
                 frame_count,
                 MixBehaviour::Overwrite,
@@ -176,7 +181,7 @@ impl DspGraph {
         self.input_endpoint = Some(input_endpoint);
     }
 
-    fn process_dsps(&mut self, frame_count: usize, channel_count: usize, start_time: &Timestamp) {
+    fn process_dsps(&mut self, frame_count: usize, start_time: &Timestamp) {
         let sorted_graph = self.topological_sort.get_sorted_graph();
         for dsp_id in sorted_graph {
             debug_assert!(can_process_dsp(
@@ -190,7 +195,6 @@ impl DspGraph {
                 &mut self.graph,
                 *dsp_id,
                 frame_count,
-                channel_count,
                 start_time,
             );
         }
@@ -202,15 +206,13 @@ fn process_dsp(
     graph: &mut Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
     frame_count: usize,
-    channel_count: usize,
     start_time: &Timestamp,
 ) {
     let output_endpoint = Endpoint::new(dsp_id, EndpointType::Output);
 
     let mut output_buffer = get_buffer_with_endpoint(&output_endpoint, buffer_pools);
 
-    let (input_buffer, input_endpoint) =
-        prepare_input(buffer_pools, graph, dsp_id, frame_count, channel_count);
+    let (input_buffer, input_endpoint) = prepare_input(buffer_pools, graph, dsp_id, frame_count);
 
     if let Some(dsp) = graph.get_node_mut(dsp_id) {
         let mut output_slice = MutableBorrowedAudioBuffer::slice_channels_and_frames(
@@ -254,29 +256,33 @@ enum MixBehaviour {
     Mix,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn mix_endpoint(
     assigned_buffer_pool: &mut AssignedBufferPool<Endpoint>,
     endpoint: &Endpoint,
     output_buffer: &mut dyn AudioBuffer,
+    source_channel: usize,
+    destination_channel: usize,
     channel_count: usize,
     frame_count: usize,
     mix_behaviour: MixBehaviour,
 ) {
     if let Some(buffer) = assigned_buffer_pool.remove(endpoint) {
-        let sample_location = SampleLocation::origin();
+        let source_location = SampleLocation::channel(source_channel);
+        let destination_location = SampleLocation::channel(destination_channel);
 
         match mix_behaviour {
             MixBehaviour::Overwrite => output_buffer.copy_from(
                 &buffer,
-                sample_location,
-                sample_location,
+                source_location,
+                destination_location,
                 channel_count,
                 frame_count,
             ),
             MixBehaviour::Mix => output_buffer.add_from(
                 &buffer,
-                sample_location,
-                sample_location,
+                source_location,
+                destination_location,
                 channel_count,
                 frame_count,
             ),
@@ -291,19 +297,22 @@ fn copy_output_from_dependencies(
     graph: &Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
     destination_buffer: &mut dyn AudioBuffer,
-    channel_count: usize,
     frame_count: usize,
 ) {
     let mut mix_behaviour = MixBehaviour::Overwrite;
 
-    for connected_node_id in graph.node_iter(dsp_id, Direction::Incoming) {
-        let endpoint = Endpoint::new(connected_node_id, EndpointType::Output);
+    for edge_id in graph.edge_iterator(dsp_id, Direction::Incoming) {
+        let edge = graph.get_edge(edge_id).expect("Edge not found");
+
+        let endpoint = Endpoint::new(edge.from_node_id, EndpointType::Output);
 
         mix_endpoint(
             assigned_buffer_pool,
             &endpoint,
             destination_buffer,
-            channel_count,
+            edge.edge_data.source_output_channel,
+            edge.edge_data.destination_input_channel,
+            edge.edge_data.channel_count,
             frame_count,
             mix_behaviour,
         );
@@ -330,7 +339,6 @@ fn prepare_n_input_node(
     graph: &Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
     frame_count: usize,
-    channel_count: usize,
 ) -> (OwnedAudioBuffer, Endpoint) {
     let input_endpoint = Endpoint::new(dsp_id, EndpointType::Input);
 
@@ -341,7 +349,6 @@ fn prepare_n_input_node(
         graph,
         dsp_id,
         &mut node_input_buffer,
-        channel_count,
         frame_count,
     );
 
@@ -364,16 +371,25 @@ fn prepare_single_input_node(
     buffer_pools: &mut BufferPools,
     graph: &Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
+    frame_count: usize,
 ) -> (OwnedAudioBuffer, Endpoint) {
-    let input_endpoint = Endpoint::new(
-        graph.node_iter(dsp_id, Direction::Incoming).next().unwrap(),
-        EndpointType::Output,
-    );
+    let edge_id = graph
+        .edge_iterator(dsp_id, Direction::Incoming)
+        .next()
+        .unwrap();
 
-    (
-        get_buffer_with_endpoint(&input_endpoint, buffer_pools),
-        input_endpoint,
-    )
+    let edge = graph.get_edge(edge_id).unwrap();
+
+    if edge.edge_data.destination_input_channel == 0 && edge.edge_data.source_output_channel == 0 {
+        let input_endpoint = Endpoint::new(edge.from_node_id, EndpointType::Output);
+
+        return (
+            get_buffer_with_endpoint(&input_endpoint, buffer_pools),
+            input_endpoint,
+        );
+    }
+
+    prepare_n_input_node(buffer_pools, graph, dsp_id, frame_count)
 }
 
 fn prepare_input(
@@ -381,12 +397,11 @@ fn prepare_input(
     graph: &Graph<Box<Dsp>, Connection>,
     dsp_id: Id,
     frame_count: usize,
-    channel_count: usize,
 ) -> (OwnedAudioBuffer, Endpoint) {
     match graph.connection_count(dsp_id, Direction::Incoming) {
         0 => prepare_zero_input_node(buffer_pools, dsp_id),
-        1 => prepare_single_input_node(buffer_pools, graph, dsp_id),
-        _ => prepare_n_input_node(buffer_pools, graph, dsp_id, frame_count, channel_count),
+        1 => prepare_single_input_node(buffer_pools, graph, dsp_id, frame_count),
+        _ => prepare_n_input_node(buffer_pools, graph, dsp_id, frame_count),
     }
 }
 
@@ -431,11 +446,14 @@ mod tests {
         }
     }
 
-    fn make_dsp(value_to_write: f32, location_to_write: SampleLocation) -> Box<Dsp> {
+    fn make_dsp(
+        value_to_write: f32,
+        location_to_write: SampleLocation,
+        input_count: usize,
+        output_count: usize,
+    ) -> Box<Dsp> {
         let processor = Box::new(Processor::new(value_to_write, location_to_write));
 
-        let input_count = 2;
-        let output_count = 2;
         Box::new(Dsp::new(
             Id::generate(),
             input_count,
@@ -449,8 +467,9 @@ mod tests {
     fn renders_when_connected_to_output() {
         let value = 0.456;
         let location = SampleLocation::frame(27);
+        let channel_count = 2;
 
-        let dsp = make_dsp(value, location);
+        let dsp = make_dsp(value, location, channel_count, channel_count);
 
         let dsp_id = dsp.get_id();
         let sample_rate = 44100;
@@ -460,7 +479,6 @@ mod tests {
 
         let frame_count = 128;
 
-        let channel_count = 2;
         let input_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
         let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
@@ -483,15 +501,17 @@ mod tests {
         let location_1 = SampleLocation::new(0, 27);
         let location_2 = SampleLocation::new(1, 38);
 
-        let dsp_1 = make_dsp(value_1, location_1);
-        let dsp_2 = make_dsp(value_2, location_2);
+        let channel_count = 2;
+
+        let dsp_1 = make_dsp(value_1, location_1, channel_count, channel_count);
+        let dsp_2 = make_dsp(value_2, location_2, channel_count, channel_count);
 
         let dsp_id_1 = dsp_1.get_id();
         let dsp_id_2 = dsp_2.get_id();
 
         let sample_rate = 44100;
 
-        let mut graph = DspGraph::new(128, 2, sample_rate);
+        let mut graph = DspGraph::new(128, channel_count, sample_rate);
 
         graph.add_dsp(dsp_1);
         graph.add_dsp(dsp_2);
@@ -500,9 +520,8 @@ mod tests {
 
         graph.connect_to_output(Endpoint::new(dsp_id_2, EndpointType::Output));
 
-        graph.add_connection(Connection::new(dsp_id_1, dsp_id_2));
+        graph.add_connection(Connection::new(dsp_id_1, dsp_id_2, channel_count));
 
-        let channel_count = 2;
         let input_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
         let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
@@ -514,12 +533,12 @@ mod tests {
 
     #[test]
     fn doesnt_write_too_many_channels() {
-        let dsp = make_dsp(0.0, SampleLocation::origin());
+        let channel_count = 2;
+        let dsp = make_dsp(0.0, SampleLocation::origin(), channel_count, channel_count);
         let dsp_id = dsp.get_id();
         let sample_rate = 44100;
-        let maximum_number_of_channels = 2;
 
-        let mut graph = DspGraph::new(128, maximum_number_of_channels, sample_rate);
+        let mut graph = DspGraph::new(128, channel_count, sample_rate);
 
         graph.add_dsp(dsp);
 
@@ -527,17 +546,17 @@ mod tests {
 
         graph.connect_to_output(Endpoint::new(dsp_id, EndpointType::Output));
 
-        let input_buffer =
-            OwnedAudioBuffer::new(frame_count, maximum_number_of_channels * 2, sample_rate);
-        let mut output_buffer =
-            OwnedAudioBuffer::new(frame_count, maximum_number_of_channels * 2, sample_rate);
+        let input_buffer = OwnedAudioBuffer::new(frame_count, channel_count * 2, sample_rate);
+        let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count * 2, sample_rate);
 
         graph.process(&input_buffer, &mut output_buffer, &Timestamp::default());
     }
 
     #[test]
     fn doesnt_write_too_many_frames() {
-        let dsp = make_dsp(0.0, SampleLocation::origin());
+        let channel_count = 2;
+
+        let dsp = make_dsp(0.0, SampleLocation::origin(), channel_count, channel_count);
         let dsp_id = dsp.get_id();
         let sample_rate = 44100;
         let maximum_number_of_frames = 512;
@@ -548,12 +567,73 @@ mod tests {
 
         graph.connect_to_output(Endpoint::new(dsp_id, EndpointType::Output));
 
-        let channel_count = 2;
         let input_buffer =
             OwnedAudioBuffer::new(maximum_number_of_frames * 2, channel_count, sample_rate);
         let mut output_buffer =
             OwnedAudioBuffer::new(maximum_number_of_frames * 2, channel_count, sample_rate);
 
         graph.process(&input_buffer, &mut output_buffer, &Timestamp::default());
+    }
+
+    #[test]
+    fn multichannel_routing() {
+        let maximum_frame_count = 1024;
+        let graph_channel_count = 10;
+        let sample_rate = 48_000;
+
+        let dsp_1_channel_count = 4;
+
+        let value_1 = 1.0;
+        let value_2 = 2.0;
+
+        let value_1_location = SampleLocation::new(2, 35);
+        let value_2_location = SampleLocation::new(0, 89);
+
+        let dsp_1 = make_dsp(
+            value_1,
+            value_1_location,
+            dsp_1_channel_count,
+            dsp_1_channel_count,
+        );
+
+        let dsp_2 = make_dsp(
+            value_2,
+            value_2_location,
+            graph_channel_count,
+            graph_channel_count,
+        );
+
+        let dsp_1_id = dsp_1.get_id();
+        let dsp_2_id = dsp_2.get_id();
+
+        let mut graph = DspGraph::new(maximum_frame_count, graph_channel_count, sample_rate);
+
+        graph.add_dsp(dsp_1);
+        graph.add_dsp(dsp_2);
+
+        let destination_input_channel = 5;
+        let source_output_channel = value_1_location.channel;
+        let connection_channel_count = 1;
+
+        graph.add_connection(
+            Connection::new(dsp_1_id, dsp_2_id, connection_channel_count)
+                .with_destination_input_channel(destination_input_channel)
+                .with_source_output_channel(source_output_channel),
+        );
+
+        graph.connect_to_output(Endpoint::new(dsp_2_id, EndpointType::Output));
+
+        let input_buffer =
+            OwnedAudioBuffer::new(maximum_frame_count, graph_channel_count, sample_rate);
+        let mut output_buffer =
+            OwnedAudioBuffer::new(maximum_frame_count, graph_channel_count, sample_rate);
+
+        graph.process(&input_buffer, &mut output_buffer, &Timestamp::zero());
+
+        assert_relative_eq!(
+            output_buffer.get_sample(value_1_location.with_channel(destination_input_channel)),
+            value_1
+        );
+        assert_relative_eq!(output_buffer.get_sample(value_2_location), value_2);
     }
 }

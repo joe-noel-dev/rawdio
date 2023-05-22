@@ -2,7 +2,9 @@
 mod helpers;
 
 use helpers::AudioCallback;
-use rawdio::{create_engine_with_options, Adsr, Context, EngineOptions, Oscillator, Timestamp};
+use rawdio::{
+    create_engine_with_options, Adsr, Context, EngineOptions, Level, Oscillator, Timestamp,
+};
 use std::time::Duration;
 use structopt::StructOpt;
 
@@ -41,9 +43,7 @@ fn schedule_events(
             .frequency
             .set_value_at_time(frequency, beat_position);
 
-        let note_duration = 0.1;
         adsr.note_on_at_time(beat_position);
-        adsr.note_off_at_time(beat_position.incremented_by_seconds(note_duration));
 
         beat += 1;
     }
@@ -101,8 +101,9 @@ fn create_oscillator(context: &dyn Context, channel_count: usize) -> Oscillator 
 fn create_adsr(context: &dyn Context, channel_count: usize, sample_rate: usize) -> Adsr {
     let mut adsr = Adsr::new(context, channel_count, sample_rate);
 
-    adsr.set_attack_time(Duration::from_millis(20));
-    adsr.set_release_time(Duration::from_millis(100));
+    adsr.set_attack_time(Duration::from_millis(5));
+    adsr.set_decay_time(Duration::from_millis(25));
+    adsr.set_sustain_level(Level::zero());
 
     adsr
 }
