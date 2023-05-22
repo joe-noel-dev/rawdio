@@ -1,4 +1,4 @@
-use crate::{commands::Id, Command, CommandQueue};
+use crate::{commands::Id, Command, CommandQueue, Context};
 
 use super::{
     connection::Connection,
@@ -16,13 +16,15 @@ impl GraphNode {
     /// Create a new audio graph
     pub fn new(
         id: Id,
-        command_queue: Box<dyn CommandQueue>,
+        context: &dyn Context,
         input_count: usize,
         output_count: usize,
         processor: Box<dyn DspProcessor + Send + Sync>,
         parameters: DspParameters,
     ) -> Self {
         let dsp = Dsp::new(id, input_count, output_count, processor, parameters);
+
+        let command_queue = context.get_command_queue();
 
         dsp.add_to_audio_process(command_queue.as_ref());
 
