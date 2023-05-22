@@ -9,7 +9,7 @@ pub enum Command {
     AddDsp(Box<Dsp>),
     RemoveDsp(Id),
 
-    CancelParamaterChanges(CancelChangeRequest),
+    CancelParameterChanges(CancelChangeRequest),
     ParameterValueChange(ParameterChangeRequest),
 
     AddConnection(Connection),

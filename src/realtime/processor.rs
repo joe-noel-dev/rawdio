@@ -97,7 +97,7 @@ impl Processor {
                 Command::ParameterValueChange(change_request) => {
                     self.graph.request_parameter_change(change_request)
                 }
-                Command::CancelParamaterChanges(change_request) => {
+                Command::CancelParameterChanges(change_request) => {
                     self.graph.cancel_parameter_changes(change_request)
                 }
 
