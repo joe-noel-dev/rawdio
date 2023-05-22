@@ -27,24 +27,7 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
     }
 
     pub fn get_last_connected_edge_id(&self, node_id: Id, direction: Direction) -> Option<Id> {
-        if let Some(node) = self.nodes.get(&node_id) {
-            let start_id = match direction {
-                Direction::Outgoing => node.outgoing,
-                Direction::Incoming => node.incoming,
-            };
-
-            return match start_id {
-                Some(start_id) => {
-                    match EdgeIterator::new(start_id, direction, &self.edges).last() {
-                        Some(last_id) => Some(last_id),
-                        None => Some(start_id),
-                    }
-                }
-                None => None,
-            };
-        }
-
-        None
+        EdgeIterator::new(node_id, None, direction, &self.nodes, &self.edges).last()
     }
 
     pub fn add_edge(&mut self, from_node_id: Id, to_node_id: Id, with_edge_data: EdgeData) -> Id {
@@ -120,10 +103,6 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
         self.nodes.get_mut(&id).map(|node| &mut node.node_data)
     }
 
-    pub fn _get_node(&self, id: Id) -> Option<&NodeData> {
-        self.nodes.get(&id).map(|node| &node.node_data)
-    }
-
     pub fn add_node_with_id(&mut self, id: Id, node_data: NodeData) {
         assert!(!self.nodes.contains_key(&id));
         self.nodes.insert(id, Node::new(node_data));
@@ -138,6 +117,18 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
         NodeIterator::new(node_id, direction, &self.nodes, &self.edges)
     }
 
+    pub fn edge_iterator(
+        &self,
+        node_id: Id,
+        direction: Direction,
+    ) -> EdgeIterator<NodeData, EdgeData> {
+        EdgeIterator::new(node_id, None, direction, &self.nodes, &self.edges)
+    }
+
+    pub fn get_edge(&self, edge_id: Id) -> Option<&Edge<EdgeData>> {
+        self.edges.get(&edge_id)
+    }
+
     pub fn connection_count(&self, node_id: Id, direction: Direction) -> usize {
         self.node_iter(node_id, direction).count()
     }
@@ -148,30 +139,6 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
 
     pub fn node_count(&self) -> usize {
         self.nodes.len()
-    }
-}
-
-pub struct EdgeIterator<'a, EdgeData> {
-    edge_id: Option<Id>,
-    edges: &'a EdgeMap<EdgeData>,
-    direction: Direction,
-}
-
-impl<'a, EdgeData> Iterator for EdgeIterator<'a, EdgeData> {
-    type Item = Id;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some(edge_id) = self.edge_id {
-            if let Some(edge) = self.edges.get(&edge_id) {
-                self.edge_id = match self.direction {
-                    Direction::Outgoing => edge.next_out,
-                    Direction::Incoming => edge.next_in,
-                };
-                return self.edge_id;
-            }
-        }
-
-        None
     }
 }
 
@@ -237,10 +204,59 @@ fn replace_connections<N, E>(
     replace_node_connections(graph, direction, find_edge_id, replace_edge_id);
 }
 
-impl<'a, EdgeData> EdgeIterator<'a, EdgeData> {
-    pub fn new(edge_id: Id, direction: Direction, edges: &'a EdgeMap<EdgeData>) -> Self {
+pub struct EdgeIterator<'a, NodeData, EdgeData> {
+    node_id: Id,
+    edge_id: Option<Id>,
+    nodes: &'a NodeMap<NodeData>,
+    edges: &'a EdgeMap<EdgeData>,
+    direction: Direction,
+}
+
+impl<'a, NodeData, EdgeData> Iterator for EdgeIterator<'a, NodeData, EdgeData> {
+    type Item = Id;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let node = match self.nodes.get(&self.node_id) {
+            Some(node) => node,
+            None => return None,
+        };
+
+        let next_edge_id = match self.edge_id {
+            Some(edge_id) => {
+                let edge = match self.edges.get(&edge_id) {
+                    Some(edge) => edge,
+                    None => return None,
+                };
+
+                match self.direction {
+                    Direction::Outgoing => edge.next_out,
+                    Direction::Incoming => edge.next_in,
+                }
+            }
+            None => match self.direction {
+                Direction::Outgoing => node.outgoing,
+                Direction::Incoming => node.incoming,
+            },
+        };
+
+        self.edge_id = next_edge_id;
+
+        self.edge_id
+    }
+}
+
+impl<'a, NodeData, EdgeData> EdgeIterator<'a, NodeData, EdgeData> {
+    pub fn new(
+        node_id: Id,
+        edge_id: Option<Id>,
+        direction: Direction,
+        nodes: &'a NodeMap<NodeData>,
+        edges: &'a EdgeMap<EdgeData>,
+    ) -> Self {
         Self {
-            edge_id: Some(edge_id),
+            node_id,
+            edge_id,
+            nodes,
             edges,
             direction,
         }
@@ -253,40 +269,6 @@ pub struct NodeIterator<'a, NodeData, EdgeData> {
     nodes: &'a NodeMap<NodeData>,
     edges: &'a EdgeMap<EdgeData>,
     direction: Direction,
-}
-
-impl<'a, NodeData, EdgeData> Iterator for NodeIterator<'a, NodeData, EdgeData> {
-    type Item = Id;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let next_edge_id = match self.edge_id {
-            Some(edge_id) => EdgeIterator::new(edge_id, self.direction, self.edges).next(),
-            None => {
-                if let Some(node) = self.nodes.get(&self.node_id) {
-                    match self.direction {
-                        Direction::Outgoing => node.outgoing,
-                        Direction::Incoming => node.incoming,
-                    }
-                } else {
-                    None
-                }
-            }
-        };
-
-        let next_node_id = match next_edge_id {
-            Some(next_edge_id) => match self.edges.get(&next_edge_id) {
-                Some(edge) => match self.direction {
-                    Direction::Outgoing => Some(edge.to_node_id),
-                    Direction::Incoming => Some(edge.from_node_id),
-                },
-                None => None,
-            },
-            None => None,
-        };
-
-        self.edge_id = next_edge_id;
-        next_node_id
-    }
 }
 
 impl<'a, NodeData, EdgeData> NodeIterator<'a, NodeData, EdgeData> {
@@ -303,6 +285,35 @@ impl<'a, NodeData, EdgeData> NodeIterator<'a, NodeData, EdgeData> {
             edges,
             direction,
         }
+    }
+}
+
+impl<'a, NodeData, EdgeData> Iterator for NodeIterator<'a, NodeData, EdgeData> {
+    type Item = Id;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next_edge_id = EdgeIterator::new(
+            self.node_id,
+            self.edge_id,
+            self.direction,
+            self.nodes,
+            self.edges,
+        )
+        .next();
+
+        let next_node_id = match next_edge_id {
+            Some(next_edge_id) => match self.edges.get(&next_edge_id) {
+                Some(edge) => match self.direction {
+                    Direction::Outgoing => Some(edge.to_node_id),
+                    Direction::Incoming => Some(edge.from_node_id),
+                },
+                None => None,
+            },
+            None => None,
+        };
+
+        self.edge_id = next_edge_id;
+        next_node_id
     }
 }
 
@@ -337,12 +348,14 @@ mod tests {
         let a_to_c_id = graph.add_edge(node_a_id, node_c_id, ());
         let a_to_d_id = graph.add_edge(node_a_id, node_d_id, ());
 
-        let iterated_edges: Vec<Id> =
-            EdgeIterator::new(a_to_b_id, Direction::Outgoing, &graph.edges).collect();
+        let iterated_edges: Vec<Id> = graph
+            .edge_iterator(node_a_id, Direction::Outgoing)
+            .collect();
 
-        assert_eq!(iterated_edges.len(), 2);
-        assert_eq!(iterated_edges[0], a_to_c_id);
-        assert_eq!(iterated_edges[1], a_to_d_id);
+        assert_eq!(iterated_edges.len(), 3);
+        assert_eq!(iterated_edges[0], a_to_b_id);
+        assert_eq!(iterated_edges[1], a_to_c_id);
+        assert_eq!(iterated_edges[2], a_to_d_id);
     }
 
     #[test]

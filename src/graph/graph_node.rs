@@ -10,6 +10,7 @@ use super::{
 pub struct GraphNode {
     id: Id,
     command_queue: Box<dyn CommandQueue>,
+    output_count: usize,
 }
 
 impl GraphNode {
@@ -28,7 +29,11 @@ impl GraphNode {
 
         dsp.add_to_audio_process(command_queue.as_ref());
 
-        Self { id, command_queue }
+        Self {
+            id,
+            command_queue,
+            output_count,
+        }
     }
 
     fn get_id(&self) -> Id {
@@ -65,14 +70,29 @@ impl GraphNode {
             )));
     }
 
-    fn connect_to_id(&self, id: Id) {
-        self.command_queue
-            .send(Command::AddConnection(Connection::new(self.get_id(), id)));
-    }
-
     /// Connect the output of this node to the input of another node
     pub fn connect_to(&self, node: &GraphNode) {
-        self.connect_to_id(node.get_id());
+        self.command_queue
+            .send(Command::AddConnection(Connection::new(
+                self.get_id(),
+                node.get_id(),
+                self.output_count,
+            )));
+    }
+
+    /// Connect a subset of channels from this node to another node
+    pub fn connect_channels_to(
+        &self,
+        node: &GraphNode,
+        source_output_channel: usize,
+        destination_input_channel: usize,
+        channel_count: usize,
+    ) {
+        self.command_queue.send(Command::AddConnection(
+            Connection::new(self.get_id(), node.get_id(), channel_count)
+                .with_source_output_channel(source_output_channel)
+                .with_destination_input_channel(destination_input_channel),
+        ));
     }
 
     fn disconnect_from_id(&self, id: Id) {
@@ -80,6 +100,7 @@ impl GraphNode {
             .send(Command::RemoveConnection(Connection::new(
                 self.get_id(),
                 id,
+                self.output_count,
             )));
     }
 
