@@ -1,50 +1,81 @@
 use std::collections::HashMap;
 
-use crate::{commands::Id, graph::DspParameters, AudioParameter, Context, GraphNode};
+use crate::{
+    commands::Id, graph::DspParameters, parameter::RealtimeAudioParameter, AudioParameter, Context,
+    GraphNode,
+};
 
 use super::{
-    compressor_parameters::{
-        attack_range, dry_range, knee_range, makeup_range, ratio_range, release_range,
-        threshold_range, wet_range, CompressorParameter,
-    },
+    compressor_parameters::{get_range, CompressorParameter},
     compressor_processor::CompressorProcessor,
 };
 
+/// A basic dynamics compressor
 pub struct Compressor {
-    node: GraphNode,
+    /// The node to connect into the audio graph
+    pub node: GraphNode,
+
+    /// The attack time of the compressor (in ms)
+    ///
+    /// This is how fast or slow the compressor tracks the input signal when the signal
+    /// level is rising
     pub attack: AudioParameter,
+
+    /// The release time of the compressor (in ms)
+    ///
+    /// This is how fast or slow the compressor releases the tracked input signal
+    /// when the signal level is falling
     pub release: AudioParameter,
+
+    /// The ratio of the compressor
+    ///
+    /// This controls how aggresively the signal is attentuated when it goes
+    /// over the threshold
     pub ratio: AudioParameter,
+
+    /// The threshold at which the signal will begin to apply gain reduction
     pub threshold: AudioParameter,
+
+    /// The knee of the compressor (in dB)
+    ///
+    /// At larger values, the compressor's gain reduction will begin more gradually
     pub knee: AudioParameter,
-    pub makeup: AudioParameter,
+
+    /// The gain to apply to the wet (compressed) signal (linear gain)
     pub wet_level: AudioParameter,
+
+    /// The gain to apply to the dry (uncompressed) signal
     pub dry_level: AudioParameter,
 }
 
 impl Compressor {
-    pub fn new(context: &mut dyn Context, channel_count: usize) -> Self {
+    /// Create a new compressor node
+    pub fn new(context: &dyn Context, channel_count: usize) -> Self {
         let id = Id::generate();
 
-        let (attack, realtime_attack) = AudioParameter::new(id, attack_range(), context);
-        let (release, realtime_release) = AudioParameter::new(id, release_range(), context);
-        let (ratio, realtime_ratio) = AudioParameter::new(id, ratio_range(), context);
-        let (threshold, realtime_threshold) = AudioParameter::new(id, threshold_range(), context);
-        let (knee, realtime_knee) = AudioParameter::new(id, knee_range(), context);
-        let (makeup, realtime_makeup) = AudioParameter::new(id, makeup_range(), context);
-        let (wet_level, realtime_wet_level) = AudioParameter::new(id, wet_range(), context);
-        let (dry_level, realtime_dry_level) = AudioParameter::new(id, dry_range(), context);
+        let parameters = [
+            CompressorParameter::Attack,
+            CompressorParameter::Release,
+            CompressorParameter::Ratio,
+            CompressorParameter::Threshold,
+            CompressorParameter::Knee,
+            CompressorParameter::WetLevel,
+            CompressorParameter::DryLevel,
+        ];
 
-        let parameter_ids = HashMap::from([
-            (CompressorParameter::Attack, attack.get_id()),
-            (CompressorParameter::Release, release.get_id()),
-            (CompressorParameter::Ratio, ratio.get_id()),
-            (CompressorParameter::Threshold, threshold.get_id()),
-            (CompressorParameter::Knee, knee.get_id()),
-            (CompressorParameter::Makeup, makeup.get_id()),
-            (CompressorParameter::WetLevel, wet_level.get_id()),
-            (CompressorParameter::DryLevel, dry_level.get_id()),
-        ]);
+        let mut audio_parameters = HashMap::new();
+        let mut realtime_paramters = HashMap::new();
+
+        for param in parameters.iter() {
+            let (audio_param, realtime_param) = AudioParameter::new(id, get_range(*param), context);
+            audio_parameters.insert(*param, audio_param);
+            realtime_paramters.insert(*param, realtime_param);
+        }
+
+        let mut parameter_ids = HashMap::new();
+        for (parameter, audio_param) in audio_parameters.iter() {
+            parameter_ids.insert(*parameter, audio_param.get_id());
+        }
 
         let processor = Box::new(CompressorProcessor::new(
             channel_count,
@@ -53,16 +84,11 @@ impl Compressor {
             parameter_ids,
         ));
 
-        let parameters = DspParameters::new([
-            realtime_attack,
-            realtime_release,
-            realtime_ratio,
-            realtime_threshold,
-            realtime_knee,
-            realtime_makeup,
-            realtime_wet_level,
-            realtime_dry_level,
-        ]);
+        let dsp_parameters = DspParameters::from(
+            realtime_paramters
+                .into_values()
+                .collect::<Vec<RealtimeAudioParameter>>(),
+        );
 
         let node = GraphNode::new(
             id,
@@ -70,19 +96,32 @@ impl Compressor {
             channel_count,
             channel_count,
             processor,
-            parameters,
+            dsp_parameters,
         );
 
         Self {
             node,
-            attack,
-            release,
-            ratio,
-            threshold,
-            knee,
-            makeup,
-            wet_level,
-            dry_level,
+            attack: audio_parameters
+                .remove(&CompressorParameter::Attack)
+                .unwrap_or_else(|| panic!("Missing parameter")),
+            release: audio_parameters
+                .remove(&CompressorParameter::Release)
+                .unwrap_or_else(|| panic!("Missing parameter")),
+            ratio: audio_parameters
+                .remove(&CompressorParameter::Ratio)
+                .unwrap_or_else(|| panic!("Missing parameter")),
+            threshold: audio_parameters
+                .remove(&CompressorParameter::Threshold)
+                .unwrap_or_else(|| panic!("Missing parameter")),
+            knee: audio_parameters
+                .remove(&CompressorParameter::Knee)
+                .unwrap_or_else(|| panic!("Missing parameter")),
+            wet_level: audio_parameters
+                .remove(&CompressorParameter::WetLevel)
+                .unwrap_or_else(|| panic!("Missing parameter")),
+            dry_level: audio_parameters
+                .remove(&CompressorParameter::DryLevel)
+                .unwrap_or_else(|| panic!("Missing parameter")),
         }
     }
 }

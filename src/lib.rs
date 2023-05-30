@@ -50,6 +50,7 @@ pub use buffer::SampleLocation;
 pub use effects::Adsr;
 pub use effects::Biquad;
 pub use effects::BiquadFilterType;
+pub use effects::Compressor;
 pub use effects::Convolution;
 pub use effects::Envelope;
 pub use effects::Gain;

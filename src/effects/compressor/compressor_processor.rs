@@ -10,7 +10,7 @@ use crate::{
     AudioBuffer, Level, OwnedAudioBuffer, ProcessContext, SampleLocation,
 };
 
-use super::compressor_parameters::{attack_range, release_range, CompressorParameter};
+use super::compressor_parameters::{get_range, CompressorParameter};
 
 pub struct CompressorProcessor {
     ids: HashMap<CompressorParameter, Id>,
@@ -31,8 +31,12 @@ impl CompressorProcessor {
                 .map(|_| {
                     EnvelopeFollower::new(
                         sample_rate as f64,
-                        Duration::from_secs_f64(attack_range().default() / 1_000.0),
-                        Duration::from_secs_f64(release_range().default() / 1_000.0),
+                        Duration::from_secs_f64(
+                            get_range(CompressorParameter::Attack).default() / 1_000.0,
+                        ),
+                        Duration::from_secs_f64(
+                            get_range(CompressorParameter::Release).default() / 1_000.0,
+                        ),
                     )
                 })
                 .collect(),
@@ -127,12 +131,6 @@ impl CompressorProcessor {
             context.parameters,
         );
 
-        let makeup = self.get_parameter_values(
-            CompressorParameter::Makeup,
-            context.output_buffer.frame_count(),
-            context.parameters,
-        );
-
         let wet = self.get_parameter_values(
             CompressorParameter::WetLevel,
             context.output_buffer.frame_count(),
@@ -177,7 +175,6 @@ impl CompressorProcessor {
             .get_channel_data(SampleLocation::channel(0));
         let gain_reduction = &gain_reduction[..frame_count];
         context.output_buffer.apply_gain(gain_reduction);
-        context.output_buffer.apply_gain(makeup);
         context.output_buffer.apply_gain(wet);
     }
 
@@ -250,7 +247,6 @@ mod tests {
                 CompressorParameter::Ratio,
                 CompressorParameter::Threshold,
                 CompressorParameter::Knee,
-                CompressorParameter::Makeup,
                 CompressorParameter::WetLevel,
                 CompressorParameter::DryLevel,
             ];
