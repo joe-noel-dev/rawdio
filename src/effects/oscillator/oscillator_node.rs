@@ -1,7 +1,7 @@
 use crate::{
     commands::Id,
     graph::{DspParameters, GraphNode},
-    parameter::AudioParameter,
+    parameter::{AudioParameter, ParameterRange},
     Context, Level,
 };
 
@@ -97,18 +97,14 @@ impl Oscillator {
 
         let (frequency, realtime_frequency) = AudioParameter::new(
             id,
-            frequency,
-            MIN_FREQUENCY,
-            MAX_FREQUENCY,
-            context.get_command_queue(),
+            ParameterRange::new(frequency, MIN_FREQUENCY, MAX_FREQUENCY),
+            context,
         );
 
         let (gain, realtime_gain) = AudioParameter::new(
             id,
-            DEFAULT_GAIN,
-            MIN_GAIN,
-            MAX_GAIN,
-            context.get_command_queue(),
+            ParameterRange::new(DEFAULT_GAIN, MIN_GAIN, MAX_GAIN),
+            context,
         );
 
         let input_count = 0;

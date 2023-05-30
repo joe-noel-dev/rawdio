@@ -28,6 +28,11 @@ impl Level {
         }
     }
 
+    /// Create a level from dB
+    pub fn from_db_f32(level_in_db: f32) -> Self {
+        Self::from_db(level_in_db as f64)
+    }
+
     /// Convert to dB
     pub fn as_db(&self) -> f64 {
         if self.gain <= 1e-9 {

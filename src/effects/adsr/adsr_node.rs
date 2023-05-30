@@ -23,7 +23,11 @@ impl Adsr {
 
         let (event_transmitter, event_receiver) = Channel::bounded(EVENT_CHANNEL_CAPACITY);
 
-        let processor = Box::new(AdsrProcessor::new(event_receiver, sample_rate));
+        let processor = Box::new(AdsrProcessor::new(
+            event_receiver,
+            sample_rate,
+            context.maximum_frame_count(),
+        ));
 
         let node = GraphNode::new(
             id,

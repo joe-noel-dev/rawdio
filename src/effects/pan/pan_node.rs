@@ -1,4 +1,7 @@
-use crate::{commands::Id, graph::DspParameters, AudioParameter, Context, GraphNode};
+use crate::{
+    commands::Id, graph::DspParameters, parameter::ParameterRange, AudioParameter, Context,
+    GraphNode,
+};
 
 use super::pan_processor::PanProcessor;
 
@@ -21,7 +24,7 @@ impl Pan {
         let id = Id::generate();
 
         let (pan, realtime_pan) =
-            AudioParameter::new(id, 0.0, MIN_PAN, MAX_PAN, context.get_command_queue());
+            AudioParameter::new(id, ParameterRange::new(0.0, MIN_PAN, MAX_PAN), context);
 
         let output_count = 2;
 

@@ -66,3 +66,7 @@ harness = false
 [[bench]]
 name = "convolution_benches"
 harness = false
+
+[[bench]]
+name = "compressor_benches"
+harness = false

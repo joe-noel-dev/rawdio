@@ -17,14 +17,13 @@ pub struct ConvolutionProcessor {
     complex_input: ComplexAudioBuffer,
     complex_output: ComplexAudioBuffer,
     output_scale: f32,
+    maximum_frame_count: usize,
 }
 
-const MAXIMUM_FRAME_COUNT: usize = 1024;
-
 impl ConvolutionProcessor {
-    pub fn new(impulse: &dyn AudioBuffer) -> Self {
+    pub fn new(impulse: &dyn AudioBuffer, maximum_frame_count: usize) -> Self {
         let convolution_length =
-            (impulse.frame_count() + MAXIMUM_FRAME_COUNT - 1).next_power_of_two();
+            (impulse.frame_count() + maximum_frame_count - 1).next_power_of_two();
         let output_channel_count = impulse.channel_count();
 
         let mut planner = FftPlanner::new();
@@ -38,6 +37,7 @@ impl ConvolutionProcessor {
             complex_input: create_complex_audio_buffer(output_channel_count, convolution_length),
             complex_output: create_complex_audio_buffer(output_channel_count, convolution_length),
             output_scale: 1.0 / convolution_length as f32,
+            maximum_frame_count,
         }
     }
 
@@ -119,7 +119,7 @@ impl ConvolutionProcessor {
         let mut offset = 0;
 
         while remaining > 0 {
-            let frames = std::cmp::min(remaining, MAXIMUM_FRAME_COUNT);
+            let frames = std::cmp::min(remaining, self.maximum_frame_count);
 
             let input = BorrowedAudioBuffer::slice_frames(input, offset, frames);
             let mut output = MutableBorrowedAudioBuffer::slice_frames(output, offset, frames);
@@ -239,7 +239,7 @@ mod tests {
 
         let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
-        let mut processor = ConvolutionProcessor::new(&impulse_signal);
+        let mut processor = ConvolutionProcessor::new(&impulse_signal, expected_output.len());
 
         processor.process(&input_signal, &mut output_buffer);
 
@@ -263,7 +263,7 @@ mod tests {
 
             let impulse = create_dirac(impulse_length, channel_count, sample_rate);
 
-            let mut processor = ConvolutionProcessor::new(&impulse);
+            let mut processor = ConvolutionProcessor::new(&impulse, frame_count);
 
             let mut processed =
                 OwnedAudioBuffer::new(frame_count + impulse_length - 1, channel_count, sample_rate);
@@ -293,7 +293,8 @@ mod tests {
 
             let input = OwnedAudioBuffer::white_noise(input_length, channel_count, sample_rate);
 
-            let mut processor = ConvolutionProcessor::new(&impulse);
+            let maximum_frame_count = 1024;
+            let mut processor = ConvolutionProcessor::new(&impulse, maximum_frame_count);
 
             let naive_result = naive_convolution(&input, &impulse);
 
@@ -325,7 +326,8 @@ mod tests {
 
             let input = OwnedAudioBuffer::white_noise(input_length, channel_count, sample_rate);
 
-            let mut processor = ConvolutionProcessor::new(&impulse);
+            let maximum_frame_count = 1024;
+            let mut processor = ConvolutionProcessor::new(&impulse, maximum_frame_count);
 
             let naive_result = naive_convolution(&input, &impulse);
 

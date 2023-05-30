@@ -1,11 +1,12 @@
 use std::time::Duration;
 
-use crate::{effects::utility::PeriodicNotification, graph::DspProcessor, SampleLocation};
-
-use super::{
-    envelope_follower::EnvelopeFollower,
-    envelope_notification::{EnvelopeNotification, EnvelopeNotificationTransmitter},
+use crate::{
+    effects::utility::{EnvelopeFollower, PeriodicNotification},
+    graph::DspProcessor,
+    SampleLocation,
 };
+
+use super::envelope_notification::{EnvelopeNotification, EnvelopeNotificationTransmitter};
 
 pub struct EnvelopeProcessor {
     envelopes: Vec<EnvelopeFollower>,

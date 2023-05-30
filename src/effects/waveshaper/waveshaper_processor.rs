@@ -2,7 +2,6 @@ use itertools::izip;
 
 use crate::{
     commands::Id, graph::DspProcessor, AudioBuffer, Level, OwnedAudioBuffer, SampleLocation,
-    MAXIMUM_FRAME_COUNT,
 };
 
 use super::{
@@ -26,6 +25,7 @@ impl WaveshaperProcessor {
         overdrive_id: Id,
         mix_id: Id,
         sample_rate: usize,
+        maximum_frame_count: usize,
     ) -> Self {
         const NUM_POINTS: usize = 512 - 1;
 
@@ -39,7 +39,7 @@ impl WaveshaperProcessor {
             overdrive_id,
             mix_id,
             oversampling_buffer: OwnedAudioBuffer::new(
-                MAXIMUM_FRAME_COUNT * OVERSAMPLING_RATIO,
+                maximum_frame_count * OVERSAMPLING_RATIO,
                 INTERNAL_CHANNEL_COUNT,
                 sample_rate * OVERSAMPLING_RATIO,
             ),

@@ -1,4 +1,7 @@
-use crate::{commands::Id, graph::DspParameters, AudioParameter, Context, GraphNode, Level};
+use crate::{
+    commands::Id, graph::DspParameters, parameter::ParameterRange, AudioParameter, Context,
+    GraphNode, Level,
+};
 
 use super::{
     parameters::{
@@ -84,18 +87,18 @@ impl Waveshaper {
 
         let (overdrive, realtime_overdrive) = AudioParameter::new(
             id,
-            OVERDRIVE_PARAMETER_DEFAULT,
-            OVERDRIVE_PARAMETER_MIN,
-            OVERDRIVE_PARAMETER_MAX,
-            context.get_command_queue(),
+            ParameterRange::new(
+                OVERDRIVE_PARAMETER_DEFAULT,
+                OVERDRIVE_PARAMETER_MIN,
+                OVERDRIVE_PARAMETER_MAX,
+            ),
+            context,
         );
 
         let (mix, realtime_mix) = AudioParameter::new(
             id,
-            MIX_PARAMETER_DEFAULT,
-            MIX_PARAMETER_MIN,
-            MIX_PARAMETER_MAX,
-            context.get_command_queue(),
+            ParameterRange::new(MIX_PARAMETER_DEFAULT, MIX_PARAMETER_MIN, MIX_PARAMETER_MAX),
+            context,
         );
 
         let processor = Box::new(WaveshaperProcessor::new(
@@ -103,6 +106,7 @@ impl Waveshaper {
             overdrive.get_id(),
             mix.get_id(),
             context.get_sample_rate(),
+            context.maximum_frame_count(),
         ));
 
         let node = GraphNode::new(

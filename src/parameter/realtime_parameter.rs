@@ -1,4 +1,4 @@
-use crate::{commands::Id, Timestamp, MAXIMUM_FRAME_COUNT};
+use crate::{commands::Id, Timestamp};
 
 use super::{
     parameter_change::ValueChangeMethod, parameter_value::ParameterValue, ParameterChange,
@@ -14,6 +14,12 @@ struct ParameterBuffer {
 }
 
 impl ParameterBuffer {
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            values: Vec::with_capacity(capacity),
+        }
+    }
+
     fn reset(&mut self) {
         self.values.clear()
     }
@@ -25,13 +31,9 @@ impl ParameterBuffer {
     fn get_values(&self, frame_count: usize) -> &[f32] {
         &self.values[..frame_count]
     }
-}
 
-impl Default for ParameterBuffer {
-    fn default() -> Self {
-        Self {
-            values: Vec::with_capacity(MAXIMUM_FRAME_COUNT),
-        }
+    fn fill(&mut self, value: f32, frame_count: usize) {
+        self.values.resize(frame_count, value);
     }
 }
 
@@ -46,14 +48,14 @@ pub struct RealtimeAudioParameter {
 }
 
 impl RealtimeAudioParameter {
-    pub fn new(parameter_id: Id, value: ParameterValue) -> Self {
+    pub fn new(parameter_id: Id, value: ParameterValue, maximum_frame_count: usize) -> Self {
         let initial_value = value.load(Ordering::Acquire);
 
         Self {
             parameter_id,
             value,
             parameter_changes: Vec::with_capacity(MAXIMUM_PENDING_PARAMETER_CHANGES),
-            parameter_buffer: ParameterBuffer::default(),
+            parameter_buffer: ParameterBuffer::with_capacity(maximum_frame_count),
             increment: 0.0,
             coefficient: 1.0,
             current_change: ParameterChange {
@@ -77,24 +79,43 @@ impl RealtimeAudioParameter {
             .retain(|param_change| param_change.end_time >= *time);
     }
 
+    fn is_static(&self) -> bool {
+        if (self.coefficient - 1.0).abs() > 1e-6 {
+            return false;
+        }
+
+        if self.increment.abs() > 1e-6 {
+            return false;
+        }
+
+        if !self.parameter_changes.is_empty() {
+            return false;
+        }
+
+        true
+    }
+
     pub fn process(&mut self, time: &Timestamp, frame_count: usize, sample_rate: usize) {
         self.parameter_buffer.reset();
 
         self.remove_expired_changes(time);
 
         let mut value = self.get_value();
-        for frame in 0..frame_count {
-            let frame_time = time.incremented_by_samples(frame, sample_rate);
 
-            value = self.process_change(&frame_time, sample_rate, value);
-
-            self.parameter_buffer.add_value(value as f32);
+        if self.is_static() {
+            self.parameter_buffer.fill(value as f32, frame_count);
+        } else {
+            for frame in 0..frame_count {
+                let frame_time = time.incremented_by_samples(frame, sample_rate);
+                value = self.value_at_time(&frame_time, sample_rate, value);
+                self.parameter_buffer.add_value(value as f32);
+            }
         }
 
         self.set_value(value);
     }
 
-    fn process_change(&mut self, time: &Timestamp, sample_rate: usize, value: f64) -> f64 {
+    fn value_at_time(&mut self, time: &Timestamp, sample_rate: usize, value: f64) -> f64 {
         if let Some(next_event) = self.parameter_changes.first() {
             match next_event.method {
                 ValueChangeMethod::Immediate => {
@@ -182,9 +203,10 @@ mod tests {
 
         let start_sample = from_time.as_samples(sample_rate).ceil() as usize;
         let end_sample = to_time.as_samples(sample_rate).ceil() as usize;
+        let maximum_frame_count = 512;
 
-        for frame in (start_sample..end_sample).step_by(MAXIMUM_FRAME_COUNT) {
-            let frame_end_sample = (frame + MAXIMUM_FRAME_COUNT).min(end_sample);
+        for frame in (start_sample..end_sample).step_by(maximum_frame_count) {
+            let frame_end_sample = (frame + maximum_frame_count).min(end_sample);
             let current_time = from_time.incremented_by_samples(frame, sample_rate);
             let frame_count = frame_end_sample - frame;
 
@@ -200,7 +222,9 @@ mod tests {
     fn immediate_parameter_changes() {
         let id = Id::generate();
         let value = ParameterValue::new(AtomicF64::new(0.0));
-        let mut param = RealtimeAudioParameter::new(id, value);
+        let maximum_frame_count = 512;
+
+        let mut param = RealtimeAudioParameter::new(id, value, maximum_frame_count);
 
         param.add_parameter_change(ParameterChange {
             value: 1.0,
@@ -247,7 +271,9 @@ mod tests {
     fn ramped_parameter_changes() {
         let id = Id::generate();
         let value = ParameterValue::new(AtomicF64::new(0.0));
-        let mut param = RealtimeAudioParameter::new(id, value);
+        let maximum_frame_count = 512;
+
+        let mut param = RealtimeAudioParameter::new(id, value, maximum_frame_count);
 
         [
             (1.0, Timestamp::zero(), Timestamp::from_seconds(1.0)),
@@ -297,7 +323,8 @@ mod tests {
         let id = Id::generate();
         let initial_value = 2.0;
         let value = ParameterValue::new(AtomicF64::new(initial_value));
-        let mut param = RealtimeAudioParameter::new(id, value);
+        let maximum_frame_count = 512;
+        let mut param = RealtimeAudioParameter::new(id, value, maximum_frame_count);
 
         let ramp_duration = Timestamp::from_seconds(1.0);
 
@@ -325,7 +352,4 @@ mod tests {
         assert_relative_eq!(get_value_at_time(0.5), 2.0 * 1.414, epsilon = 1e-3);
         assert_relative_eq!(get_value_at_time(1.0), 4.0, epsilon = 1e-3);
     }
-
-    #[test]
-    fn smooth_ramp() {}
 }

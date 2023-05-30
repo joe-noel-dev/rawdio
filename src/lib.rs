@@ -50,6 +50,7 @@ pub use buffer::SampleLocation;
 pub use effects::Adsr;
 pub use effects::Biquad;
 pub use effects::BiquadFilterType;
+pub use effects::Compressor;
 pub use effects::Convolution;
 pub use effects::Envelope;
 pub use effects::Gain;
@@ -74,5 +75,3 @@ pub use parameter::AudioParameter;
 
 pub use utility::Level;
 pub use utility::Timestamp;
-
-pub(crate) const MAXIMUM_FRAME_COUNT: usize = 512;

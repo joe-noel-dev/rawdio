@@ -1,5 +1,6 @@
 mod adsr;
 mod biquad;
+mod compressor;
 mod convolution;
 mod envelope;
 mod gain;
@@ -14,6 +15,7 @@ mod waveshaper;
 pub use adsr::Adsr;
 pub use biquad::Biquad;
 pub use biquad::BiquadFilterType;
+pub use compressor::Compressor;
 pub use convolution::Convolution;
 pub use envelope::Envelope;
 pub use gain::Gain;

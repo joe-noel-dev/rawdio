@@ -2,6 +2,9 @@ use std::time::Duration;
 
 pub struct EnvelopeFollower {
     level: f32,
+    sample_rate: f64,
+    attack_time: Duration,
+    release_time: Duration,
     attack_coefficient: f64,
     release_coefficient: f64,
 }
@@ -14,8 +17,25 @@ impl EnvelopeFollower {
     pub fn new(sample_rate: f64, attack_time: Duration, release_time: Duration) -> Self {
         Self {
             level: 0.0,
+            sample_rate,
+            attack_time,
+            release_time,
             attack_coefficient: calculate_coefficient(sample_rate, attack_time),
             release_coefficient: calculate_coefficient(sample_rate, release_time),
+        }
+    }
+
+    pub fn set_attack_time(&mut self, attack_time: Duration) {
+        if self.attack_time != attack_time {
+            self.attack_time = attack_time;
+            self.attack_coefficient = calculate_coefficient(self.sample_rate, attack_time);
+        }
+    }
+
+    pub fn set_release_time(&mut self, release_time: Duration) {
+        if self.release_time != release_time {
+            self.release_time = release_time;
+            self.release_coefficient = calculate_coefficient(self.sample_rate, release_time);
         }
     }
 
