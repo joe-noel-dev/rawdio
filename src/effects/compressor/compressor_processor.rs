@@ -109,7 +109,7 @@ impl CompressorProcessor {
             envelope_db + ((1.0 / ratio - 1.0) * excess * excess) / (2.0 * knee)
         };
 
-        Level::from_db_f32(output - envelope_db).as_gain_f32()
+        Level::from_db_f32(output - envelope_db).as_linear_f32()
     }
 
     fn process_gain_reduction(&mut self, context: &mut ProcessContext) {
@@ -150,7 +150,7 @@ impl CompressorProcessor {
             }
 
             let gain = Self::calculate_gain_reduction(
-                Level::from_gain(envelope),
+                Level::from_linear(envelope),
                 knee[frame],
                 threshold[frame],
                 ratio[frame],
@@ -347,7 +347,7 @@ mod tests {
             channel_count,
             sample_rate,
             frequency,
-            test_level.as_gain(),
+            test_level.as_linear(),
         );
 
         let mut fixture = Fixture::default();
@@ -377,7 +377,7 @@ mod tests {
             channel_count,
             sample_rate,
             frequency,
-            test_level.as_gain(),
+            test_level.as_linear(),
         );
 
         let mut fixture = Fixture::default();

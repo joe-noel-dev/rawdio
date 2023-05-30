@@ -44,7 +44,7 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
 
         oscillator
             .gain
-            .set_value_at_time(level.as_gain(), Timestamp::zero());
+            .set_value_at_time(level.as_linear(), Timestamp::zero());
 
         oscillator
     })

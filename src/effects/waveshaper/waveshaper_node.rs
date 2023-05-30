@@ -44,7 +44,7 @@ impl Waveshaper {
     /// Create a waveshaper that uses a soft saturation function to shape the
     /// input
     pub fn soft_saturator(context: &dyn Context, channel_count: usize, threshold: Level) -> Self {
-        let threshold = threshold.as_gain() as f32;
+        let threshold = threshold.as_linear() as f32;
         assert!(0.0 <= threshold);
         assert!(threshold <= 1.0);
 
@@ -64,7 +64,7 @@ impl Waveshaper {
     /// Create a waveshaper that hard clips the signal when it goes over the
     /// specified threshold
     pub fn hard_clip(context: &dyn Context, channel_count: usize, threshold: Level) -> Self {
-        let threshold = threshold.as_gain() as f32;
+        let threshold = threshold.as_linear() as f32;
 
         let shaper = Box::new(move |input: f32| {
             if input < -threshold {

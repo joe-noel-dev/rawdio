@@ -42,12 +42,12 @@ fn calculate_coefficients(
         BiquadFilterType::HighShelf => BiquadCoefficients::high_shelf(
             parameters.frequency,
             sample_rate as f64,
-            Level::from_gain(parameters.shelf_gain),
+            Level::from_linear(parameters.shelf_gain),
         ),
         BiquadFilterType::LowShelf => BiquadCoefficients::low_shelf(
             parameters.frequency,
             sample_rate as f64,
-            Level::from_gain(parameters.shelf_gain),
+            Level::from_linear(parameters.shelf_gain),
         ),
     }
 }

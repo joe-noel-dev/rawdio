@@ -63,7 +63,7 @@ impl Drop for Fixture {
 fn test_phase_invert() {
     let channel_count = 1;
     let mut fixture = Fixture::new(channel_count);
-    fixture.mixer.set_level(0, 0, Level::from_gain(-1.0));
+    fixture.mixer.set_level(0, 0, Level::from_linear(-1.0));
 
     let frame_count = 1_024;
     let sample_rate = 48_000;
@@ -112,8 +112,8 @@ fn test_channel_flip() {
 fn test_stereo_to_mono() {
     let channel_count = 2;
     let mut fixture = Fixture::new(channel_count);
-    fixture.mixer.set_level(0, 0, Level::from_gain(0.5));
-    fixture.mixer.set_level(1, 0, Level::from_gain(0.5));
+    fixture.mixer.set_level(0, 0, Level::from_linear(0.5));
+    fixture.mixer.set_level(1, 0, Level::from_linear(0.5));
 
     let frame_count = 1_024;
     let sample_rate = 48_000;

@@ -105,7 +105,7 @@ impl BiquadCoefficients {
     }
 
     pub fn low_shelf(center_frequency: f64, sample_rate: f64, level: Level) -> Self {
-        let a = level.as_gain().sqrt();
+        let a = level.as_linear().sqrt();
 
         let omega = omega(center_frequency, sample_rate);
         let beta = (2.0 * a).sqrt();
@@ -135,7 +135,7 @@ impl BiquadCoefficients {
     }
 
     pub fn high_shelf(center_frequency: f64, sample_rate: f64, level: Level) -> Self {
-        let a = level.as_gain().sqrt();
+        let a = level.as_linear().sqrt();
 
         let omega = omega(center_frequency, sample_rate);
         let beta = (a + a).sqrt();
