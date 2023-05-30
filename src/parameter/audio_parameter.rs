@@ -4,7 +4,7 @@ use crate::{
 };
 use atomic_float::AtomicF64;
 
-use super::{parameter_change::ValueChangeMethod, parameter_value::ParameterValue};
+use super::{parameter_change::ValueChangeMethod, parameter_value::ParameterValue, ParameterRange};
 use super::{realtime_parameter::RealtimeAudioParameter, ParameterChange};
 
 /// An parameter that generates a value for every audio sample
@@ -12,8 +12,7 @@ pub struct AudioParameter {
     dsp_id: Id,
     parameter_id: Id,
     value: ParameterValue,
-    minimum_value: f64,
-    maximum_value: f64,
+    range: ParameterRange,
     command_queue: Box<dyn CommandQueue>,
 }
 
@@ -21,25 +20,19 @@ impl AudioParameter {
     /// Create a new audio parameter
     pub fn new(
         dsp_id: Id,
-        initial_value: f64,
-        minimum_value: f64,
-        maximum_value: f64,
+        range: ParameterRange,
         command_queue: Box<dyn CommandQueue>,
     ) -> (Self, RealtimeAudioParameter) {
-        assert!((minimum_value..=maximum_value).contains(&initial_value));
-        assert!(minimum_value < maximum_value);
-
         let parameter_id = Id::generate();
-        let param_value = ParameterValue::new(AtomicF64::new(initial_value));
-        let realtime_audio_param = RealtimeAudioParameter::new(parameter_id, param_value.clone());
+        let value = ParameterValue::new(AtomicF64::new(range.default()));
+        let realtime_audio_param = RealtimeAudioParameter::new(parameter_id, value.clone());
 
         (
             Self {
                 dsp_id,
                 parameter_id,
-                value: param_value,
-                minimum_value,
-                maximum_value,
+                value,
+                range,
                 command_queue,
             },
             realtime_audio_param,
@@ -65,7 +58,7 @@ impl AudioParameter {
     ///
     /// If `at_time` is in the past, it will be handled immediately
     pub fn set_value_at_time(&mut self, mut value: f64, at_time: Timestamp) {
-        value = value.clamp(self.minimum_value, self.maximum_value);
+        value = self.range.clamp(value);
         self.command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {
                 dsp_id: self.dsp_id,
@@ -80,7 +73,8 @@ impl AudioParameter {
 
     /// Linearly to a value over a time window
     pub fn linear_ramp_to_value(&mut self, value: f64, start_time: Timestamp, end_time: Timestamp) {
-        let value = value.clamp(self.minimum_value, self.maximum_value);
+        let value = self.range.clamp(value);
+
         self.command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {
                 dsp_id: self.dsp_id,
@@ -102,7 +96,8 @@ impl AudioParameter {
         start_time: Timestamp,
         end_time: Timestamp,
     ) {
-        let value = value.clamp(self.minimum_value, self.maximum_value);
+        let value = self.range.clamp(value);
+
         self.command_queue
             .send(Command::ParameterValueChange(ParameterChangeRequest {
                 dsp_id: self.dsp_id,

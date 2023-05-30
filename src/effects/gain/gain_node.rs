@@ -1,7 +1,7 @@
 use crate::{
     commands::Id,
     graph::{DspParameters, GraphNode},
-    parameter::AudioParameter,
+    parameter::{AudioParameter, ParameterRange},
     Context,
 };
 
@@ -31,9 +31,7 @@ impl Gain {
         let id = Id::generate();
         let (gain, realtime_gain) = AudioParameter::new(
             id,
-            DEFAULT_GAIN,
-            MIN_GAIN,
-            MAX_GAIN,
+            ParameterRange::new(DEFAULT_GAIN, MIN_GAIN, MAX_GAIN),
             context.get_command_queue(),
         );
 

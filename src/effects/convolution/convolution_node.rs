@@ -1,6 +1,6 @@
 use crate::{
-    commands::Id, graph::DspParameters, AudioBuffer, AudioParameter, Context, GraphNode,
-    OwnedAudioBuffer,
+    commands::Id, graph::DspParameters, parameter::ParameterRange, AudioBuffer, AudioParameter,
+    Context, GraphNode, OwnedAudioBuffer,
 };
 
 use super::convolution_processor::ConvolutionProcessor;
@@ -26,8 +26,11 @@ impl Convolution {
 
         let processor = Box::new(ConvolutionProcessor::new(&impulse));
 
-        let (wet, realtime_wet) =
-            AudioParameter::new(Id::generate(), 1.0, 0.0, 1.0, context.get_command_queue());
+        let (wet, realtime_wet) = AudioParameter::new(
+            Id::generate(),
+            ParameterRange::new(1.0, 0.0, 1.0),
+            context.get_command_queue(),
+        );
 
         let parameters = DspParameters::new([realtime_wet]);
 

@@ -1,4 +1,7 @@
-use crate::{commands::Id, graph::DspParameters, AudioParameter, Context, GraphNode};
+use crate::{
+    commands::Id, graph::DspParameters, parameter::ParameterRange, AudioParameter, Context,
+    GraphNode,
+};
 
 use super::pan_processor::PanProcessor;
 
@@ -20,8 +23,11 @@ impl Pan {
     pub fn new(context: &dyn Context, input_count: usize) -> Self {
         let id = Id::generate();
 
-        let (pan, realtime_pan) =
-            AudioParameter::new(id, 0.0, MIN_PAN, MAX_PAN, context.get_command_queue());
+        let (pan, realtime_pan) = AudioParameter::new(
+            id,
+            ParameterRange::new(0.0, MIN_PAN, MAX_PAN),
+            context.get_command_queue(),
+        );
 
         let output_count = 2;
 

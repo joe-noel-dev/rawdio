@@ -1,4 +1,7 @@
-use crate::{commands::Id, graph::DspParameters, AudioParameter, Context, GraphNode, Level};
+use crate::{
+    commands::Id, graph::DspParameters, parameter::ParameterRange, AudioParameter, Context,
+    GraphNode, Level,
+};
 
 use super::{biquad_processor::BiquadProcessor, filter_type::BiquadFilterType};
 
@@ -30,30 +33,35 @@ impl Biquad {
     pub fn new(context: &dyn Context, channel_count: usize, filter_type: BiquadFilterType) -> Self {
         let id = Id::generate();
 
-        let (frequency, realtime_frequency) =
-            AudioParameter::new(id, 1_000.0, 20.0, 20000.0, context.get_command_queue());
+        let (frequency, realtime_frequency) = AudioParameter::new(
+            id,
+            ParameterRange::new(1_000.0, 20.0, 20_000.0),
+            context.get_command_queue(),
+        );
 
         let (q, realtime_q) = AudioParameter::new(
             id,
-            1.0 / 2.0_f64.sqrt(),
-            0.1,
-            10.0,
+            ParameterRange::new(1.0 / 2.0_f64.sqrt(), 0.1, 10.0),
             context.get_command_queue(),
         );
 
         let (shelf_gain, realtime_shelf_gain) = AudioParameter::new(
             id,
-            Level::unity().as_gain(),
-            0.0,
-            Level::from_db(100.0).as_gain(),
+            ParameterRange::new(
+                Level::unity().as_gain(),
+                0.0,
+                Level::from_db(100.0).as_gain(),
+            ),
             context.get_command_queue(),
         );
 
         let (gain, realtime_gain) = AudioParameter::new(
             id,
-            Level::unity().as_gain(),
-            0.0,
-            Level::from_db(100.0).as_gain(),
+            ParameterRange::new(
+                Level::unity().as_gain(),
+                0.0,
+                Level::from_db(100.0).as_gain(),
+            ),
             context.get_command_queue(),
         );
 
