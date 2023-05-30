@@ -55,7 +55,7 @@ impl DspProcessor for MixerProcessor {
                         destination_location,
                         channel_count,
                         frame_count,
-                        gain.as_gain_f32(),
+                        gain.as_linear_f32(),
                     );
                 }
             }

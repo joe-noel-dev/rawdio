@@ -19,14 +19,14 @@ pub fn get_range(parameter: CompressorParameter) -> ParameterRange {
         CompressorParameter::Threshold => ParameterRange::new(0.0, -128.0, 24.0),
         CompressorParameter::Knee => ParameterRange::new(0.0, 0.0, 24.0),
         CompressorParameter::WetLevel => ParameterRange::new(
-            Level::unity().as_gain(),
-            Level::zero().as_gain(),
-            Level::from_db(12.0).as_gain(),
+            Level::unity().as_linear(),
+            Level::zero().as_linear(),
+            Level::from_db(12.0).as_linear(),
         ),
         CompressorParameter::DryLevel => ParameterRange::new(
-            Level::zero().as_gain(),
-            Level::zero().as_gain(),
-            Level::from_db(12.0).as_gain(),
+            Level::zero().as_linear(),
+            Level::zero().as_linear(),
+            Level::from_db(12.0).as_linear(),
         ),
     }
 }

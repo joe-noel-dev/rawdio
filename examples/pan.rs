@@ -38,7 +38,7 @@ fn create_oscillator(context: &dyn Context) -> Oscillator {
 
     oscillator
         .gain
-        .set_value_at_time(Level::from_db(-3.0).as_gain(), Timestamp::zero());
+        .set_value_at_time(Level::from_db(-3.0).as_linear(), Timestamp::zero());
 
     oscillator
 }

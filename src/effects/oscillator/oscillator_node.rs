@@ -71,7 +71,7 @@ impl Oscillator {
             for (harmonic_sample, wavetable_sample) in
                 harmonic_wavetable.iter().zip(wavetable.iter_mut())
             {
-                *wavetable_sample += *harmonic_sample * level.as_gain();
+                *wavetable_sample += *harmonic_sample * level.as_linear();
             }
         }
 

@@ -160,7 +160,7 @@ fn test_peak() {
     let output_samples = output_buffer.get_channel_data(SampleLocation::origin());
 
     let max_value = output_samples.iter().fold(0.0_f32, |a, b| a.max(*b));
-    let max_relative = Level::from_db(0.1).as_gain() as f32;
+    let max_relative = Level::from_db(0.1).as_linear() as f32;
     assert_relative_eq!(max_value, gain as f32, max_relative = max_relative);
 }
 

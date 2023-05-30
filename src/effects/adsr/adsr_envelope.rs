@@ -104,15 +104,15 @@ impl AdsrEnvelope {
             Phase::Decay => {
                 let output =
                     process_exponential(self.envelope, DECAY_TARGET, self.decay_coefficient);
-                let output = output.max(self.sustain_level.as_gain());
+                let output = output.max(self.sustain_level.as_linear());
 
-                if output <= self.sustain_level.as_gain() {
+                if output <= self.sustain_level.as_linear() {
                     self.phase = Phase::Sustain;
                 }
 
                 output
             }
-            Phase::Sustain => self.sustain_level.as_gain(),
+            Phase::Sustain => self.sustain_level.as_linear(),
             Phase::Release => {
                 let output =
                     process_exponential(self.envelope, RELEASE_TARGET, self.release_coefficient);
@@ -156,7 +156,7 @@ fn calculate_decay_coefficient(
     sample_rate: usize,
 ) -> f64 {
     calculate_coefficient(
-        (sustain_level.as_gain() - DECAY_TARGET) / (1.0 - DECAY_TARGET),
+        (sustain_level.as_linear() - DECAY_TARGET) / (1.0 - DECAY_TARGET),
         decay_time,
         sample_rate,
     )
@@ -168,7 +168,7 @@ fn calculate_release_coefficient(
     sample_rate: usize,
 ) -> f64 {
     calculate_coefficient(
-        (-RELEASE_TARGET) / (sustain_level.as_gain() - RELEASE_TARGET),
+        (-RELEASE_TARGET) / (sustain_level.as_linear() - RELEASE_TARGET),
         release_time,
         sample_rate,
     )
@@ -197,7 +197,7 @@ mod tests {
                     SAMPLE_RATE,
                     ATTACK_TIME,
                     DECAY_TIME,
-                    Level::from_gain(SUSTAIN_LEVEL),
+                    Level::from_linear(SUSTAIN_LEVEL),
                     RELEASE_TIME,
                 ),
             }

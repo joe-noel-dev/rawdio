@@ -45,9 +45,9 @@ impl Biquad {
         let (shelf_gain, realtime_shelf_gain) = AudioParameter::new(
             id,
             ParameterRange::new(
-                Level::unity().as_gain(),
+                Level::unity().as_linear(),
                 0.0,
-                Level::from_db(100.0).as_gain(),
+                Level::from_db(100.0).as_linear(),
             ),
             context,
         );
@@ -55,9 +55,9 @@ impl Biquad {
         let (gain, realtime_gain) = AudioParameter::new(
             id,
             ParameterRange::new(
-                Level::unity().as_gain(),
+                Level::unity().as_linear(),
                 0.0,
-                Level::from_db(100.0).as_gain(),
+                Level::from_db(100.0).as_linear(),
             ),
             context,
         );

@@ -74,7 +74,7 @@ impl WaveshaperProcessor {
 fn overdrive_to_gain(overdrive: f32) -> f32 {
     let gain_db =
         OVERDRIVE_GAIN_DB_MIN + overdrive as f64 * (OVERDRIVE_GAIN_DB_MAX - OVERDRIVE_GAIN_DB_MIN);
-    Level::from_db(gain_db).as_gain_f32()
+    Level::from_db(gain_db).as_linear_f32()
 }
 
 fn apply_overdrive(overdrive: &[f32], samples: &mut [f32]) {
