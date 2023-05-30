@@ -2,7 +2,7 @@ use std::sync::{atomic::AtomicI64, atomic::Ordering, Arc};
 
 use crate::{
     commands::Command, AudioBuffer, AudioProcess, BorrowedAudioBuffer, MutableBorrowedAudioBuffer,
-    Timestamp, MAXIMUM_FRAME_COUNT,
+    Timestamp,
 };
 
 use super::dsp_graph::DspGraph;
@@ -17,12 +17,15 @@ pub struct Processor {
     frame_position: usize,
     current_time: Arc<AtomicI64>,
     graph: DspGraph,
+
+    maximum_frame_count: usize,
 }
 
 impl Processor {
     pub fn new(
         sample_rate: usize,
         maximum_channel_count: usize,
+        maximum_frame_count: usize,
         command_rx: CommandReceiver,
         current_time: Arc<AtomicI64>,
     ) -> Self {
@@ -32,7 +35,8 @@ impl Processor {
             command_rx,
             frame_position: 0,
             current_time,
-            graph: DspGraph::new(MAXIMUM_FRAME_COUNT, maximum_channel_count, sample_rate),
+            graph: DspGraph::new(maximum_frame_count, maximum_channel_count, sample_rate),
+            maximum_frame_count,
         }
     }
 
@@ -48,7 +52,7 @@ impl Processor {
         while offset < output_buffer.frame_count() {
             let frame_count = std::cmp::min(
                 output_buffer.frame_count() - offset,
-                self.get_maximum_number_of_frames(),
+                self.maximum_frame_count,
             );
 
             let input_slice = BorrowedAudioBuffer::slice_frames(input_buffer, offset, frame_count);
@@ -111,10 +115,6 @@ impl Processor {
                 }
             }
         }
-    }
-
-    fn get_maximum_number_of_frames(&self) -> usize {
-        MAXIMUM_FRAME_COUNT
     }
 
     fn update_position(&mut self, frame_count: usize) {

@@ -74,5 +74,3 @@ pub use parameter::AudioParameter;
 
 pub use utility::Level;
 pub use utility::Timestamp;
-
-pub(crate) const MAXIMUM_FRAME_COUNT: usize = 512;

@@ -92,13 +92,13 @@ impl Waveshaper {
                 OVERDRIVE_PARAMETER_MIN,
                 OVERDRIVE_PARAMETER_MAX,
             ),
-            context.get_command_queue(),
+            context,
         );
 
         let (mix, realtime_mix) = AudioParameter::new(
             id,
             ParameterRange::new(MIX_PARAMETER_DEFAULT, MIX_PARAMETER_MIN, MIX_PARAMETER_MAX),
-            context.get_command_queue(),
+            context,
         );
 
         let processor = Box::new(WaveshaperProcessor::new(
@@ -106,6 +106,7 @@ impl Waveshaper {
             overdrive.get_id(),
             mix.get_id(),
             context.get_sample_rate(),
+            context.maximum_frame_count(),
         ));
 
         let node = GraphNode::new(

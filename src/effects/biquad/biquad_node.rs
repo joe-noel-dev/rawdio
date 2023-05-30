@@ -33,16 +33,13 @@ impl Biquad {
     pub fn new(context: &dyn Context, channel_count: usize, filter_type: BiquadFilterType) -> Self {
         let id = Id::generate();
 
-        let (frequency, realtime_frequency) = AudioParameter::new(
-            id,
-            ParameterRange::new(1_000.0, 20.0, 20_000.0),
-            context.get_command_queue(),
-        );
+        let (frequency, realtime_frequency) =
+            AudioParameter::new(id, ParameterRange::new(1_000.0, 20.0, 20_000.0), context);
 
         let (q, realtime_q) = AudioParameter::new(
             id,
             ParameterRange::new(1.0 / 2.0_f64.sqrt(), 0.1, 10.0),
-            context.get_command_queue(),
+            context,
         );
 
         let (shelf_gain, realtime_shelf_gain) = AudioParameter::new(
@@ -52,7 +49,7 @@ impl Biquad {
                 0.0,
                 Level::from_db(100.0).as_gain(),
             ),
-            context.get_command_queue(),
+            context,
         );
 
         let (gain, realtime_gain) = AudioParameter::new(
@@ -62,7 +59,7 @@ impl Biquad {
                 0.0,
                 Level::from_db(100.0).as_gain(),
             ),
-            context.get_command_queue(),
+            context,
         );
 
         let processor = Box::new(BiquadProcessor::new(

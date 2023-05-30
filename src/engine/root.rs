@@ -9,6 +9,7 @@ pub struct Root {
     timestamp: Arc<AtomicI64>,
     command_transmitter: CommandTransmitter,
     notifiers: Vec<Box<dyn Fn() -> NotifierStatus>>,
+    maximum_frame_count: usize,
 }
 
 impl Context for Root {
@@ -40,12 +41,17 @@ impl Context for Root {
         self.notifiers
             .retain(|notifier| (notifier)() == NotifierStatus::Continue);
     }
+
+    fn maximum_frame_count(&self) -> usize {
+        self.maximum_frame_count
+    }
 }
 
 /// Options to control the engine
 pub struct EngineOptions {
     sample_rate: usize,
     maximum_channel_count: usize,
+    maximum_frame_count: usize,
 }
 
 impl Default for EngineOptions {
@@ -53,6 +59,7 @@ impl Default for EngineOptions {
         Self {
             sample_rate: 44_100,
             maximum_channel_count: 2,
+            maximum_frame_count: 512,
         }
     }
 }
@@ -69,6 +76,18 @@ impl EngineOptions {
     /// A bigger channel count will use more memory
     pub fn with_maximum_channel_count(mut self, maximum_channel_count: usize) -> Self {
         self.maximum_channel_count = maximum_channel_count;
+        self
+    }
+
+    /// Specify the maximum frame count that will be processed in a single block
+    ///
+    /// A bigger frame count will result in DSP nodes using more memory.
+    /// A smaller frame count might result in higher CPU usage.
+    ///
+    /// It is okay to call process() with more frames, but they will be internally
+    /// processed in smaller blocks.
+    pub fn with_maximum_frame_count(mut self, maximum_frame_count: usize) -> Self {
+        self.maximum_frame_count = maximum_frame_count;
         self
     }
 }
@@ -107,6 +126,7 @@ pub fn create_engine_with_options(
     let processor = Box::new(Processor::new(
         options.sample_rate,
         options.maximum_channel_count,
+        options.maximum_frame_count,
         command_receiver,
         Arc::clone(&timestamp),
     ));
@@ -116,6 +136,7 @@ pub fn create_engine_with_options(
         timestamp,
         command_transmitter,
         notifiers: Vec::new(),
+        maximum_frame_count: options.maximum_frame_count,
     });
 
     (engine, processor)

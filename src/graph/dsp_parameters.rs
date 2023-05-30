@@ -37,3 +37,14 @@ impl DspParameters {
         self.parameters.iter_mut()
     }
 }
+
+impl From<Vec<RealtimeAudioParameter>> for DspParameters {
+    fn from(parameters: Vec<RealtimeAudioParameter>) -> Self {
+        Self {
+            parameters: parameters
+                .into_iter()
+                .map(|parameter| (parameter.get_id(), parameter))
+                .collect(),
+        }
+    }
+}

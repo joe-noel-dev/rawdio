@@ -32,7 +32,7 @@ impl Gain {
         let (gain, realtime_gain) = AudioParameter::new(
             id,
             ParameterRange::new(DEFAULT_GAIN, MIN_GAIN, MAX_GAIN),
-            context.get_command_queue(),
+            context,
         );
 
         let processor = Box::new(GainProcessor::new(gain.get_id()));

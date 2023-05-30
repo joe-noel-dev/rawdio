@@ -27,6 +27,9 @@ pub trait Context {
     /// Get the sample rate of the audio context
     fn get_sample_rate(&self) -> usize;
 
+    /// The maximum number of frames that will be processed per block
+    fn maximum_frame_count(&self) -> usize;
+
     /// Get the command queue to send commands to the context
     fn get_command_queue(&self) -> Box<dyn CommandQueue>;
 

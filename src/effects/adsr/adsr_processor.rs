@@ -7,22 +7,24 @@ use super::{
 use crate::{
     effects::{utility::EventProcessor, Channel},
     graph::DspProcessor,
-    Level, SampleLocation, Timestamp, MAXIMUM_FRAME_COUNT,
+    Level, SampleLocation, Timestamp,
 };
 use std::time::Duration;
-
-const ENVELOPE_BUFFER_SIZE: usize = MAXIMUM_FRAME_COUNT;
 
 pub struct AdsrProcessor {
     event_processor: EventProcessor<AdsrEvent>,
     envelope: AdsrEnvelope,
-    envelope_buffer: [f32; ENVELOPE_BUFFER_SIZE],
+    envelope_buffer: Vec<f32>,
 }
 
 const MAX_PENDING_EVENTS: usize = 64;
 
 impl AdsrProcessor {
-    pub fn new(event_receiver: Channel::Receiver<AdsrEvent>, sample_rate: usize) -> Self {
+    pub fn new(
+        event_receiver: Channel::Receiver<AdsrEvent>,
+        sample_rate: usize,
+        maximum_frame_count: usize,
+    ) -> Self {
         Self {
             event_processor: EventProcessor::with_capacity(
                 MAX_PENDING_EVENTS,
@@ -36,7 +38,7 @@ impl AdsrProcessor {
                 Level::from_db(0.0),
                 Duration::ZERO,
             ),
-            envelope_buffer: [0.0_f32; ENVELOPE_BUFFER_SIZE],
+            envelope_buffer: vec![0.0_f32; maximum_frame_count],
         }
     }
 
@@ -94,11 +96,6 @@ impl DspProcessor for AdsrProcessor {
         let frame_count = std::cmp::min(
             context.input_buffer.frame_count(),
             context.output_buffer.frame_count(),
-        );
-
-        debug_assert!(
-            frame_count <= ENVELOPE_BUFFER_SIZE,
-            "Not designed to work with buffers > ENVELOPE_BUFFER_SIZE"
         );
 
         self.prepare_envelope(

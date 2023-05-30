@@ -59,6 +59,35 @@ pub fn mix_into_with_gain(source: &[f32], destination: &mut [f32], gain: f32) {
     }
 }
 
+pub fn mix_into_with_gains(source: &[f32], destination: &mut [f32], gain: &[f32]) {
+    debug_assert_eq!(source.len(), destination.len());
+    debug_assert_eq!(source.len(), gain.len());
+
+    const VECTOR_SIZE: usize = 16;
+
+    let (source_pre, source_main, source_post) = source.as_simd::<VECTOR_SIZE>();
+    let (dest_pre, dest_main, dest_post) = destination.as_simd_mut::<VECTOR_SIZE>();
+    let (gain_pre, gain_main, gain_post) = gain.as_simd::<VECTOR_SIZE>();
+
+    if source_pre.len() == dest_pre.len() && source_pre.len() == gain_pre.len() {
+        for (input, output, gain) in izip!(source_pre, dest_pre, gain_pre) {
+            *output += *input * *gain;
+        }
+
+        for (input, output, gain) in izip!(source_main, dest_main, gain_main) {
+            *output += *input * *gain;
+        }
+
+        for (input, output, gain) in izip!(source_post, dest_post, gain_post) {
+            *output += *input * *gain;
+        }
+    } else {
+        for (input, output, gain) in izip!(source, destination, gain) {
+            *output += *input * *gain;
+        }
+    }
+}
+
 pub fn mix(source_1: &[f32], source_2: &[f32], destination: &mut [f32]) {
     debug_assert_eq!(source_1.len(), source_2.len());
     debug_assert_eq!(source_1.len(), destination.len());

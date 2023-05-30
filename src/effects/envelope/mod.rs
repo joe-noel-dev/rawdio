@@ -1,4 +1,3 @@
-mod envelope_follower;
 mod envelope_node;
 mod envelope_notification;
 mod envelope_processor;

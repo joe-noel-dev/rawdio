@@ -23,11 +23,8 @@ impl Pan {
     pub fn new(context: &dyn Context, input_count: usize) -> Self {
         let id = Id::generate();
 
-        let (pan, realtime_pan) = AudioParameter::new(
-            id,
-            ParameterRange::new(0.0, MIN_PAN, MAX_PAN),
-            context.get_command_queue(),
-        );
+        let (pan, realtime_pan) =
+            AudioParameter::new(id, ParameterRange::new(0.0, MIN_PAN, MAX_PAN), context);
 
         let output_count = 2;
 

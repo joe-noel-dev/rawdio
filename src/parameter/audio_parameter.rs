@@ -1,6 +1,6 @@
 use crate::{
     commands::{CancelChangeRequest, Command, Id, ParameterChangeRequest},
-    CommandQueue, Timestamp,
+    CommandQueue, Context, Timestamp,
 };
 use atomic_float::AtomicF64;
 
@@ -21,11 +21,12 @@ impl AudioParameter {
     pub fn new(
         dsp_id: Id,
         range: ParameterRange,
-        command_queue: Box<dyn CommandQueue>,
+        context: &dyn Context,
     ) -> (Self, RealtimeAudioParameter) {
         let parameter_id = Id::generate();
         let value = ParameterValue::new(AtomicF64::new(range.default()));
-        let realtime_audio_param = RealtimeAudioParameter::new(parameter_id, value.clone());
+        let realtime_audio_param =
+            RealtimeAudioParameter::new(parameter_id, value.clone(), context.maximum_frame_count());
 
         (
             Self {
@@ -33,7 +34,7 @@ impl AudioParameter {
                 parameter_id,
                 value,
                 range,
-                command_queue,
+                command_queue: context.get_command_queue(),
             },
             realtime_audio_param,
         )
@@ -145,7 +146,8 @@ mod tests {
         fn new(initial_value: f64) -> Self {
             let id = Id::generate();
             let value = ParameterValue::new(AtomicF64::new(initial_value));
-            let realtime_parameter = RealtimeAudioParameter::new(id, value);
+            let maximum_frame_count = 512;
+            let realtime_parameter = RealtimeAudioParameter::new(id, value, maximum_frame_count);
 
             Self { realtime_parameter }
         }

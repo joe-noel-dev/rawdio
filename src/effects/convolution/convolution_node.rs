@@ -24,13 +24,13 @@ impl Convolution {
 
         let output_count = impulse.channel_count();
 
-        let processor = Box::new(ConvolutionProcessor::new(&impulse));
+        let processor = Box::new(ConvolutionProcessor::new(
+            &impulse,
+            context.maximum_frame_count(),
+        ));
 
-        let (wet, realtime_wet) = AudioParameter::new(
-            Id::generate(),
-            ParameterRange::new(1.0, 0.0, 1.0),
-            context.get_command_queue(),
-        );
+        let (wet, realtime_wet) =
+            AudioParameter::new(Id::generate(), ParameterRange::new(1.0, 0.0, 1.0), context);
 
         let parameters = DspParameters::new([realtime_wet]);
 

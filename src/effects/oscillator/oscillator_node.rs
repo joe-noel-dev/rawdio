@@ -98,13 +98,13 @@ impl Oscillator {
         let (frequency, realtime_frequency) = AudioParameter::new(
             id,
             ParameterRange::new(frequency, MIN_FREQUENCY, MAX_FREQUENCY),
-            context.get_command_queue(),
+            context,
         );
 
         let (gain, realtime_gain) = AudioParameter::new(
             id,
             ParameterRange::new(DEFAULT_GAIN, MIN_GAIN, MAX_GAIN),
-            context.get_command_queue(),
+            context,
         );
 
         let input_count = 0;
