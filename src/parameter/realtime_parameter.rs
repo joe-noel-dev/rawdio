@@ -25,6 +25,10 @@ impl ParameterBuffer {
     fn get_values(&self, frame_count: usize) -> &[f32] {
         &self.values[..frame_count]
     }
+
+    fn fill(&mut self, value: f32, frame_count: usize) {
+        self.values.resize(frame_count, value);
+    }
 }
 
 impl Default for ParameterBuffer {
@@ -77,24 +81,43 @@ impl RealtimeAudioParameter {
             .retain(|param_change| param_change.end_time >= *time);
     }
 
+    fn is_static(&self) -> bool {
+        if (self.coefficient - 1.0).abs() > 1e-6 {
+            return false;
+        }
+
+        if self.increment.abs() > 1e-6 {
+            return false;
+        }
+
+        if !self.parameter_changes.is_empty() {
+            return false;
+        }
+
+        true
+    }
+
     pub fn process(&mut self, time: &Timestamp, frame_count: usize, sample_rate: usize) {
         self.parameter_buffer.reset();
 
         self.remove_expired_changes(time);
 
         let mut value = self.get_value();
-        for frame in 0..frame_count {
-            let frame_time = time.incremented_by_samples(frame, sample_rate);
 
-            value = self.process_change(&frame_time, sample_rate, value);
-
-            self.parameter_buffer.add_value(value as f32);
+        if self.is_static() {
+            self.parameter_buffer.fill(value as f32, frame_count);
+        } else {
+            for frame in 0..frame_count {
+                let frame_time = time.incremented_by_samples(frame, sample_rate);
+                value = self.value_at_time(&frame_time, sample_rate, value);
+                self.parameter_buffer.add_value(value as f32);
+            }
         }
 
         self.set_value(value);
     }
 
-    fn process_change(&mut self, time: &Timestamp, sample_rate: usize, value: f64) -> f64 {
+    fn value_at_time(&mut self, time: &Timestamp, sample_rate: usize, value: f64) -> f64 {
         if let Some(next_event) = self.parameter_changes.first() {
             match next_event.method {
                 ValueChangeMethod::Immediate => {
@@ -325,7 +348,4 @@ mod tests {
         assert_relative_eq!(get_value_at_time(0.5), 2.0 * 1.414, epsilon = 1e-3);
         assert_relative_eq!(get_value_at_time(1.0), 4.0, epsilon = 1e-3);
     }
-
-    #[test]
-    fn smooth_ramp() {}
 }
