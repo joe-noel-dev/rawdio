@@ -64,7 +64,7 @@ More examples can be found [here](./examples)
 ## To run an example
 
 ```sh
-cargo run --example [example_name] [example_args]
+cd examples && cargo run --bin [example_name] [example_args]
 ```
 
 ## To run the tests

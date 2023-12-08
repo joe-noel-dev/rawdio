@@ -1,0 +1,11 @@
+[package]
+name = "examples"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rawdio = { path = ".." }
+cpal = "0.15.0"
+crossbeam = "0.8.2"
+hound = "3.4.0"
+structopt = "0.3.26"

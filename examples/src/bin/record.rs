@@ -1,7 +1,4 @@
-#[path = "./lib/helpers.rs"]
-mod helpers;
-
-use helpers::{write_buffer_into_file, AudioCallback};
+use examples::{write_buffer_into_file, AudioCallback};
 use rawdio::{
     create_engine_with_options, Context, EngineOptions, Level, Mixer, Recorder, Timestamp,
 };

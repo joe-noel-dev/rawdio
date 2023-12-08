@@ -1,7 +1,4 @@
-#[path = "./lib/helpers.rs"]
-mod helpers;
-
-use helpers::AudioCallback;
+use examples::AudioCallback;
 use rawdio::{create_engine_with_options, EngineOptions, Level, Oscillator, Timestamp, Waveshaper};
 use std::{thread, time};
 use structopt::StructOpt;

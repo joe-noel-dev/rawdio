@@ -1,14 +1,10 @@
-#[path = "./lib/helpers.rs"]
-mod helpers;
-
 use std::{thread, time};
 
+use examples::{read_file_into_buffer, AudioCallback};
 use rawdio::{
     create_engine_with_options, AudioBuffer, EngineOptions, Gain, Level, Sampler, Timestamp,
 };
 use structopt::StructOpt;
-
-use helpers::{read_file_into_buffer, AudioCallback};
 
 #[derive(Debug, StructOpt)]
 struct Options {

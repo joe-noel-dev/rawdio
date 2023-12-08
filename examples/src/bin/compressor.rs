@@ -1,15 +1,10 @@
-#[path = "./lib/helpers.rs"]
-mod helpers;
+use std::time::Duration;
 
-use std::{thread, time::Duration};
-
+use examples::{read_file_into_buffer, AudioCallback};
 use rawdio::{
-    create_engine_with_options, AudioBuffer, Biquad, BiquadFilterType, EngineOptions, Sampler,
-    Timestamp,
+    create_engine_with_options, AudioBuffer, Compressor, EngineOptions, Sampler, Timestamp,
 };
 use structopt::StructOpt;
-
-use helpers::{read_file_into_buffer, AudioCallback};
 
 #[derive(Debug, StructOpt)]
 struct Options {
@@ -27,29 +22,25 @@ fn play_file(file_to_play: &str) {
 
     let (mut context, process) =
         create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
+
     let _audio_callback = AudioCallback::new(process, sample_rate);
 
     let length_in_samples = sample.frame_count();
     let mut sampler = Sampler::new(context.as_ref(), sample);
 
     let channel_count = 2;
-    let mut biquad = Biquad::new(context.as_ref(), channel_count, BiquadFilterType::LowPass);
 
-    biquad.frequency.set_value_now(20.0);
+    let mut compressor = Compressor::new(context.as_ref(), channel_count);
 
-    biquad.frequency.exponential_ramp_to_value(
-        20_000.0,
-        Timestamp::zero(),
-        Timestamp::from_seconds(10.0),
-    );
+    compressor.threshold.set_value_now(-18.0);
+    compressor.attack.set_value_now(1.0);
+    compressor.release.set_value_now(10.0);
+    compressor.wet_level.set_value_now(0.75);
+    compressor.dry_level.set_value_now(0.25);
+    compressor.knee.set_value_now(6.0);
+    compressor.ratio.set_value_now(4.0);
 
-    biquad.frequency.exponential_ramp_to_value(
-        20.0,
-        Timestamp::from_seconds(10.0),
-        Timestamp::from_seconds(20.0),
-    );
-
-    sampler.node.connect_to(&biquad.node);
+    sampler.node.connect_to(&compressor.node);
 
     sampler.start_now();
     sampler.enable_loop(
@@ -57,12 +48,12 @@ fn play_file(file_to_play: &str) {
         Timestamp::from_samples(length_in_samples as f64, sample_rate),
     );
 
-    biquad.node.connect_to_output();
+    compressor.node.connect_to_output();
 
     context.start();
 
     loop {
-        thread::sleep(Duration::from_secs(1));
+        std::thread::sleep(Duration::from_secs(1));
         context.process_notifications();
     }
 }
