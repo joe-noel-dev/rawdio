@@ -1,7 +1,4 @@
-#[path = "./lib/helpers.rs"]
-mod helpers;
-
-use helpers::AudioCallback;
+use examples::AudioCallback;
 use rawdio::{
     create_engine_with_options, Context, EngineOptions, Gain, Level, Mixer, Oscillator, Timestamp,
 };

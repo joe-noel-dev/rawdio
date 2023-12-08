@@ -308,9 +308,7 @@ mod tests {
             let naive_data = naive_result.get_channel_data(SampleLocation::origin());
             let processed_data = processed_result.get_channel_data(SampleLocation::origin());
 
-            for (_index, (naive_sample, processed_sample)) in
-                zip(naive_data.iter(), processed_data.iter()).enumerate()
-            {
+            for (naive_sample, processed_sample) in zip(naive_data.iter(), processed_data.iter()) {
                 assert_relative_eq!(*naive_sample, *processed_sample, epsilon = 1e-3);
             }
         }

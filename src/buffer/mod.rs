@@ -11,4 +11,3 @@ pub(crate) use buffer_pool::BufferPool;
 pub use mutable_borrowed_audio_buffer::MutableBorrowedAudioBuffer;
 pub use owned_audio_buffer::OwnedAudioBuffer;
 pub use sample_location::SampleLocation;
-pub use sample_location::SampleRange;

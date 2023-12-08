@@ -1,14 +1,13 @@
-#[path = "./lib/helpers.rs"]
-mod helpers;
+use std::{thread, time::Duration};
 
-use std::time::Duration;
+use examples::{read_file_into_buffer, AudioCallback};
 
 use rawdio::{
-    create_engine_with_options, AudioBuffer, Compressor, EngineOptions, Sampler, Timestamp,
+    create_engine_with_options, AudioBuffer, Biquad, BiquadFilterType, EngineOptions, Sampler,
+    Timestamp,
 };
-use structopt::StructOpt;
 
-use helpers::{read_file_into_buffer, AudioCallback};
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 struct Options {
@@ -32,18 +31,23 @@ fn play_file(file_to_play: &str) {
     let mut sampler = Sampler::new(context.as_ref(), sample);
 
     let channel_count = 2;
+    let mut biquad = Biquad::new(context.as_ref(), channel_count, BiquadFilterType::LowPass);
 
-    let mut compressor = Compressor::new(context.as_ref(), channel_count);
+    biquad.frequency.set_value_now(20.0);
 
-    compressor.threshold.set_value_now(-18.0);
-    compressor.attack.set_value_now(1.0);
-    compressor.release.set_value_now(10.0);
-    compressor.wet_level.set_value_now(0.75);
-    compressor.dry_level.set_value_now(0.25);
-    compressor.knee.set_value_now(6.0);
-    compressor.ratio.set_value_now(4.0);
+    biquad.frequency.exponential_ramp_to_value(
+        20_000.0,
+        Timestamp::zero(),
+        Timestamp::from_seconds(10.0),
+    );
 
-    sampler.node.connect_to(&compressor.node);
+    biquad.frequency.exponential_ramp_to_value(
+        20.0,
+        Timestamp::from_seconds(10.0),
+        Timestamp::from_seconds(20.0),
+    );
+
+    sampler.node.connect_to(&biquad.node);
 
     sampler.start_now();
     sampler.enable_loop(
@@ -51,12 +55,12 @@ fn play_file(file_to_play: &str) {
         Timestamp::from_samples(length_in_samples as f64, sample_rate),
     );
 
-    compressor.node.connect_to_output();
+    biquad.node.connect_to_output();
 
     context.start();
 
     loop {
-        std::thread::sleep(Duration::from_secs(1));
+        thread::sleep(Duration::from_secs(1));
         context.process_notifications();
     }
 }

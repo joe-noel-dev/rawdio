@@ -1,7 +1,4 @@
-#[path = "./lib/helpers.rs"]
-mod helpers;
-
-use helpers::render_audio_process_to_file;
+use examples::render_audio_process_to_file;
 use rawdio::{
     create_engine_with_options, Context, EngineOptions, Gain, Oscillator, Pan, Timestamp,
 };

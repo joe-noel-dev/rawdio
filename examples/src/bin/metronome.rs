@@ -1,7 +1,4 @@
-#[path = "./lib/helpers.rs"]
-mod helpers;
-
-use helpers::AudioCallback;
+use examples::AudioCallback;
 use rawdio::{
     create_engine_with_options, Adsr, Context, EngineOptions, Level, Oscillator, Timestamp,
 };
@@ -57,6 +54,7 @@ fn main() {
 
     let (mut context, process) =
         create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
+
     let _callback = AudioCallback::new(process, sample_rate);
 
     let channel_count = 2;
