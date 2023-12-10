@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    Host, InputCallbackInfo, SampleFormat, Stream,
+    Device, Host, SampleFormat, Stream, SupportedStreamConfig,
 };
 use rawdio::{
     AudioBuffer, AudioProcess, BorrowedAudioBuffer, MutableBorrowedAudioBuffer, OwnedAudioBuffer,
@@ -13,8 +13,8 @@ use rawdio::{
 
 pub struct AudioCallback {
     input_channel_count: usize,
-    _output_stream: Stream,
-    _input_stream: Stream,
+    output_stream: Stream,
+    input_stream: Stream,
 }
 
 fn print_output_devices(host: &Host) {
@@ -72,6 +72,7 @@ impl AudioCallback {
 
         let (input_stream, input_channel_count) =
             prepare_input_stream(&host, sample_rate, input_to_output_tx);
+
         let output_stream = prepare_output_stream(
             &host,
             sample_rate,
@@ -82,8 +83,8 @@ impl AudioCallback {
 
         Self {
             input_channel_count,
-            _output_stream: output_stream,
-            _input_stream: input_stream,
+            output_stream,
+            input_stream,
         }
     }
 
@@ -92,30 +93,26 @@ impl AudioCallback {
     }
 }
 
-fn prepare_input_stream(
-    host: &Host,
-    sample_rate: usize,
-    input_to_output_tx: AudioSender,
-) -> (Stream, usize) {
-    let preferred_device = host.default_input_device();
-
-    let device = preferred_device.expect("Couldn't connect to input audio device");
-
+fn choose_input_config(device: &Device, sample_rate: usize) -> cpal::SupportedStreamConfig {
     let mut input_configs = device.supported_input_configs().unwrap();
 
     let cpal_sample_rate = cpal::SampleRate(sample_rate as u32);
 
-    let config = input_configs
+    input_configs
         .find(|config| {
             config.min_sample_rate() <= cpal_sample_rate
                 && cpal_sample_rate <= config.max_sample_rate()
                 && config.sample_format() == SampleFormat::F32
         })
         .expect("No matching configurations for device")
-        .with_sample_rate(cpal_sample_rate);
+        .with_sample_rate(cpal_sample_rate)
+}
 
-    println!("Connecting to input device: {}", device.name().unwrap());
-
+fn create_input_callback(
+    config: SupportedStreamConfig,
+    sample_rate: usize,
+    input_to_output_tx: AudioSender,
+) -> impl for<'a, 'b> Fn(&'a [f32], &'b cpal::InputCallbackInfo) {
     let channel_count = config.channels() as usize;
 
     let input_delay = Duration::from_millis(1);
@@ -126,11 +123,25 @@ fn prepare_input_stream(
         let _ = input_to_output_tx.send(0.0_f32);
     });
 
-    let input_callback = move |data: &[f32], _: &InputCallbackInfo| {
+    move |data: &[f32], _| {
         data.iter().for_each(|sample| {
             let _ = input_to_output_tx.send(*sample);
         });
-    };
+    }
+}
+
+fn prepare_input_stream(
+    host: &Host,
+    sample_rate: usize,
+    input_to_output_tx: AudioSender,
+) -> (Stream, usize) {
+    let preferred_device = host.default_input_device();
+    let device = preferred_device.expect("Couldn't connect to input audio device");
+    let config = choose_input_config(&device, sample_rate);
+
+    println!("Connecting to input device: {}", device.name().unwrap());
+
+    let input_callback = create_input_callback(config.clone(), sample_rate, input_to_output_tx);
 
     let input_error_callback = move |err| eprintln!("Input stream error: {err:?}");
 
@@ -140,54 +151,28 @@ fn prepare_input_stream(
 
     input_stream.play().expect("Couldn't start input stream");
 
-    (input_stream, channel_count)
+    (input_stream, config.channels() as usize)
 }
 
-fn prepare_output_stream(
-    host: &Host,
-    sample_rate: usize,
+fn create_output_callback(
+    config: SupportedStreamConfig,
     input_channel_count: usize,
     input_to_output_rx: AudioReceiver,
     mut audio_process: Box<dyn AudioProcess + Send>,
-) -> Stream {
-    let preferred_device = host.default_output_device();
-
-    let device = preferred_device.expect("Couldn't connect to output audio device");
-
-    let mut output_configs = device.supported_output_configs().unwrap();
-
-    let cpal_sample_rate = cpal::SampleRate(sample_rate as u32);
-    let config = output_configs
-        .find(|config| {
-            config.min_sample_rate() <= cpal_sample_rate
-                && cpal_sample_rate <= config.max_sample_rate()
-                && config.sample_format() == SampleFormat::F32
-        })
-        .expect("No matching configurations for device")
-        .with_sample_rate(cpal_sample_rate);
-
-    println!("Connecting to output device: {}", device.name().unwrap());
-
+) -> impl for<'a, 'b> FnMut(&'a mut [f32], &'b cpal::OutputCallbackInfo) {
     let max_buffer_size = match config.buffer_size() {
-        cpal::SupportedBufferSize::Range { min: _, max } => *max,
+        cpal::SupportedBufferSize::Range { min: _, max } => *max as usize,
         cpal::SupportedBufferSize::Unknown => 4096,
     };
 
     let channel_count = config.channels() as usize;
+    let sample_rate = config.sample_rate().0 as usize;
 
-    let mut input_buffer = OwnedAudioBuffer::new(
-        max_buffer_size as usize,
-        channel_count,
-        config.sample_rate().0 as usize,
-    );
+    let mut input_buffer = OwnedAudioBuffer::new(max_buffer_size, channel_count, sample_rate);
 
-    let mut output_buffer = OwnedAudioBuffer::new(
-        max_buffer_size as usize,
-        channel_count,
-        config.sample_rate().0 as usize,
-    );
+    let mut output_buffer = OwnedAudioBuffer::new(max_buffer_size, channel_count, sample_rate);
 
-    let output_callback = move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+    move |data: &mut [f32], _| {
         let num_frames = data.len() / channel_count;
 
         (0..num_frames).for_each(|frame| {
@@ -210,7 +195,43 @@ fn prepare_output_stream(
         audio_process.process(&input_slice, &mut output_slice);
 
         output_slice.copy_to_interleaved(data, channel_count, data.len() / channel_count);
-    };
+    }
+}
+
+fn choose_output_config(device: &Device, sample_rate: usize) -> cpal::SupportedStreamConfig {
+    let mut output_configs = device.supported_output_configs().unwrap();
+
+    let cpal_sample_rate = cpal::SampleRate(sample_rate as u32);
+
+    output_configs
+        .find(|config| {
+            config.min_sample_rate() <= cpal_sample_rate
+                && cpal_sample_rate <= config.max_sample_rate()
+                && config.sample_format() == SampleFormat::F32
+        })
+        .expect("No matching configurations for device")
+        .with_sample_rate(cpal_sample_rate)
+}
+
+fn prepare_output_stream(
+    host: &Host,
+    sample_rate: usize,
+    input_channel_count: usize,
+    input_to_output_rx: AudioReceiver,
+    audio_process: Box<dyn AudioProcess + Send>,
+) -> Stream {
+    let preferred_device = host.default_output_device();
+    let device = preferred_device.expect("Couldn't connect to output audio device");
+    let config = choose_output_config(&device, sample_rate);
+
+    println!("Connecting to output device: {}", device.name().unwrap());
+
+    let output_callback = create_output_callback(
+        config.clone(),
+        input_channel_count,
+        input_to_output_rx,
+        audio_process,
+    );
 
     let output_error_callback = move |err| eprintln!("Output stream error: {err:?}");
 
