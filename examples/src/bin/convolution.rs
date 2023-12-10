@@ -4,9 +4,20 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 struct Options {
+    #[structopt(short, long)]
     input: String,
+
+    #[structopt(short = "m", long)]
     impulse: String,
+
+    #[structopt(short, long)]
     output: String,
+
+    #[structopt(short, long, default_value = "1.0")]
+    wet: f64,
+
+    #[structopt(short, long, default_value = "0.0")]
+    dry: f64,
 }
 
 fn main() {
@@ -26,20 +37,16 @@ fn process_file(options: &Options) {
         create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
     let mut sample_player = Sampler::new(context.as_ref(), input);
-    let convolution = Convolution::new(context.as_ref(), input_channels, impulse);
-    let mut dry_gain = Gain::new(context.as_ref(), input_channels);
-    let mut wet_gain = Gain::new(context.as_ref(), input_channels);
+    let mut convolution = Convolution::new(context.as_ref(), input_channels, impulse);
+
+    convolution.dry.set_value_now(options.dry);
+    convolution.wet.set_value_now(options.wet);
+
     let mut output = Gain::new(context.as_ref(), input_channels);
+    output.gain.set_value_now(1.0);
 
-    wet_gain.gain.set_value_now(0.05);
-    dry_gain.gain.set_value_now(1.0);
-    output.gain.set_value_now(0.5);
-
-    sample_player.node.connect_to(&dry_gain.node);
     sample_player.node.connect_to(&convolution.node);
-    dry_gain.node.connect_to(&output.node);
-    convolution.node.connect_to(&wet_gain.node);
-    wet_gain.node.connect_to(&output.node);
+    convolution.node.connect_to(&output.node);
     output.node.connect_to_output();
 
     sample_player.start_now();

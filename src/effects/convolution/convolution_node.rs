@@ -10,11 +10,11 @@ pub struct Convolution {
     /// The node to connect into the audio graph
     pub node: GraphNode,
 
-    /// The proportion of the wet (processed signal) to include in the output
-    ///
-    /// A value of 1.0 represents a fully wet signal
-    /// A value of 0.0 represents a fully dry signal
+    /// The gain applied to the wet (processed signal) in the output
     pub wet: AudioParameter,
+
+    /// The gain applied to the dry (input signal) in the output
+    pub dry: AudioParameter,
 }
 
 impl Convolution {
@@ -24,15 +24,20 @@ impl Convolution {
 
         let output_count = impulse.channel_count();
 
+        let (wet, realtime_wet) =
+            AudioParameter::new(id, ParameterRange::new(1.0, 0.0, 1.0), context);
+
+        let (dry, realtime_dry) =
+            AudioParameter::new(id, ParameterRange::new(0.0, 0.0, 1.0), context);
+
         let processor = Box::new(ConvolutionProcessor::new(
             &impulse,
             context.maximum_frame_count(),
+            wet.get_id(),
+            dry.get_id(),
         ));
 
-        let (wet, realtime_wet) =
-            AudioParameter::new(Id::generate(), ParameterRange::new(1.0, 0.0, 1.0), context);
-
-        let parameters = DspParameters::new([realtime_wet]);
+        let parameters = DspParameters::new([realtime_wet, realtime_dry]);
 
         let node = GraphNode::new(
             id,
@@ -43,6 +48,6 @@ impl Convolution {
             parameters,
         );
 
-        Self { node, wet }
+        Self { node, wet, dry }
     }
 }
