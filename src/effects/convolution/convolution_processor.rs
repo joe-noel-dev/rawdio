@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use crate::{
-    graph::DspProcessor, AudioBuffer, BorrowedAudioBuffer, MutableBorrowedAudioBuffer,
-    SampleLocation,
+    commands::Id, dsp::mix_into_with_gains, graph::DspProcessor, AudioBuffer, BorrowedAudioBuffer,
+    MutableBorrowedAudioBuffer, SampleLocation,
 };
 use itertools::izip;
 use rustfft::{num_complex::Complex, num_traits::Zero, Fft, FftPlanner};
@@ -18,10 +18,17 @@ pub struct ConvolutionProcessor {
     complex_output: ComplexAudioBuffer,
     output_scale: f32,
     maximum_frame_count: usize,
+    wet_id: Id,
+    dry_id: Id,
 }
 
 impl ConvolutionProcessor {
-    pub fn new(impulse: &dyn AudioBuffer, maximum_frame_count: usize) -> Self {
+    pub fn new(
+        impulse: &dyn AudioBuffer,
+        maximum_frame_count: usize,
+        wet_id: Id,
+        dry_id: Id,
+    ) -> Self {
         let convolution_length =
             (impulse.frame_count() + maximum_frame_count - 1).next_power_of_two();
         let output_channel_count = impulse.channel_count();
@@ -38,6 +45,8 @@ impl ConvolutionProcessor {
             complex_output: create_complex_audio_buffer(output_channel_count, convolution_length),
             output_scale: 1.0 / convolution_length as f32,
             maximum_frame_count,
+            wet_id,
+            dry_id,
         }
     }
 
@@ -93,31 +102,60 @@ impl ConvolutionProcessor {
         }
     }
 
-    fn copy_to_output(&mut self, output: &mut dyn AudioBuffer) {
-        debug_assert_eq!(output.channel_count(), self.complex_output.len());
+    fn copy_dry_to_output(input: &dyn AudioBuffer, output: &mut dyn AudioBuffer, dry: &[f32]) {
+        debug_assert_eq!(input.channel_count(), output.channel_count());
+        debug_assert_eq!(input.frame_count(), output.frame_count());
+        debug_assert_eq!(input.frame_count(), dry.len());
+
+        for channel in 0..output.channel_count() {
+            let output = output.get_channel_data_mut(SampleLocation::channel(channel));
+            let input = input.get_channel_data(SampleLocation::channel(channel));
+            mix_into_with_gains(input, output, dry);
+        }
+    }
+
+    fn copy_processed_to_output(
+        complex_output: &ComplexAudioBuffer,
+        output_scale: f32,
+        output: &mut dyn AudioBuffer,
+        wet: &[f32],
+    ) {
+        debug_assert_eq!(output.channel_count(), complex_output.len());
+        debug_assert!(wet.len() >= output.frame_count());
 
         for channel in 0..output.channel_count() {
             let audio_data = output.get_channel_data_mut(SampleLocation::channel(channel));
 
-            let convolution_output = self.complex_output.get(channel).expect("Invalid channel");
+            let convolution_output = complex_output.get(channel).expect("Invalid channel");
 
             let index = convolution_output.len() - audio_data.len();
             let convolution_output = &convolution_output[index..];
 
-            for (output_sample, complex_convolution_output) in izip!(audio_data, convolution_output)
+            for (output_sample, complex_convolution_output, wet) in
+                izip!(audio_data, convolution_output, wet)
             {
-                *output_sample = complex_convolution_output.re * self.output_scale;
+                *output_sample += complex_convolution_output.re * output_scale * *wet;
             }
         }
     }
 
-    fn process(&mut self, input: &dyn AudioBuffer, output: &mut dyn AudioBuffer) {
+    fn process(
+        &mut self,
+        input: &dyn AudioBuffer,
+        output: &mut dyn AudioBuffer,
+        wet: &[f32],
+        dry: &[f32],
+    ) {
         debug_assert_eq!(input.channel_count(), output.channel_count());
         debug_assert_eq!(input.frame_count(), output.frame_count());
+        debug_assert_eq!(input.frame_count(), wet.len());
+        debug_assert_eq!(input.frame_count(), dry.len());
 
         for offset in (0..input.frame_count()).step_by(self.maximum_frame_count) {
             let frame_count = std::cmp::min(self.maximum_frame_count, input.frame_count() - offset);
 
+            let wet = &wet[offset..offset + frame_count];
+            let dry = &dry[offset..offset + frame_count];
             let input = BorrowedAudioBuffer::slice_frames(input, offset, frame_count);
             let mut output = MutableBorrowedAudioBuffer::slice_frames(output, offset, frame_count);
 
@@ -125,7 +163,14 @@ impl ConvolutionProcessor {
             self.fft_input();
             self.perform_fft_multiplication();
             self.ifft_output();
-            self.copy_to_output(&mut output);
+
+            Self::copy_dry_to_output(&input, &mut output, dry);
+            Self::copy_processed_to_output(
+                &self.complex_output,
+                self.output_scale,
+                &mut output,
+                wet,
+            );
         }
     }
 }
@@ -162,42 +207,39 @@ fn fft_impulse(
 
 impl DspProcessor for ConvolutionProcessor {
     fn process_audio(&mut self, context: &mut crate::ProcessContext) {
-        self.process(context.input_buffer, context.output_buffer);
+        let wet = context
+            .parameters
+            .get_parameter_values(self.wet_id, context.output_buffer.frame_count());
+
+        let dry = context
+            .parameters
+            .get_parameter_values(self.dry_id, context.output_buffer.frame_count());
+
+        self.process(context.input_buffer, context.output_buffer, wet, dry);
     }
 }
 
 #[cfg(test)]
 mod tests {
 
+    use rand::Rng;
     use std::iter::zip;
 
     use approx::assert_relative_eq;
 
-    use crate::{
-        AudioBuffer, BorrowedAudioBuffer, MutableBorrowedAudioBuffer, OwnedAudioBuffer,
-        SampleLocation,
-    };
+    use crate::{AudioBuffer, OwnedAudioBuffer, SampleLocation};
 
     use super::*;
 
-    fn naive_convolution(input: &dyn AudioBuffer, impulse: &dyn AudioBuffer) -> OwnedAudioBuffer {
-        debug_assert_eq!(input.sample_rate(), impulse.sample_rate());
-        debug_assert_eq!(input.channel_count(), impulse.channel_count());
+    fn naive_convolution(input: &[f32], impulse: &[f32]) -> Vec<f32> {
+        let result_length = input.len() + impulse.len() - 1;
 
-        let result_length = input.frame_count() + impulse.frame_count() - 1;
+        let mut result = vec![0.0; result_length];
 
-        let mut result =
-            OwnedAudioBuffer::new(result_length, input.channel_count(), input.sample_rate());
-
-        let output_data = result.get_channel_data_mut(SampleLocation::origin());
-        let impulse_data = impulse.get_channel_data(SampleLocation::origin());
-        let input_data = input.get_channel_data(SampleLocation::origin());
-
-        for (output_frame, output_sample) in output_data.iter_mut().enumerate() {
-            for (impulse_frame, inpulse_sample) in impulse_data.iter().enumerate() {
-                if impulse_frame <= output_frame && output_frame - impulse_frame < input_data.len()
-                {
-                    *output_sample += input_data[output_frame - impulse_frame] * *inpulse_sample;
+        for (output_frame, output_sample) in result.iter_mut().enumerate() {
+            for (impulse_frame, inpulse_sample) in impulse.iter().enumerate() {
+                if impulse_frame <= output_frame && output_frame - impulse_frame < input.len() {
+                    *output_sample += input[output_frame - impulse_frame] * *inpulse_sample;
                 }
             }
         }
@@ -205,15 +247,53 @@ mod tests {
         result
     }
 
-    fn create_dirac(length: usize, channel_count: usize, sample_rate: usize) -> OwnedAudioBuffer {
-        let mut impulse = OwnedAudioBuffer::new(length, channel_count, sample_rate);
-
-        impulse.clear();
-
-        let impulse_data = impulse.get_channel_data_mut(SampleLocation::origin());
-        impulse_data[0] = 1.0;
-
+    fn dirac(length: usize) -> Vec<f32> {
+        let mut impulse = vec![0.0; length];
+        impulse[0] = 1.0;
         impulse
+    }
+
+    fn random_signal(length: usize) -> Vec<f32> {
+        let mut rng = rand::thread_rng();
+        (0..length).map(|_| rng.gen_range(-1.0..=1.0)).collect()
+    }
+
+    struct Fixture {
+        processor: ConvolutionProcessor,
+        sample_rate: usize,
+    }
+
+    impl Fixture {
+        fn new(impulse: &[f32], maximum_frame_count: usize) -> Self {
+            let channel_count = 1;
+            let sample_rate = 48_000;
+            let impulse = OwnedAudioBuffer::from_slice(impulse, channel_count, sample_rate);
+
+            Self {
+                processor: ConvolutionProcessor::new(
+                    &impulse,
+                    maximum_frame_count,
+                    Id::generate(),
+                    Id::generate(),
+                ),
+                sample_rate,
+            }
+        }
+
+        fn process(&mut self, input: &[f32], wet: f32, dry: f32) -> Vec<f32> {
+            let channel_count = 1;
+
+            let mut output = OwnedAudioBuffer::new(input.len(), channel_count, self.sample_rate);
+
+            let input = OwnedAudioBuffer::from_slice(input, channel_count, self.sample_rate);
+
+            let wet = vec![wet; input.frame_count()];
+            let dry = vec![dry; input.frame_count()];
+
+            self.processor.process(&input, &mut output, &wet, &dry);
+
+            output.get_channel_data(SampleLocation::origin()).to_vec()
+        }
     }
 
     #[test]
@@ -223,23 +303,11 @@ mod tests {
         let expected_output = [5.0, 16.0, 34.0, 60.0, 61.0, 52.0, 32.0];
 
         let frame_count = expected_output.len();
-        let channel_count = 1;
-        let sample_rate = 44_100;
 
-        let mut input_signal = OwnedAudioBuffer::from_slice(&signal_1, channel_count, sample_rate);
-        input_signal = input_signal.padded_to_length(frame_count);
+        let mut fixture = Fixture::new(&signal_1, frame_count);
+        let output = fixture.process(&signal_2, 1.0, 0.0);
 
-        let impulse_signal = OwnedAudioBuffer::from_slice(&signal_2, channel_count, sample_rate);
-
-        let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
-
-        let mut processor = ConvolutionProcessor::new(&impulse_signal, expected_output.len());
-
-        processor.process(&input_signal, &mut output_buffer);
-
-        let output_data = output_buffer.get_channel_data(SampleLocation::origin());
-
-        for (expected_sample, actual_sample) in izip!(expected_output.iter(), output_data.iter()) {
+        for (expected_sample, actual_sample) in izip!(expected_output.iter(), output.iter()) {
             assert_relative_eq!(expected_sample, actual_sample, epsilon = 1e-3);
         }
     }
@@ -250,28 +318,18 @@ mod tests {
             println!("Impulse length = {impulse_length}");
 
             let frame_count = 1024;
-            let channel_count = 1;
-            let sample_rate = 48_000;
+            let expected_length = frame_count + impulse_length - 1;
 
-            let input = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
+            let mut input = random_signal(frame_count);
+            input.resize(expected_length, 0.0);
 
-            let impulse = create_dirac(impulse_length, channel_count, sample_rate);
+            let impulse = dirac(impulse_length);
 
-            let mut processor = ConvolutionProcessor::new(&impulse, frame_count);
+            let mut fixture = Fixture::new(&impulse, frame_count);
 
-            let mut processed =
-                OwnedAudioBuffer::new(frame_count + impulse_length - 1, channel_count, sample_rate);
+            let output = fixture.process(&input, 1.0, 0.0);
 
-            let input = input.padded_to_length(processed.frame_count());
-
-            processor.process(&input, &mut processed);
-
-            let input_channel_data = input.get_channel_data(SampleLocation::origin());
-            let processed_channel_data = processed.get_channel_data(SampleLocation::origin());
-
-            for (input_sample, processed_sample) in
-                zip(input_channel_data.iter(), processed_channel_data.iter())
-            {
+            for (input_sample, processed_sample) in zip(input.iter(), output.iter()) {
                 assert_relative_eq!(input_sample, processed_sample, epsilon = 1e-3);
             }
         }
@@ -280,29 +338,19 @@ mod tests {
     #[test]
     fn generates_correct_output() {
         for (input_length, impulse_length) in [(1024, 1024), (1024, 8192), (8192, 1024)] {
-            let channel_count = 1;
-            let sample_rate = 48_000;
-
-            let impulse = OwnedAudioBuffer::white_noise(impulse_length, channel_count, sample_rate);
-
-            let input = OwnedAudioBuffer::white_noise(input_length, channel_count, sample_rate);
+            let impulse = random_signal(impulse_length);
+            let mut input = random_signal(input_length);
 
             let maximum_frame_count = 1024;
-            let mut processor = ConvolutionProcessor::new(&impulse, maximum_frame_count);
+
+            let mut fixture = Fixture::new(&impulse, maximum_frame_count);
 
             let naive_result = naive_convolution(&input, &impulse);
 
-            let mut processed_result =
-                OwnedAudioBuffer::new(naive_result.frame_count(), channel_count, sample_rate);
+            input.resize(naive_result.len(), 0.0);
+            let processed = fixture.process(&input, 1.0, 0.0);
 
-            let input = input.padded_to_length(naive_result.frame_count());
-
-            processor.process(&input, &mut processed_result);
-
-            let naive_data = naive_result.get_channel_data(SampleLocation::origin());
-            let processed_data = processed_result.get_channel_data(SampleLocation::origin());
-
-            for (naive_sample, processed_sample) in zip(naive_data.iter(), processed_data.iter()) {
+            for (naive_sample, processed_sample) in zip(naive_result.iter(), processed.iter()) {
                 assert_relative_eq!(*naive_sample, *processed_sample, epsilon = 1e-3);
             }
         }
@@ -311,55 +359,60 @@ mod tests {
     #[test]
     fn process_in_chunks() {
         for (input_length, impulse_length) in [(1024, 1024), (1024, 8192), (8192, 1024)] {
-            let channel_count = 1;
-            let sample_rate = 48_000;
-
-            let impulse = OwnedAudioBuffer::white_noise(impulse_length, channel_count, sample_rate);
-
-            let input = OwnedAudioBuffer::white_noise(input_length, channel_count, sample_rate);
+            let impulse = random_signal(impulse_length);
+            let mut input = random_signal(input_length);
 
             let maximum_frame_count = 1024;
-            let mut processor = ConvolutionProcessor::new(&impulse, maximum_frame_count);
 
-            let naive_result = naive_convolution(&input, &impulse);
+            let mut fixture = Fixture::new(&impulse, maximum_frame_count);
 
-            let mut padded_input =
-                OwnedAudioBuffer::new(naive_result.frame_count(), channel_count, sample_rate);
+            let naive = naive_convolution(&input, &impulse);
+            input.resize(naive.len(), 0.0);
 
-            padded_input.copy_from(
-                &input,
-                SampleLocation::origin(),
-                SampleLocation::origin(),
-                input.channel_count(),
-                input.frame_count(),
-            );
+            let mut result = vec![];
 
             let step = 512;
 
-            let mut processed_result =
-                OwnedAudioBuffer::new(naive_result.frame_count(), channel_count, sample_rate);
+            for offset in (0..naive.len()).step_by(step) {
+                let frames = std::cmp::min(step, naive.len() - offset);
 
-            for offset in (0..naive_result.frame_count()).step_by(step) {
-                let this_time = std::cmp::min(step, naive_result.frame_count() - offset);
-
-                let input_slice =
-                    BorrowedAudioBuffer::slice_frames(&padded_input, offset, this_time);
-
-                let mut output_slice = MutableBorrowedAudioBuffer::slice_frames(
-                    &mut processed_result,
-                    offset,
-                    this_time,
-                );
-
-                processor.process(&input_slice, &mut output_slice);
+                let input = &input[offset..offset + frames];
+                let processed = fixture.process(input, 1.0, 0.0);
+                result.extend(processed);
             }
 
-            let naive_data = naive_result.get_channel_data(SampleLocation::origin());
-            let processed_data = processed_result.get_channel_data(SampleLocation::origin());
+            assert_eq!(result.len(), naive.len());
 
-            for (naive_sample, processed_sample) in zip(naive_data.iter(), processed_data.iter()) {
+            for (naive_sample, processed_sample) in zip(naive.iter(), result.iter()) {
                 assert_relative_eq!(*naive_sample, *processed_sample, epsilon = 1e-3);
             }
+        }
+    }
+
+    #[test]
+    fn wet_dry() {
+        let impulse_length = 1024;
+        let input_length = 2048;
+
+        let impulse = random_signal(impulse_length);
+        let mut input = random_signal(input_length);
+
+        let maximum_frame_count = 1024;
+
+        let mut fixture = Fixture::new(&impulse, maximum_frame_count);
+
+        let naive = naive_convolution(&input, &impulse);
+        input.resize(naive.len(), 0.0);
+
+        let wet = 0.25;
+        let dry = 1.0 - wet;
+        let processed = fixture.process(&input, wet, dry);
+
+        for (input_sample, naive_sample, processed_sample) in
+            izip!(input.iter(), naive.iter(), processed.iter())
+        {
+            let expected = *naive_sample * wet + *input_sample * dry;
+            assert_relative_eq!(expected, *processed_sample, epsilon = 1e-3);
         }
     }
 }

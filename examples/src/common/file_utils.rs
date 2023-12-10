@@ -71,9 +71,9 @@ pub fn render_audio_process_to_file(
     let max_frame_count = 1024;
     let mut audio_buffer = OwnedAudioBuffer::new(total_frame_count, num_channels, sample_rate);
 
-    let mut position = 0;
-    while position < total_frame_count {
+    for position in (0..total_frame_count).step_by(max_frame_count) {
         let frames_this_time = std::cmp::min(max_frame_count, total_frame_count - position);
+
         process_block(
             frames_this_time,
             position,
@@ -82,7 +82,6 @@ pub fn render_audio_process_to_file(
             max_value,
             &mut writer,
         );
-        position += frames_this_time;
 
         let progress = 100.0 * position as f64 / total_frame_count as f64;
         println!("Progress: {progress:.2}%");
