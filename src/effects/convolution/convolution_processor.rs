@@ -115,23 +115,17 @@ impl ConvolutionProcessor {
         debug_assert_eq!(input.channel_count(), output.channel_count());
         debug_assert_eq!(input.frame_count(), output.frame_count());
 
-        let mut remaining = input.frame_count();
-        let mut offset = 0;
+        for offset in (0..input.frame_count()).step_by(self.maximum_frame_count) {
+            let frame_count = std::cmp::min(self.maximum_frame_count, input.frame_count() - offset);
 
-        while remaining > 0 {
-            let frames = std::cmp::min(remaining, self.maximum_frame_count);
-
-            let input = BorrowedAudioBuffer::slice_frames(input, offset, frames);
-            let mut output = MutableBorrowedAudioBuffer::slice_frames(output, offset, frames);
+            let input = BorrowedAudioBuffer::slice_frames(input, offset, frame_count);
+            let mut output = MutableBorrowedAudioBuffer::slice_frames(output, offset, frame_count);
 
             self.consume_input(&input);
             self.fft_input();
             self.perform_fft_multiplication();
             self.ifft_output();
             self.copy_to_output(&mut output);
-
-            remaining -= frames;
-            offset += frames;
         }
     }
 }

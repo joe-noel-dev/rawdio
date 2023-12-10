@@ -299,11 +299,9 @@ mod tests {
 
             let mut output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
 
-            let mut remaining = frame_count;
-            let mut offset = 0;
-
-            while remaining > 0 {
-                let frames_this_time = self.maximum_frame_count.min(remaining);
+            for offset in (0..frame_count).step_by(self.maximum_frame_count) {
+                let frames_this_time =
+                    std::cmp::min(self.maximum_frame_count, frame_count - offset);
 
                 let input_slice =
                     BorrowedAudioBuffer::slice_frames(input_signal, offset, frames_this_time);
@@ -325,9 +323,6 @@ mod tests {
                     start_time: &start_time,
                     parameters: &self.parameters,
                 });
-
-                offset += frames_this_time;
-                remaining -= frames_this_time;
             }
 
             output_buffer
