@@ -4,6 +4,8 @@
 
 [![Crates.io](https://img.shields.io/crates/v/rawdio)](https://crates.io/crates/rawdio)
 
+[![docs.rs](https://img.shields.io/docsrs/rawdio)](https://docs.rs/rawdio/latest/rawdio/)
+
 This is an audio engine, inspired by the Web Audio API.
 
 ## Oscillator Example
