@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use itertools::izip;
 use rawdio::{
-    create_engine_with_options, AudioBuffer, EngineOptions, OwnedAudioBuffer, Recorder,
-    SampleLocation, Timestamp,
+    connect_nodes, create_engine_with_options, AudioBuffer, EngineOptions, OwnedAudioBuffer,
+    Recorder, SampleLocation, Timestamp,
 };
 
 fn record_sampler(
@@ -16,7 +16,7 @@ fn record_sampler(
 
     let recorder = Recorder::new(context.as_mut(), channel_count, sample_rate);
 
-    recorder.borrow_mut().node.connect_to_input();
+    connect_nodes!("input" => recorder.borrow_mut());
 
     recorder.borrow_mut().record_now();
     recorder

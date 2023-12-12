@@ -1,8 +1,8 @@
 use approx::assert_relative_eq;
 use itertools::izip;
 use rawdio::{
-    create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions, Level, Mixer,
-    OwnedAudioBuffer, SampleLocation,
+    connect_nodes, create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions,
+    Level, Mixer, OwnedAudioBuffer, SampleLocation,
 };
 
 struct Fixture {
@@ -31,8 +31,7 @@ impl Fixture {
 
         let mixer = Mixer::new(context.as_ref(), channel_count, channel_count);
 
-        mixer.node.connect_to_input();
-        mixer.node.connect_to_output();
+        connect_nodes!("input" => mixer => "output");
 
         context.start();
 
