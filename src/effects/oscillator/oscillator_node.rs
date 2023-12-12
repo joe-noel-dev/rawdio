@@ -1,3 +1,5 @@
+use itertools::izip;
+
 use crate::{
     commands::Id,
     graph::{DspParameters, GraphNode},
@@ -69,7 +71,7 @@ impl Oscillator {
             let harmonic_wavetable = make_sine_wavetable(table_size, harmonic);
 
             for (harmonic_sample, wavetable_sample) in
-                harmonic_wavetable.iter().zip(wavetable.iter_mut())
+                izip!(harmonic_wavetable.iter(), wavetable.iter_mut())
             {
                 *wavetable_sample += *harmonic_sample * level.as_linear();
             }
