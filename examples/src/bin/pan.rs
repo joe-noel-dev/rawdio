@@ -1,6 +1,7 @@
 use examples::AudioCallback;
 use rawdio::{
-    create_engine_with_options, Context, EngineOptions, Level, Oscillator, Pan, Timestamp,
+    connect_nodes, create_engine_with_options, Context, EngineOptions, Level, Oscillator, Pan,
+    Timestamp,
 };
 use std::{thread, time};
 
@@ -14,8 +15,7 @@ fn main() {
     let oscillator = create_oscillator(context.as_ref());
     let pan = create_pan(context.as_ref());
 
-    oscillator.node.connect_to(&pan.node);
-    pan.node.connect_to_output();
+    connect_nodes!(oscillator => pan => "output");
 
     context.start();
     thread::sleep(time::Duration::from_secs(5));

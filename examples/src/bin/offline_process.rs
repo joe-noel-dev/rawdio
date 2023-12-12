@@ -1,6 +1,7 @@
 use examples::render_audio_process_to_file;
 use rawdio::{
-    create_engine_with_options, Context, EngineOptions, Gain, Oscillator, Pan, Timestamp,
+    connect_nodes, create_engine_with_options, Context, EngineOptions, Gain, Oscillator, Pan,
+    Timestamp,
 };
 use std::time::Duration;
 use structopt::StructOpt;
@@ -21,11 +22,11 @@ fn render_file(output_file: &str) {
     let (mut context, process) =
         create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
-    let mut oscillators = create_oscillators(context.as_ref());
-    let mut gain = create_gain(context.as_ref());
-    let mut pan = create_pan(context.as_ref());
+    let oscillators = create_oscillators(context.as_ref());
+    let gain = create_gain(context.as_ref());
+    let pan = create_pan(context.as_ref());
 
-    make_connections(&mut oscillators, &mut gain, &mut pan);
+    make_connections(&oscillators, &gain, &pan);
 
     context.start();
 
@@ -68,11 +69,10 @@ fn create_pan(context: &dyn Context) -> Pan {
     pan
 }
 
-fn make_connections(oscillators: &mut [Oscillator], gain: &mut Gain, pan: &mut Pan) {
+fn make_connections(oscillators: &[Oscillator], gain: &Gain, pan: &Pan) {
     for oscillator in oscillators {
-        oscillator.node.connect_to(&gain.node);
+        connect_nodes!(oscillator => gain);
     }
 
-    gain.node.connect_to(&pan.node);
-    pan.node.connect_to_output();
+    connect_nodes!(gain => pan => "output");
 }

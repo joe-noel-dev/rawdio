@@ -1,5 +1,8 @@
 use examples::{read_file_into_buffer, render_audio_process_to_file};
-use rawdio::{create_engine_with_options, AudioBuffer, Convolution, EngineOptions, Gain, Sampler};
+use rawdio::{
+    connect_nodes, create_engine_with_options, AudioBuffer, Convolution, EngineOptions, Gain,
+    Sampler,
+};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -45,9 +48,7 @@ fn process_file(options: &Options) {
     let mut output = Gain::new(context.as_ref(), input_channels);
     output.gain.set_value_now(1.0);
 
-    sample_player.node.connect_to(&convolution.node);
-    convolution.node.connect_to(&output.node);
-    output.node.connect_to_output();
+    connect_nodes!(sample_player => convolution => output => "output");
 
     sample_player.start_now();
     context.start();

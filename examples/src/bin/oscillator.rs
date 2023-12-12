@@ -1,6 +1,7 @@
 use examples::AudioCallback;
 use rawdio::{
-    create_engine_with_options, Context, EngineOptions, Gain, Level, Mixer, Oscillator, Timestamp,
+    connect_nodes, create_engine_with_options, Context, EngineOptions, Gain, Level, Mixer,
+    Oscillator, Timestamp,
 };
 use std::{thread, time};
 
@@ -11,12 +12,15 @@ fn main() {
 
     let audio_callback = AudioCallback::new(process, sample_rate);
 
-    let mut oscillator = create_oscillator(context.as_ref());
+    let oscillator = create_oscillator(context.as_ref());
     let mut gain = create_gain(context.as_ref());
-    let mut mixer = create_mixer(context.as_ref());
+    let mixer = create_mixer(context.as_ref());
 
     schedule_gain_changes(&mut gain);
-    make_connections(&mut oscillator, &mut gain, &mut mixer);
+
+    connect_nodes!(
+        oscillator => gain => mixer => "output"
+    );
 
     run(context.as_mut());
 
@@ -71,12 +75,6 @@ fn schedule_gain_changes(gain: &mut Gain) {
         Timestamp::from_seconds(3.9),
         Timestamp::from_seconds(4.0),
     );
-}
-
-fn make_connections(oscillator: &mut Oscillator, gain: &mut Gain, mixer: &mut Mixer) {
-    oscillator.node.connect_to(&gain.node);
-    gain.node.connect_to(&mixer.node);
-    mixer.node.connect_to_output();
 }
 
 fn run(context: &mut dyn Context) {

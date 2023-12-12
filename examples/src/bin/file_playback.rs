@@ -2,7 +2,8 @@ use std::{thread, time};
 
 use examples::{read_file_into_buffer, AudioCallback};
 use rawdio::{
-    create_engine_with_options, AudioBuffer, EngineOptions, Gain, Level, Sampler, Timestamp,
+    connect_nodes, create_engine_with_options, AudioBuffer, EngineOptions, Gain, Level, Sampler,
+    Timestamp,
 };
 use structopt::StructOpt;
 
@@ -32,14 +33,13 @@ fn play_file(file_to_play: &str) {
     let channel_count = 2;
     let mut gain = Gain::new(context.as_ref(), channel_count);
 
-    sampler.node.connect_to(&gain.node);
     sampler.start_now();
     sampler.enable_loop(
         Timestamp::zero(),
         Timestamp::from_samples(length_in_samples as f64, sample_rate),
     );
 
-    gain.node.connect_to_output();
+    connect_nodes!(sampler => gain => "output");
 
     gain.gain
         .set_value_at_time(Level::from_db(-6.0).as_linear(), Timestamp::zero());

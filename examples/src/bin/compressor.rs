@@ -2,7 +2,8 @@ use std::time::Duration;
 
 use examples::{read_file_into_buffer, AudioCallback};
 use rawdio::{
-    create_engine_with_options, AudioBuffer, Compressor, EngineOptions, Sampler, Timestamp,
+    connect_nodes, create_engine_with_options, AudioBuffer, Compressor, EngineOptions, Sampler,
+    Timestamp,
 };
 use structopt::StructOpt;
 
@@ -40,15 +41,13 @@ fn play_file(file_to_play: &str) {
     compressor.knee.set_value_now(6.0);
     compressor.ratio.set_value_now(4.0);
 
-    sampler.node.connect_to(&compressor.node);
-
     sampler.start_now();
     sampler.enable_loop(
         Timestamp::zero(),
         Timestamp::from_samples(length_in_samples as f64, sample_rate),
     );
 
-    compressor.node.connect_to_output();
+    connect_nodes!(sampler => compressor);
 
     context.start();
 

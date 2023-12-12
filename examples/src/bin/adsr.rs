@@ -5,8 +5,8 @@ use std::{
 
 use examples::AudioCallback;
 use rawdio::{
-    create_engine_with_options, Adsr, Context, EngineOptions, Gain, Level, Mixer, Oscillator,
-    Timestamp,
+    connect_nodes, create_engine_with_options, Adsr, Context, EngineOptions, Gain, Level, Mixer,
+    Oscillator, Timestamp,
 };
 
 fn main() {
@@ -15,13 +15,13 @@ fn main() {
         create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
     let _audio_callack = AudioCallback::new(process, sample_rate);
 
-    let mut oscillators = create_oscillators(context.as_ref());
+    let oscillators = create_oscillators(context.as_ref());
     let mut adsr = create_adsr(context.as_ref());
-    let mut gain = create_gain(context.as_ref());
-    let mut splitter = create_splitter(context.as_ref());
+    let gain = create_gain(context.as_ref());
+    let splitter = create_splitter(context.as_ref());
 
     schedule_notes(&mut adsr);
-    make_connections(&mut oscillators, &mut adsr, &mut gain, &mut splitter);
+    make_connections(&oscillators, &adsr, &gain, &splitter);
 
     run(context.as_mut());
 }
@@ -81,21 +81,12 @@ fn schedule_notes(adsr: &mut Adsr) {
     adsr.note_off_at_time(Timestamp::from_seconds(3.5));
 }
 
-fn make_connections(
-    oscillators: &mut [Oscillator],
-    adsr: &mut Adsr,
-    gain: &mut Gain,
-    splitter: &mut Mixer,
-) {
+fn make_connections(oscillators: &[Oscillator], adsr: &Adsr, gain: &Gain, splitter: &Mixer) {
     for oscillator in oscillators {
-        oscillator.node.connect_to(&adsr.node);
+        connect_nodes!(oscillator => adsr);
     }
 
-    adsr.node.connect_to(&gain.node);
-
-    gain.node.connect_to(&splitter.node);
-
-    splitter.node.connect_to_output();
+    connect_nodes!(adsr => gain => splitter => "output");
 }
 
 fn run(context: &mut dyn Context) {
