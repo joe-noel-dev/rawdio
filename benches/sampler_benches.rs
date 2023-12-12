@@ -1,6 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{
-    create_engine_with_options, AudioProcess, Context, EngineOptions, OwnedAudioBuffer, Sampler,
+    connect_nodes, create_engine_with_options, AudioProcess, Context, EngineOptions,
+    OwnedAudioBuffer, Sampler,
 };
 
 struct Fixture {
@@ -26,7 +27,7 @@ impl Fixture {
 
         sampler.start_now();
 
-        sampler.node.connect_to_output();
+        connect_nodes!(sampler => "output");
 
         context.start();
 

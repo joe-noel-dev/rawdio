@@ -1,7 +1,7 @@
 use approx::assert_relative_eq;
 use rawdio::{
-    create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions, Gain, Level,
-    OwnedAudioBuffer, SampleLocation, Timestamp,
+    connect_nodes, create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions,
+    Gain, Level, OwnedAudioBuffer, SampleLocation, Timestamp,
 };
 
 struct Fixture {
@@ -43,8 +43,7 @@ impl Fixture {
 
         let gain = Gain::new(context.as_ref(), channel_count);
 
-        gain.node.connect_to_input();
-        gain.node.connect_to_output();
+        connect_nodes!("input" => gain => "output");
 
         context.start();
 

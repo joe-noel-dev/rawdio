@@ -1,6 +1,7 @@
 use examples::{write_buffer_into_file, AudioCallback};
 use rawdio::{
-    create_engine_with_options, Context, EngineOptions, Level, Mixer, Recorder, Timestamp,
+    connect_nodes, create_engine_with_options, Context, EngineOptions, Level, Mixer, Recorder,
+    Timestamp,
 };
 use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 use structopt::StructOpt;
@@ -32,8 +33,7 @@ fn main() {
         channel_count,
     );
 
-    mixer.node.connect_to_input();
-    mixer.node.connect_to(&recorder.borrow_mut().node);
+    connect_nodes!("input" => mixer => recorder.borrow_mut());
 
     run(context.as_mut(), &record_duration);
 

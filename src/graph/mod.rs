@@ -1,4 +1,5 @@
 mod assigned_buffer_pool;
+mod connect_nodes;
 mod connection;
 mod dsp;
 mod dsp_parameters;

@@ -1,5 +1,8 @@
 use examples::AudioCallback;
-use rawdio::{create_engine_with_options, EngineOptions, Level, Oscillator, Timestamp, Waveshaper};
+use rawdio::{
+    connect_nodes, create_engine_with_options, EngineOptions, Level, Oscillator, Timestamp,
+    Waveshaper,
+};
 use std::{thread, time};
 use structopt::StructOpt;
 
@@ -48,8 +51,7 @@ fn main() {
         Timestamp::from_seconds(10.0),
     );
 
-    oscillator.node.connect_to(&shaper.node);
-    shaper.node.connect_to_output();
+    connect_nodes!(oscillator => shaper => "output");
 
     context.start();
 

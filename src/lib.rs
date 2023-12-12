@@ -13,7 +13,7 @@
 //! # Example
 //!
 //! ```rust
-//! use rawdio::{create_engine, AudioProcess, Context, Oscillator, OwnedAudioBuffer};
+//! use rawdio::{connect_nodes, create_engine, AudioProcess, Context, Oscillator, OwnedAudioBuffer};
 //!
 //! let (mut context, mut process) = create_engine();
 //!
@@ -21,7 +21,7 @@
 //! let channel_count = 2;
 //! let oscillator = Oscillator::sine(context.as_ref(), frequency, channel_count);
 //!
-//! oscillator.node.connect_to_output();
+//! connect_nodes!(oscillator => "output");
 //!
 //! context.start();
 //!

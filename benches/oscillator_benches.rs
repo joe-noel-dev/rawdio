@@ -1,6 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{
-    create_engine_with_options, AudioProcess, Context, EngineOptions, Oscillator, OwnedAudioBuffer,
+    connect_nodes, create_engine_with_options, AudioProcess, Context, EngineOptions, Oscillator,
+    OwnedAudioBuffer,
 };
 
 struct Fixture {
@@ -23,7 +24,7 @@ impl Fixture {
         let frequency = 1_000.0;
         let oscillator = Oscillator::sine(context.as_ref(), frequency, channel_count);
 
-        oscillator.node.connect_to_output();
+        connect_nodes!(oscillator => "output");
 
         context.start();
 

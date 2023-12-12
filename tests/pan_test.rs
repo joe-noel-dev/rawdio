@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use itertools::Itertools;
 use rawdio::{
-    create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions,
+    connect_nodes, create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions,
     OwnedAudioBuffer, Pan, SampleLocation, Timestamp,
 };
 
@@ -59,8 +59,7 @@ impl Default for Fixture {
 
         let pan = Pan::new(context.as_ref(), channel_count);
 
-        pan.node.connect_to_input();
-        pan.node.connect_to_output();
+        connect_nodes!("input" => pan => "output");
 
         context.start();
 

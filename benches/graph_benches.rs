@@ -1,7 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{
-    create_engine_with_options, AudioProcess, Context, EngineOptions, Gain, OwnedAudioBuffer,
-    Sampler,
+    connect_nodes, create_engine_with_options, AudioProcess, Context, EngineOptions, Gain,
+    OwnedAudioBuffer, Sampler,
 };
 
 struct Fixture {
@@ -61,36 +61,31 @@ impl Fixture {
             gain_layers.push(gains);
         });
 
-        samplers.iter().enumerate().for_each(|(index, sampler)| {
+        for (index, sampler) in samplers.iter().enumerate() {
             let layer = index / nodes_per_layer;
 
             if layer < layer_count {
-                let gain_layer = &mut gain_layers[layer];
-                gain_layer.iter().for_each(|gain| {
-                    sampler.node.connect_to(&gain.node);
-                });
+                for gain in &mut gain_layers[layer] {
+                    connect_nodes!(sampler => gain);
+                }
             } else {
-                sampler.node.connect_to(&final_gain.node);
+                connect_nodes!(sampler => final_gain);
             }
-        });
+        }
 
-        gain_layers
-            .iter()
-            .enumerate()
-            .for_each(|(layer_index, gain_layer)| {
-                let next_layer = layer_index + 1;
+        for (layer_index, gain_layer) in gain_layers.iter().enumerate() {
+            let next_layer = layer_index + 1;
 
-                gain_layer.iter().for_each(|gain_1| {
-                    if next_layer < layer_count {
-                        let gain_layer = &gain_layers[next_layer];
-                        gain_layer.iter().for_each(|gain_2| {
-                            gain_1.node.connect_to(&gain_2.node);
-                        });
-                    } else {
-                        gain_1.node.connect_to(&final_gain.node);
+            for gain_1 in gain_layer {
+                if next_layer < layer_count {
+                    for gain_2 in &gain_layers[next_layer] {
+                        connect_nodes!(gain_1 => gain_2);
                     }
-                });
-            });
+                } else {
+                    connect_nodes!(gain_1 => final_gain);
+                }
+            }
+        }
 
         context.start();
 

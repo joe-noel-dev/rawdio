@@ -1,6 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{
-    create_engine_with_options, AudioProcess, EngineOptions, OwnedAudioBuffer, Pan, Timestamp,
+    connect_nodes, create_engine_with_options, AudioProcess, EngineOptions, OwnedAudioBuffer, Pan,
+    Timestamp,
 };
 
 struct Fixture {
@@ -20,7 +21,9 @@ impl Fixture {
             create_engine_with_options(EngineOptions::default().with_sample_rate(sample_rate));
 
         let mut pan = Pan::new(context.as_ref(), channel_count);
-        pan.node.connect_to_output();
+
+        connect_nodes!("input" => pan => "output");
+
         context.start();
 
         pan.pan.set_value_now(-0.5);

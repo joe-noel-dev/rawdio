@@ -15,7 +15,7 @@ More examples can be found [here](./examples)
 1. Create an engine
 
     ```rust
-    use rawdio::{create_engine, Level, Oscillator, Node};
+    use rawdio::{connect_nodes, create_engine, Level, Oscillator, Node};
     let sample_rate = 44_100;
     let (mut context, mut process) = create_engine(sample_rate);
     ```
@@ -40,7 +40,7 @@ More examples can be found [here](./examples)
 1. Connect to output
 
     ```rust
-    oscillator.node.connect_to_output();
+    connect_nodes!(oscillator => "output");
     ```
 
 1. Start the context

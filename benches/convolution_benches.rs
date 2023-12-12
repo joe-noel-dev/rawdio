@@ -2,7 +2,8 @@ use std::time::Duration;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{
-    create_engine_with_options, AudioProcess, Convolution, EngineOptions, OwnedAudioBuffer,
+    connect_nodes, create_engine_with_options, AudioProcess, Convolution, EngineOptions,
+    OwnedAudioBuffer,
 };
 
 #[allow(dead_code)]
@@ -33,8 +34,7 @@ impl Fixture {
 
         let convolution = Convolution::new(context.as_ref(), channel_count, impulse);
 
-        convolution.node.connect_to_input();
-        convolution.node.connect_to_output();
+        connect_nodes!("input" => convolution => "output");
 
         context.start();
 

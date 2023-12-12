@@ -3,8 +3,8 @@ use std::{thread, time::Duration};
 use examples::{read_file_into_buffer, AudioCallback};
 
 use rawdio::{
-    create_engine_with_options, AudioBuffer, Biquad, BiquadFilterType, EngineOptions, Sampler,
-    Timestamp,
+    connect_nodes, create_engine_with_options, AudioBuffer, Biquad, BiquadFilterType,
+    EngineOptions, Sampler, Timestamp,
 };
 
 use structopt::StructOpt;
@@ -47,15 +47,13 @@ fn play_file(file_to_play: &str) {
         Timestamp::from_seconds(20.0),
     );
 
-    sampler.node.connect_to(&biquad.node);
-
     sampler.start_now();
     sampler.enable_loop(
         Timestamp::zero(),
         Timestamp::from_samples(length_in_samples as f64, sample_rate),
     );
 
-    biquad.node.connect_to_output();
+    connect_nodes!(sampler => biquad => "output");
 
     context.start();
 

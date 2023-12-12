@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 
 use examples::{read_file_into_buffer, AudioCallback};
 use rawdio::{
-    create_engine_with_options, AudioBuffer, Context, EngineOptions, Envelope, Gain,
+    connect_nodes, create_engine_with_options, AudioBuffer, Context, EngineOptions, Envelope, Gain,
     OwnedAudioBuffer, Sampler, Timestamp,
 };
 use structopt::StructOpt;
@@ -31,9 +31,8 @@ fn play_file(file_to_play: &str) {
     let gain = create_gain(context.as_mut(), channel_count, duration);
     let envelope = create_envelope(context.as_mut(), channel_count);
 
-    sampler.node.connect_to(&gain.node);
-    gain.node.connect_to(&envelope.borrow().node);
-    gain.node.connect_to_output();
+    connect_nodes!(sampler => gain => envelope.borrow());
+    connect_nodes!(gain => "output");
 
     sampler.start_now();
 

@@ -1,6 +1,7 @@
 use examples::AudioCallback;
 use rawdio::{
-    create_engine_with_options, Adsr, Context, EngineOptions, Level, Oscillator, Timestamp,
+    connect_nodes, create_engine_with_options, Adsr, Context, EngineOptions, Level, Oscillator,
+    Timestamp,
 };
 use std::time::Duration;
 use structopt::StructOpt;
@@ -61,8 +62,7 @@ fn main() {
     let mut oscillator = create_oscillator(context.as_ref(), channel_count);
     let mut adsr = create_adsr(context.as_ref(), channel_count, sample_rate);
 
-    oscillator.node.connect_to(&adsr.node);
-    adsr.node.connect_to_output();
+    connect_nodes!(oscillator => adsr => "output");
 
     context.start();
 
