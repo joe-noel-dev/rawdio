@@ -16,6 +16,9 @@ itertools = "0.12.0"
 rand = "0.8.5"
 rustfft = {version = "6.1.0", features = ["avx", "sse", "neon"] }
 
+[lib]
+doctest = false
+
 [dev-dependencies]
 approx = "0.5.0" 
 criterion = "0.5"
