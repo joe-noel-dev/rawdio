@@ -1,6 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{
-    create_engine_with_options, AudioProcess, EngineOptions, Gain, OwnedAudioBuffer, Timestamp,
+    connect_nodes, create_engine_with_options, AudioProcess, EngineOptions, Gain, OwnedAudioBuffer,
+    Timestamp,
 };
 
 struct Fixture {
@@ -23,7 +24,7 @@ impl Fixture {
 
         gain.gain.set_value_at_time(1.0, Timestamp::zero());
 
-        gain.node.connect_to_output();
+        connect_nodes!("input" => gain => "output");
 
         context.start();
 

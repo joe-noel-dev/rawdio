@@ -2,7 +2,8 @@ use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{
-    create_engine_with_options, AudioProcess, Context, EngineOptions, Envelope, OwnedAudioBuffer,
+    connect_nodes, create_engine_with_options, AudioProcess, Context, EngineOptions, Envelope,
+    OwnedAudioBuffer,
 };
 
 struct Fixture {
@@ -32,7 +33,7 @@ impl Fixture {
             notification_frequency,
         );
 
-        envelope.borrow_mut().node.connect_to_input();
+        connect_nodes!("input" => envelope.borrow_mut());
 
         context.start();
 

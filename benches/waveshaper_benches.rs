@@ -1,6 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{
-    create_engine_with_options, AudioProcess, EngineOptions, OwnedAudioBuffer, Waveshaper,
+    connect_nodes, create_engine_with_options, AudioProcess, EngineOptions, OwnedAudioBuffer,
+    Waveshaper,
 };
 
 struct Fixture {
@@ -23,8 +24,7 @@ impl Fixture {
 
         let waveshaper = Waveshaper::tanh(context.as_ref(), channel_count);
 
-        waveshaper.node.connect_to_input();
-        waveshaper.node.connect_to_output();
+        connect_nodes!("input" => waveshaper => "output");
 
         context.start();
 

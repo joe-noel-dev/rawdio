@@ -1,6 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{
-    create_engine_with_options, AudioProcess, Compressor, EngineOptions, OwnedAudioBuffer,
+    connect_nodes, create_engine_with_options, AudioProcess, Compressor, EngineOptions,
+    OwnedAudioBuffer,
 };
 
 struct Fixture {
@@ -23,8 +24,7 @@ impl Fixture {
 
         let compressor = Compressor::new(context.as_ref(), channel_count);
 
-        compressor.node.connect_to_input();
-        compressor.node.connect_to_output();
+        connect_nodes!("input" => compressor => "output");
 
         context.start();
 

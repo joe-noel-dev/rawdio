@@ -1,7 +1,10 @@
 use std::time::Duration;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rawdio::{create_engine_with_options, Adsr, EngineOptions, Level, OwnedAudioBuffer, Timestamp};
+use rawdio::{
+    connect_nodes, create_engine_with_options, Adsr, EngineOptions, Level, OwnedAudioBuffer,
+    Timestamp,
+};
 
 fn adsr_benchmarks(c: &mut Criterion) {
     c.benchmark_group("ADSR");
@@ -23,8 +26,7 @@ fn adsr_benchmarks(c: &mut Criterion) {
         adsr.note_on_at_time(Timestamp::zero());
         adsr.note_off_at_time(Timestamp::from_duration(Duration::from_millis(35)));
 
-        adsr.node.connect_to_input();
-        adsr.node.connect_to_output();
+        connect_nodes!("input" => adsr => "output");
 
         context.start();
 
