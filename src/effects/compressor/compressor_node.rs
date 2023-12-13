@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-    commands::Id, graph::DspParameters, parameter::RealtimeAudioParameter, AudioParameter, Context,
-    GraphNode,
-};
+use crate::{commands::Id, graph::DspParameters, AudioParameter, Context, GraphNode};
 
 use super::{
     compressor_parameters::{get_range, CompressorParameter},
@@ -64,12 +61,12 @@ impl Compressor {
         ];
 
         let mut audio_parameters = HashMap::new();
-        let mut realtime_paramters = HashMap::new();
+        let mut realtime_parameters = DspParameters::empty();
 
         for param in parameters.iter() {
             let (audio_param, realtime_param) = AudioParameter::new(id, get_range(*param), context);
             audio_parameters.insert(*param, audio_param);
-            realtime_paramters.insert(*param, realtime_param);
+            realtime_parameters = realtime_parameters.with_parameter(realtime_param);
         }
 
         let mut parameter_ids = HashMap::new();
@@ -84,19 +81,13 @@ impl Compressor {
             parameter_ids,
         ));
 
-        let dsp_parameters = DspParameters::from(
-            realtime_paramters
-                .into_values()
-                .collect::<Vec<RealtimeAudioParameter>>(),
-        );
-
         let node = GraphNode::new(
             id,
             context,
             channel_count,
             channel_count,
             processor,
-            dsp_parameters,
+            realtime_parameters,
         );
 
         Self {

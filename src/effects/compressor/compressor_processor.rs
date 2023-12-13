@@ -256,16 +256,14 @@ mod tests {
                 ids.insert(*param, Id::generate());
             });
 
-            let realtime_parameters: Vec<RealtimeAudioParameter> = params
-                .iter()
-                .map(|parameter| {
-                    let id = ids[parameter];
-                    let value = get_range(*parameter);
-                    let value = AtomicF64::new(value.default());
-                    let value = Arc::new(value);
-                    RealtimeAudioParameter::new(id, value, maximum_frame_count)
-                })
-                .collect();
+            let realtime_params = params.iter().map(|parameter| {
+                let id = ids[parameter];
+                let range = get_range(*parameter);
+                let value = Arc::new(AtomicF64::new(range.default()));
+                RealtimeAudioParameter::new(id, value, maximum_frame_count)
+            });
+
+            let realtime_params = DspParameters::new(realtime_params);
 
             Self {
                 compressor: CompressorProcessor::new(
@@ -275,7 +273,7 @@ mod tests {
                     ids.clone(),
                 ),
                 ids,
-                parameters: DspParameters::from(realtime_parameters),
+                parameters: realtime_params,
                 maximum_frame_count,
             }
         }
