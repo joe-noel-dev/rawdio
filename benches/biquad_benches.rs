@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use rawdio::{
-    connect_nodes, create_engine_with_options, AudioProcess, Biquad, BiquadFilterType,
+    connect_nodes, create_engine_with_options, AudioProcess, Biquad, BiquadFilterType, DspNode,
     EngineOptions, OwnedAudioBuffer, Timestamp,
 };
 
@@ -24,7 +24,9 @@ impl Fixture {
 
         let mut biquad = Biquad::new(context.as_ref(), channel_count, filter_type);
 
-        biquad.frequency.set_value_now(cutoff_frequency);
+        biquad
+            .get_parameter_mut("frequency")
+            .set_value_now(cutoff_frequency);
 
         connect_nodes!("input" => biquad => "output");
 
@@ -45,7 +47,7 @@ impl Fixture {
         end_time: Timestamp,
     ) {
         self.biquad
-            .frequency
+            .get_parameter_mut("frequency")
             .linear_ramp_to_value(value, start_time, end_time);
     }
 

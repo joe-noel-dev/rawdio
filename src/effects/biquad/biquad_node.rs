@@ -1,6 +1,8 @@
 use crate::{
-    commands::Id, graph::DspParameters, parameter::ParameterRange, AudioParameter, Context,
-    GraphNode, Level,
+    commands::Id,
+    parameter::{ParameterRange, Parameters},
+    utility::create_parameters,
+    Context, DspNode, GraphNode, Level,
 };
 
 use super::{biquad_processor::BiquadProcessor, filter_type::BiquadFilterType};
@@ -8,24 +10,27 @@ use super::{biquad_processor::BiquadProcessor, filter_type::BiquadFilterType};
 /// A biquad filter
 ///
 /// This can be used to create a second order filter
+///
+/// # Parameters
+/// - frequency
+/// - q
+/// - shelf-gain
+/// - gain
 pub struct Biquad {
     /// The node to connect into the audio graph
     pub node: GraphNode,
 
-    /// The frequency of the filter
-    ///
-    /// Depending on the type, this could be the centre frequency or the cutoff
-    /// frequency
-    pub frequency: AudioParameter,
+    parameters: Parameters,
+}
 
-    /// The 'q' value of the filter
-    pub q: AudioParameter,
+impl DspNode for Biquad {
+    fn get_parameters(&self) -> &crate::parameter::Parameters {
+        &self.parameters
+    }
 
-    /// The gain of the shelf slope (only used for shelf frequencies)
-    pub shelf_gain: AudioParameter,
-
-    /// Output gain of the filter
-    pub gain: AudioParameter,
+    fn get_parameters_mut(&mut self) -> &mut crate::parameter::Parameters {
+        &mut self.parameters
+    }
 }
 
 impl Biquad {
@@ -33,43 +38,39 @@ impl Biquad {
     pub fn new(context: &dyn Context, channel_count: usize, filter_type: BiquadFilterType) -> Self {
         let id = Id::generate();
 
-        let (frequency, realtime_frequency) =
-            AudioParameter::new(id, ParameterRange::new(1_000.0, 20.0, 20_000.0), context);
-
-        let (q, realtime_q) = AudioParameter::new(
+        let (params, realtime_params) = create_parameters(
             id,
-            ParameterRange::new(1.0 / 2.0_f64.sqrt(), 0.1, 10.0),
             context,
-        );
-
-        let (shelf_gain, realtime_shelf_gain) = AudioParameter::new(
-            id,
-            ParameterRange::new(
-                Level::unity().as_linear(),
-                0.0,
-                Level::from_db(100.0).as_linear(),
-            ),
-            context,
-        );
-
-        let (gain, realtime_gain) = AudioParameter::new(
-            id,
-            ParameterRange::new(
-                Level::unity().as_linear(),
-                0.0,
-                Level::from_db(100.0).as_linear(),
-            ),
-            context,
+            [
+                ("frequency", ParameterRange::new(1_000.0, 20.0, 20_000.0)),
+                ("q", ParameterRange::new(1.0 / 2.0_f64.sqrt(), 0.1, 10.0)),
+                (
+                    "shelf-gain",
+                    ParameterRange::new(
+                        Level::unity().as_linear(),
+                        0.0,
+                        Level::from_db(100.0).as_linear(),
+                    ),
+                ),
+                (
+                    "gain",
+                    ParameterRange::new(
+                        Level::unity().as_linear(),
+                        0.0,
+                        Level::from_db(100.0).as_linear(),
+                    ),
+                ),
+            ],
         );
 
         let processor = Box::new(BiquadProcessor::new(
             context.get_sample_rate(),
             channel_count,
             filter_type,
-            frequency.get_id(),
-            q.get_id(),
-            shelf_gain.get_id(),
-            gain.get_id(),
+            params.get("frequency").unwrap().get_id(),
+            params.get("q").unwrap().get_id(),
+            params.get("shelf-gain").unwrap().get_id(),
+            params.get("gain").unwrap().get_id(),
         ));
 
         let node = GraphNode::new(
@@ -78,20 +79,12 @@ impl Biquad {
             channel_count,
             channel_count,
             processor,
-            DspParameters::new([
-                realtime_frequency,
-                realtime_q,
-                realtime_shelf_gain,
-                realtime_gain,
-            ]),
+            realtime_params,
         );
 
         Self {
             node,
-            frequency,
-            q,
-            shelf_gain,
-            gain,
+            parameters: params,
         }
     }
 }
