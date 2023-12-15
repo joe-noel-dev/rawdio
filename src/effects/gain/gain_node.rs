@@ -1,8 +1,9 @@
 use crate::{
     commands::Id,
-    graph::{DspParameters, GraphNode},
-    parameter::{AudioParameter, ParameterRange},
-    Context,
+    graph::GraphNode,
+    parameter::{AudioParameter, ParameterRange, Parameters},
+    utility::create_parameters,
+    Context, DspNode,
 };
 
 use super::gain_processor::GainProcessor;
@@ -11,31 +12,45 @@ use super::gain_processor::GainProcessor;
 ///
 /// A gain node must be used in the graph with the same number of input to
 /// output channels
+///
+/// # Parameters
+/// - gain
 pub struct Gain {
     /// The node to connect into the audio graph
     pub node: GraphNode,
 
-    /// The (linear) value of the gain
-    ///
-    /// See [crate::Level] to set the value in dB
-    pub gain: AudioParameter,
+    params: Parameters,
 }
 
 const MIN_GAIN: f64 = f64::NEG_INFINITY;
 const MAX_GAIN: f64 = f64::INFINITY;
 const DEFAULT_GAIN: f64 = 1.0;
 
+impl DspNode for Gain {
+    fn get_parameters(&self) -> &Parameters {
+        &self.params
+    }
+
+    fn get_parameters_mut(&mut self) -> &mut Parameters {
+        &mut self.params
+    }
+}
+
 impl Gain {
     /// Create a new gain node with a given channel count
     pub fn new(context: &dyn Context, channel_count: usize) -> Self {
         let id = Id::generate();
-        let (gain, realtime_gain) = AudioParameter::new(
+
+        let (params, realtime_params) = create_parameters(
             id,
-            ParameterRange::new(DEFAULT_GAIN, MIN_GAIN, MAX_GAIN),
             context,
+            [(
+                "gain",
+                ParameterRange::new(DEFAULT_GAIN, MIN_GAIN, MAX_GAIN),
+            )],
         );
 
-        let processor = Box::new(GainProcessor::new(gain.get_id()));
+        let processor = Box::new(GainProcessor::new(params.get("gain").unwrap().get_id()));
 
         Self {
             node: GraphNode::new(
@@ -44,9 +59,14 @@ impl Gain {
                 channel_count,
                 channel_count,
                 processor,
-                DspParameters::new([realtime_gain]),
+                realtime_params,
             ),
-            gain,
+            params,
         }
+    }
+
+    /// Get the gain parameter
+    pub fn gain(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("gain")
     }
 }

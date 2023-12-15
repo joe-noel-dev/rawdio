@@ -51,7 +51,7 @@ fn process_file(options: &Options) {
         .set_value_now(options.wet);
 
     let mut output = Gain::new(context.as_ref(), input_channels);
-    output.gain.set_value_now(1.0);
+    output.gain().set_value_now(1.0);
 
     connect_nodes!(sample_player => convolution => output => "output");
 

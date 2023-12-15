@@ -22,7 +22,7 @@ impl Fixture {
 
         let mut gain = Gain::new(context.as_ref(), channel_count);
 
-        gain.gain.set_value_at_time(1.0, Timestamp::zero());
+        gain.gain().set_value_at_time(1.0, Timestamp::zero());
 
         connect_nodes!("input" => gain => "output");
 
@@ -64,7 +64,7 @@ fn gain_benchmarks(c: &mut Criterion) {
 
         fixture
             .gain
-            .gain
+            .gain()
             .linear_ramp_to_value(0.0, start_time, end_time);
 
         b.iter(|| fixture.process());

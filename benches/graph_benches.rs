@@ -51,7 +51,7 @@ impl Fixture {
                         let mut gain = Gain::new(context.as_ref(), channel_count);
 
                         let value = 1.0 / (nodes_per_layer * layer_count) as f64;
-                        gain.gain.set_value_now(value);
+                        gain.gain().set_value_now(value);
 
                         gains.push(gain);
                     });

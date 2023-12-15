@@ -41,7 +41,7 @@ fn play_file(file_to_play: &str) {
 
     connect_nodes!(sampler => gain => "output");
 
-    gain.gain
+    gain.gain()
         .set_value_at_time(Level::from_db(-6.0).as_linear(), Timestamp::zero());
 
     context.start();

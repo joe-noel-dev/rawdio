@@ -61,9 +61,9 @@ fn create_sampler(context: &dyn Context, sample: OwnedAudioBuffer) -> (Sampler, 
 fn create_gain(context: &mut dyn Context, channel_count: usize, sample_duration: Duration) -> Gain {
     let mut gain = Gain::new(context, channel_count);
 
-    gain.gain.set_value_now(1.0);
+    gain.gain().set_value_now(1.0);
 
-    gain.gain.linear_ramp_to_value(
+    gain.gain().linear_ramp_to_value(
         0.0,
         Timestamp::zero(),
         Timestamp::from_duration(sample_duration),

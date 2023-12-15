@@ -53,7 +53,7 @@ fn create_gain(context: &dyn Context) -> Gain {
     let channel_count = 2;
 
     let mut gain = Gain::new(context, channel_count);
-    gain.gain.set_value_at_time(0.9, Timestamp::zero());
+    gain.gain().set_value_at_time(0.9, Timestamp::zero());
     gain
 }
 
