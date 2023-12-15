@@ -1,20 +1,32 @@
 use crate::{
-    commands::Id, graph::DspParameters, parameter::ParameterRange, AudioBuffer, AudioParameter,
-    Context, GraphNode, OwnedAudioBuffer,
+    commands::Id,
+    parameter::{ParameterRange, Parameters},
+    utility::create_parameters,
+    AudioBuffer, Context, DspNode, GraphNode, OwnedAudioBuffer,
 };
 
 use super::convolution_processor::ConvolutionProcessor;
 
 /// A convolution node to convolve the input signal with an impulse response
+///
+/// # Parameters
+/// - wet
+/// - dry
 pub struct Convolution {
     /// The node to connect into the audio graph
     pub node: GraphNode,
 
-    /// The gain applied to the wet (processed signal) in the output
-    pub wet: AudioParameter,
+    params: Parameters,
+}
 
-    /// The gain applied to the dry (input signal) in the output
-    pub dry: AudioParameter,
+impl DspNode for Convolution {
+    fn get_parameters(&self) -> &crate::parameter::Parameters {
+        &self.params
+    }
+
+    fn get_parameters_mut(&mut self) -> &mut crate::parameter::Parameters {
+        &mut self.params
+    }
 }
 
 impl Convolution {
@@ -24,20 +36,21 @@ impl Convolution {
 
         let output_count = impulse.channel_count();
 
-        let (wet, realtime_wet) =
-            AudioParameter::new(id, ParameterRange::new(1.0, 0.0, 1.0), context);
-
-        let (dry, realtime_dry) =
-            AudioParameter::new(id, ParameterRange::new(0.0, 0.0, 1.0), context);
+        let (params, realtime_params) = create_parameters(
+            id,
+            context,
+            [
+                ("wet", ParameterRange::new(1.0, 0.0, 1.0)),
+                ("dry", ParameterRange::new(0.0, 0.0, 1.0)),
+            ],
+        );
 
         let processor = Box::new(ConvolutionProcessor::new(
             &impulse,
             context.maximum_frame_count(),
-            wet.get_id(),
-            dry.get_id(),
+            params.get("wet").unwrap().get_id(),
+            params.get("dry").unwrap().get_id(),
         ));
-
-        let parameters = DspParameters::new([realtime_wet, realtime_dry]);
 
         let node = GraphNode::new(
             id,
@@ -45,9 +58,9 @@ impl Convolution {
             input_count,
             output_count,
             processor,
-            parameters,
+            realtime_params,
         );
 
-        Self { node, wet, dry }
+        Self { node, params }
     }
 }
