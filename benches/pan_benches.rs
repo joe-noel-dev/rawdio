@@ -26,7 +26,7 @@ impl Fixture {
 
         context.start();
 
-        pan.pan.set_value_now(-0.5);
+        pan.pan().set_value_now(-0.5);
 
         let input_buffer = OwnedAudioBuffer::white_noise(frame_count, channel_count, sample_rate);
         let output_buffer = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
@@ -60,11 +60,11 @@ fn pan_benchmarks(c: &mut Criterion) {
         let start_time = Timestamp::zero();
         let end_time = Timestamp::from_samples(4_096.0, 48_000);
 
-        fixture.pan.pan.set_value_now(-1.0);
+        fixture.pan.pan().set_value_now(-1.0);
 
         fixture
             .pan
-            .pan
+            .pan()
             .linear_ramp_to_value(1.0, start_time, end_time);
 
         b.iter(|| fixture.process());

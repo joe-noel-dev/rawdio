@@ -59,10 +59,10 @@ fn create_pan(context: &dyn Context) -> Pan {
     let pan_input_count = 2;
     let mut pan = Pan::new(context, pan_input_count);
 
-    pan.pan.set_value_at_time(-1.0, Timestamp::zero());
-    pan.pan
+    pan.pan().set_value_at_time(-1.0, Timestamp::zero());
+    pan.pan()
         .linear_ramp_to_value(1.0, Timestamp::zero(), Timestamp::from_seconds(2.0));
-    pan.pan.linear_ramp_to_value(
+    pan.pan().linear_ramp_to_value(
         -1.0,
         Timestamp::from_seconds(2.0),
         Timestamp::from_seconds(4.0),
