@@ -64,11 +64,11 @@ pub use effects::Waveshaper;
 pub use engine::create_engine;
 pub use engine::create_engine_with_options;
 pub use engine::AudioProcess;
-pub use engine::CommandQueue;
+pub(crate) use engine::CommandQueue;
 pub use engine::Context;
 pub use engine::EngineOptions;
 
-pub use graph::DspNode;
+pub(crate) use graph::DspNode;
 pub use graph::GraphNode;
 pub use graph::ProcessContext;
 

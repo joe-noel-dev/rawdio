@@ -13,15 +13,6 @@ impl Parameters {
         }
     }
 
-    pub fn new<A>(params: A) -> Self
-    where
-        A: IntoIterator<Item = (&'static str, AudioParameter)>,
-    {
-        Self {
-            params: params.into_iter().collect(),
-        }
-    }
-
     pub fn with_parameter(mut self, name: &'static str, param: AudioParameter) -> Self {
         self.add(name, param);
         self
