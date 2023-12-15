@@ -10,10 +10,12 @@ use crate::{
     AudioBuffer, Level, OwnedAudioBuffer, ProcessContext, SampleLocation,
 };
 
-use super::compressor_parameters::{get_range, CompressorParameter};
+use super::compressor_parameters::get_range;
+
+type CompressorParameter = &'static str;
 
 pub struct CompressorProcessor {
-    ids: HashMap<CompressorParameter, Id>,
+    ids: HashMap<&'static str, Id>,
     envelopes: Vec<EnvelopeFollower>,
     gain_reduction_buffer: OwnedAudioBuffer,
 }
@@ -23,7 +25,7 @@ impl CompressorProcessor {
         channel_count: usize,
         sample_rate: usize,
         maximum_frame_count: usize,
-        ids: HashMap<CompressorParameter, Id>,
+        ids: HashMap<&'static str, Id>,
     ) -> Self {
         Self {
             ids,
@@ -31,12 +33,8 @@ impl CompressorProcessor {
                 .map(|_| {
                     EnvelopeFollower::new(
                         sample_rate as f64,
-                        Duration::from_secs_f64(
-                            get_range(CompressorParameter::Attack).default() / 1_000.0,
-                        ),
-                        Duration::from_secs_f64(
-                            get_range(CompressorParameter::Release).default() / 1_000.0,
-                        ),
+                        Duration::from_secs_f64(get_range("attack").default() / 1_000.0),
+                        Duration::from_secs_f64(get_range("release").default() / 1_000.0),
                     )
                 })
                 .collect(),
@@ -64,13 +62,13 @@ impl CompressorProcessor {
 
     fn process_envelope(&mut self, context: &mut ProcessContext) {
         let attack = self.get_parameter_values(
-            CompressorParameter::Attack,
+            "attack",
             context.output_buffer.frame_count(),
             context.parameters,
         );
 
         let release = self.get_parameter_values(
-            CompressorParameter::Release,
+            "release",
             context.output_buffer.frame_count(),
             context.parameters,
         );
@@ -114,25 +112,25 @@ impl CompressorProcessor {
 
     fn process_gain_reduction(&mut self, context: &mut ProcessContext) {
         let knee = self.get_parameter_values(
-            CompressorParameter::Knee,
+            "knee",
             context.output_buffer.frame_count(),
             context.parameters,
         );
 
         let threshold = self.get_parameter_values(
-            CompressorParameter::Threshold,
+            "threshold",
             context.output_buffer.frame_count(),
             context.parameters,
         );
 
         let ratio = self.get_parameter_values(
-            CompressorParameter::Ratio,
+            "ratio",
             context.output_buffer.frame_count(),
             context.parameters,
         );
 
         let wet = self.get_parameter_values(
-            CompressorParameter::WetLevel,
+            "wet",
             context.output_buffer.frame_count(),
             context.parameters,
         );
@@ -180,7 +178,7 @@ impl CompressorProcessor {
 
     fn process_dry_signal(&mut self, context: &mut ProcessContext) {
         let dry = self.get_parameter_values(
-            CompressorParameter::DryLevel,
+            "dry",
             context.output_buffer.frame_count(),
             context.parameters,
         );
@@ -242,13 +240,13 @@ mod tests {
             let maximum_frame_count = 512;
 
             let params = [
-                CompressorParameter::Attack,
-                CompressorParameter::Release,
-                CompressorParameter::Ratio,
-                CompressorParameter::Threshold,
-                CompressorParameter::Knee,
-                CompressorParameter::WetLevel,
-                CompressorParameter::DryLevel,
+                "attack",
+                "release",
+                "ratio",
+                "threshold",
+                "knee",
+                "wet",
+                "dry",
             ];
 
             let mut ids = HashMap::new();
@@ -258,7 +256,7 @@ mod tests {
 
             let realtime_params = params.iter().map(|parameter| {
                 let id = ids[parameter];
-                let range = get_range(*parameter);
+                let range = get_range(parameter);
                 let value = Arc::new(AtomicF64::new(range.default()));
                 RealtimeAudioParameter::new(id, value, maximum_frame_count)
             });
@@ -345,7 +343,7 @@ mod tests {
 
         let mut fixture = Fixture::default();
 
-        fixture.set_value(CompressorParameter::Threshold, -12.0);
+        fixture.set_value("threshold", -12.0);
 
         let output = fixture.process(&test_signal, Timestamp::zero());
 
@@ -375,9 +373,9 @@ mod tests {
 
         let mut fixture = Fixture::default();
 
-        fixture.set_value(CompressorParameter::Threshold, -20.0);
-        fixture.set_value(CompressorParameter::WetLevel, 0.0);
-        fixture.set_value(CompressorParameter::DryLevel, 1.0);
+        fixture.set_value("threshold", -20.0);
+        fixture.set_value("wet", 0.0);
+        fixture.set_value("dry", 1.0);
 
         let output = fixture.process(&test_signal, Timestamp::zero());
 
