@@ -3,8 +3,8 @@ use itertools::izip;
 use crate::{
     commands::Id,
     graph::{DspParameters, GraphNode},
-    parameter::{AudioParameter, ParameterRange},
-    Context, Level,
+    parameter::{AudioParameter, ParameterRange, Parameters},
+    Context, DspNode, Level,
 };
 
 use super::oscillator_processor::OscillatorProcessor;
@@ -16,13 +16,7 @@ pub struct Oscillator {
     /// The node to connect to the audio graph
     pub node: GraphNode,
 
-    /// The frequency of the oscillator
-    ///
-    /// This should probably be between 20 Hz and 20 kHz
-    pub frequency: AudioParameter,
-
-    /// The (linear) gain of the oscillator
-    pub gain: AudioParameter,
+    params: Parameters,
 }
 
 const MIN_GAIN: f64 = f64::NEG_INFINITY;
@@ -41,6 +35,16 @@ fn make_sine_wavetable(length: usize, harmonic: usize) -> Vec<f64> {
     }
 
     values
+}
+
+impl DspNode for Oscillator {
+    fn get_parameters(&self) -> &Parameters {
+        &self.params
+    }
+
+    fn get_parameters_mut(&mut self) -> &mut Parameters {
+        &mut self.params
+    }
 }
 
 impl Oscillator {
@@ -128,8 +132,7 @@ impl Oscillator {
 
         Self {
             node,
-            frequency,
-            gain,
+            params: Parameters::new([("frequency", frequency), ("gain", gain)]),
         }
     }
 }

@@ -1,7 +1,7 @@
 use examples::AudioCallback;
 use rawdio::{
-    connect_nodes, create_engine_with_options, Adsr, Context, EngineOptions, Level, Oscillator,
-    Timestamp,
+    connect_nodes, create_engine_with_options, Adsr, Context, DspNode, EngineOptions, Level,
+    Oscillator, Timestamp,
 };
 use std::time::Duration;
 use structopt::StructOpt;
@@ -38,7 +38,7 @@ fn schedule_events(
         };
 
         oscillator
-            .frequency
+            .get_parameter_mut("frequency")
             .set_value_at_time(frequency, beat_position);
 
         adsr.note_on_at_time(beat_position);

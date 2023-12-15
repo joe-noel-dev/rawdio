@@ -5,8 +5,8 @@ use std::{
 
 use examples::AudioCallback;
 use rawdio::{
-    connect_nodes, create_engine_with_options, Adsr, Context, EngineOptions, Gain, Level, Mixer,
-    Oscillator, Timestamp,
+    connect_nodes, create_engine_with_options, Adsr, Context, DspNode, EngineOptions, Gain, Level,
+    Mixer, Oscillator, Timestamp,
 };
 
 fn main() {
@@ -39,7 +39,7 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
         let mut oscillator = Oscillator::sine(context, frequency, channel_count);
 
         oscillator
-            .gain
+            .get_parameter_mut("gain")
             .set_value_at_time(level.as_linear(), Timestamp::zero());
 
         oscillator

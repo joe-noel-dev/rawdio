@@ -68,10 +68,12 @@ pub use engine::CommandQueue;
 pub use engine::Context;
 pub use engine::EngineOptions;
 
+pub use graph::DspNode;
 pub use graph::GraphNode;
 pub use graph::ProcessContext;
 
 pub use parameter::AudioParameter;
+pub(crate) use parameter::Parameters;
 
 pub use utility::Level;
 pub use utility::Timestamp;
