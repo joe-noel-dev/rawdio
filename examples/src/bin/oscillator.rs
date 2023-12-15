@@ -1,6 +1,6 @@
 use examples::AudioCallback;
 use rawdio::{
-    connect_nodes, create_engine_with_options, Context, DspNode, EngineOptions, Gain, Level, Mixer,
+    connect_nodes, create_engine_with_options, Context, EngineOptions, Gain, Level, Mixer,
     Oscillator, Timestamp,
 };
 use std::{thread, time};
@@ -43,16 +43,14 @@ fn create_oscillator(context: &dyn Context) -> Oscillator {
     let mut oscillator = Oscillator::with_harmonics(context, 20.0, channel_count, &harmonics);
 
     oscillator
-        .get_parameter_mut("gain")
+        .gain()
         .set_value_at_time(Level::unity().as_linear(), Timestamp::zero());
 
-    oscillator
-        .get_parameter_mut("frequency")
-        .exponential_ramp_to_value(
-            100.0 * frequency,
-            Timestamp::zero(),
-            Timestamp::from_seconds(4.0),
-        );
+    oscillator.frequency().exponential_ramp_to_value(
+        100.0 * frequency,
+        Timestamp::zero(),
+        Timestamp::from_seconds(4.0),
+    );
 
     oscillator
 }

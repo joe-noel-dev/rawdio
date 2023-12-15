@@ -1,7 +1,7 @@
 use examples::render_audio_process_to_file;
 use rawdio::{
-    connect_nodes, create_engine_with_options, Context, DspNode, EngineOptions, Gain, Oscillator,
-    Pan, Timestamp,
+    connect_nodes, create_engine_with_options, Context, EngineOptions, Gain, Oscillator, Pan,
+    Timestamp,
 };
 use std::time::Duration;
 use structopt::StructOpt;
@@ -41,9 +41,7 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
     [(440.0, 0.4), (880.0, 0.2), (1320.0, 0.1), (1760.0, 0.05)].map(|(frequency, gain)| {
         let mut oscillator = Oscillator::sine(context, frequency, output_count);
 
-        oscillator
-            .get_parameter_mut("gain")
-            .set_value_at_time(gain, Timestamp::zero());
+        oscillator.gain().set_value_at_time(gain, Timestamp::zero());
 
         oscillator
     })

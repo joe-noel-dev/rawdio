@@ -2,7 +2,7 @@ use crate::{
     commands::Id,
     parameter::{ParameterRange, Parameters},
     utility::create_parameters,
-    AudioBuffer, Context, DspNode, GraphNode, OwnedAudioBuffer,
+    AudioBuffer, AudioParameter, Context, DspNode, GraphNode, OwnedAudioBuffer,
 };
 
 use super::convolution_processor::ConvolutionProcessor;
@@ -62,5 +62,15 @@ impl Convolution {
         );
 
         Self { node, params }
+    }
+
+    /// Get the wet parameter
+    pub fn wet(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("wet")
+    }
+
+    /// Get the dry parameter
+    pub fn dry(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("dry")
     }
 }

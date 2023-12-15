@@ -5,7 +5,7 @@ use crate::{
     graph::GraphNode,
     parameter::{ParameterRange, Parameters},
     utility::create_parameters,
-    Context, DspNode, Level,
+    AudioParameter, Context, DspNode, Level,
 };
 
 use super::oscillator_processor::OscillatorProcessor;
@@ -140,5 +140,15 @@ impl Oscillator {
         );
 
         Self { node, params }
+    }
+
+    /// Get the frequency parameter
+    pub fn frequency(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("frequency")
+    }
+
+    /// Get the gain parameter
+    pub fn gain(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("gain")
     }
 }
