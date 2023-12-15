@@ -22,6 +22,11 @@ impl Parameters {
         }
     }
 
+    pub fn with_parameter(mut self, name: &'static str, param: AudioParameter) -> Self {
+        self.add(name, param);
+        self
+    }
+
     pub fn add(&mut self, name: &'static str, param: AudioParameter) {
         self.params.insert(name, param);
     }

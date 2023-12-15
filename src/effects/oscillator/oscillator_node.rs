@@ -2,8 +2,9 @@ use itertools::izip;
 
 use crate::{
     commands::Id,
-    graph::{DspParameters, GraphNode},
-    parameter::{AudioParameter, ParameterRange, Parameters},
+    graph::GraphNode,
+    parameter::{ParameterRange, Parameters},
+    utility::create_parameters,
     Context, DspNode, Level,
 };
 
@@ -12,6 +13,11 @@ use super::oscillator_processor::OscillatorProcessor;
 /// An oscillator node
 ///
 /// Oscillator nodes don't have inputs, they only produce output
+///
+/// # Parameters
+///
+/// - frequency
+/// - gain
 pub struct Oscillator {
     /// The node to connect to the audio graph
     pub node: GraphNode,
@@ -101,23 +107,26 @@ impl Oscillator {
 
         let id = Id::generate();
 
-        let (frequency, realtime_frequency) = AudioParameter::new(
+        let (params, realtime_params) = create_parameters(
             id,
-            ParameterRange::new(frequency, MIN_FREQUENCY, MAX_FREQUENCY),
             context,
-        );
-
-        let (gain, realtime_gain) = AudioParameter::new(
-            id,
-            ParameterRange::new(DEFAULT_GAIN, MIN_GAIN, MAX_GAIN),
-            context,
+            [
+                (
+                    "frequency",
+                    ParameterRange::new(frequency, MIN_FREQUENCY, MAX_FREQUENCY),
+                ),
+                (
+                    "gain",
+                    ParameterRange::new(DEFAULT_GAIN, MIN_GAIN, MAX_GAIN),
+                ),
+            ],
         );
 
         let input_count = 0;
 
         let processor = Box::new(OscillatorProcessor::new(
-            frequency.get_id(),
-            gain.get_id(),
+            params.get("frequency").unwrap().get_id(),
+            params.get("gain").unwrap().get_id(),
             wavetable,
         ));
 
@@ -127,12 +136,9 @@ impl Oscillator {
             input_count,
             output_count,
             processor,
-            DspParameters::new([realtime_frequency, realtime_gain]),
+            realtime_params,
         );
 
-        Self {
-            node,
-            params: Parameters::new([("frequency", frequency), ("gain", gain)]),
-        }
+        Self { node, params }
     }
 }
