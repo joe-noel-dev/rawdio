@@ -3,7 +3,7 @@ use std::{thread, time::Duration};
 use examples::{read_file_into_buffer, AudioCallback};
 
 use rawdio::{
-    connect_nodes, create_engine_with_options, AudioBuffer, Biquad, BiquadFilterType, DspNode,
+    connect_nodes, create_engine_with_options, AudioBuffer, Biquad, BiquadFilterType,
     EngineOptions, Sampler, Timestamp,
 };
 
@@ -33,19 +33,19 @@ fn play_file(file_to_play: &str) {
     let channel_count = 2;
     let mut biquad = Biquad::new(context.as_ref(), channel_count, BiquadFilterType::LowPass);
 
-    biquad.get_parameter_mut("frequency").set_value_now(20.0);
+    biquad.frequency().set_value_now(20.0);
 
-    biquad
-        .get_parameter_mut("frequency")
-        .exponential_ramp_to_value(20_000.0, Timestamp::zero(), Timestamp::from_seconds(10.0));
+    biquad.frequency().exponential_ramp_to_value(
+        20_000.0,
+        Timestamp::zero(),
+        Timestamp::from_seconds(10.0),
+    );
 
-    biquad
-        .get_parameter_mut("frequency")
-        .exponential_ramp_to_value(
-            20.0,
-            Timestamp::from_seconds(10.0),
-            Timestamp::from_seconds(20.0),
-        );
+    biquad.frequency().exponential_ramp_to_value(
+        20.0,
+        Timestamp::from_seconds(10.0),
+        Timestamp::from_seconds(20.0),
+    );
 
     sampler.start_now();
     sampler.enable_loop(

@@ -2,7 +2,7 @@ use crate::{
     commands::Id,
     parameter::{ParameterRange, Parameters},
     utility::create_parameters,
-    Context, DspNode, GraphNode, Level,
+    AudioParameter, Context, DspNode, GraphNode, Level,
 };
 
 use super::{biquad_processor::BiquadProcessor, filter_type::BiquadFilterType};
@@ -86,5 +86,25 @@ impl Biquad {
             node,
             parameters: params,
         }
+    }
+
+    /// Get the frequency parameter
+    pub fn frequency(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("frequency")
+    }
+
+    /// Get the Q parameter
+    pub fn q(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("q")
+    }
+
+    /// Get the shelf gain parameter
+    pub fn shelf_gain(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("shelf_gain")
+    }
+
+    /// Get the gain parameter
+    pub fn gain(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("gain")
     }
 }
