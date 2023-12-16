@@ -50,7 +50,7 @@ impl Gain {
             )],
         );
 
-        let processor = Box::new(GainProcessor::new(params.get("gain").unwrap().get_id()));
+        let processor = Box::new(GainProcessor::new());
 
         Self {
             node: GraphNode::new(

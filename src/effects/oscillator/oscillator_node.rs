@@ -124,11 +124,7 @@ impl Oscillator {
 
         let input_count = 0;
 
-        let processor = Box::new(OscillatorProcessor::new(
-            params.get("frequency").unwrap().get_id(),
-            params.get("gain").unwrap().get_id(),
-            wavetable,
-        ));
+        let processor = Box::new(OscillatorProcessor::new(wavetable));
 
         let node = GraphNode::new(
             id,

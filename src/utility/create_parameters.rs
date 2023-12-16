@@ -17,7 +17,7 @@ where
 {
     options
         .into_iter()
-        .map(|(name, range)| (name, AudioParameter::new(dsp_id, range, context)))
+        .map(|(name, range)| (name, AudioParameter::new(dsp_id, name, range, context)))
         .fold(
             (Parameters::empty(), DspParameters::empty()),
             |(params, realtime_params), (name, (param, realtime_param))| {

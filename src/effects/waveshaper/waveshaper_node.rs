@@ -116,8 +116,6 @@ impl Waveshaper {
 
         let processor = Box::new(WaveshaperProcessor::new(
             shaper,
-            params.get("overdrive").unwrap().get_id(),
-            params.get("mix").unwrap().get_id(),
             context.get_sample_rate(),
             context.maximum_frame_count(),
         ));

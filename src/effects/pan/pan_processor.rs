@@ -1,12 +1,10 @@
-use crate::{commands::Id, graph::DspProcessor, SampleLocation};
+use crate::{graph::DspProcessor, SampleLocation};
 
-pub struct PanProcessor {
-    pan_id: Id,
-}
+pub struct PanProcessor {}
 
 impl PanProcessor {
-    pub fn new(pan_id: Id) -> Self {
-        Self { pan_id }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
@@ -17,7 +15,7 @@ impl DspProcessor for PanProcessor {
 
         let pan_values = context
             .parameters
-            .get_parameter_values(self.pan_id, context.output_buffer.frame_count());
+            .get_parameter_values("pan", context.output_buffer.frame_count());
 
         (0..context.output_buffer.frame_count()).for_each(|frame| {
             let pan = pan_values[frame];

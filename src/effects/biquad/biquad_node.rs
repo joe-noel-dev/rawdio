@@ -67,10 +67,6 @@ impl Biquad {
             context.get_sample_rate(),
             channel_count,
             filter_type,
-            params.get("frequency").unwrap().get_id(),
-            params.get("q").unwrap().get_id(),
-            params.get("shelf-gain").unwrap().get_id(),
-            params.get("gain").unwrap().get_id(),
         ));
 
         let node = GraphNode::new(

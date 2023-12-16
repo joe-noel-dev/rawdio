@@ -54,10 +54,6 @@ impl Compressor {
             channel_count,
             context.get_sample_rate(),
             context.maximum_frame_count(),
-            param_ids
-                .map(|id| (id, params.get(id).unwrap().get_id()))
-                .into_iter()
-                .collect(),
         ));
 
         let node = GraphNode::new(

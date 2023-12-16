@@ -4,13 +4,16 @@ use crate::{
 };
 use atomic_float::AtomicF64;
 
-use super::{parameter_change::ValueChangeMethod, parameter_value::ParameterValue, ParameterRange};
+use super::{
+    parameter_change::ValueChangeMethod, parameter_value::ParameterValue, ParameterId,
+    ParameterRange,
+};
 use super::{realtime_parameter::RealtimeAudioParameter, ParameterChange};
 
 /// An parameter that generates a value for every audio sample
 pub struct AudioParameter {
     dsp_id: Id,
-    parameter_id: Id,
+    parameter_id: ParameterId,
     value: ParameterValue,
     range: ParameterRange,
     command_queue: Box<dyn CommandQueue>,
@@ -20,10 +23,10 @@ impl AudioParameter {
     /// Create a new audio parameter
     pub fn new(
         dsp_id: Id,
+        parameter_id: ParameterId,
         range: ParameterRange,
         context: &dyn Context,
     ) -> (Self, RealtimeAudioParameter) {
-        let parameter_id = Id::generate();
         let value = ParameterValue::new(AtomicF64::new(range.default()));
         let realtime_audio_param =
             RealtimeAudioParameter::new(parameter_id, value.clone(), context.maximum_frame_count());
@@ -41,7 +44,7 @@ impl AudioParameter {
     }
 
     /// Get the ID of this parameters
-    pub fn get_id(&self) -> Id {
+    pub fn get_id(&self) -> ParameterId {
         self.parameter_id
     }
 
@@ -144,10 +147,10 @@ mod tests {
 
     impl Fixture {
         fn new(initial_value: f64) -> Self {
-            let id = Id::generate();
             let value = ParameterValue::new(AtomicF64::new(initial_value));
             let maximum_frame_count = 512;
-            let realtime_parameter = RealtimeAudioParameter::new(id, value, maximum_frame_count);
+            let realtime_parameter =
+                RealtimeAudioParameter::new("parameter", value, maximum_frame_count);
 
             Self { realtime_parameter }
         }

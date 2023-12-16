@@ -1,14 +1,10 @@
-use crate::{commands::Id, graph::DspProcessor, Level, SampleLocation};
+use crate::{graph::DspProcessor, Level, SampleLocation};
 
 use super::{biquad_coefficients::BiquadCoefficients, filter_type::BiquadFilterType};
 
 pub struct BiquadProcessor {
     filter_type: BiquadFilterType,
     sample_rate: usize,
-    frequency_id: Id,
-    q_id: Id,
-    shelf_gain_id: Id,
-    gain_id: Id,
     coefficients: BiquadCoefficients,
     last_parameters: Parameters,
     delays: Vec<[f64; 4]>,
@@ -53,15 +49,7 @@ fn calculate_coefficients(
 }
 
 impl BiquadProcessor {
-    pub fn new(
-        sample_rate: usize,
-        channel_count: usize,
-        filter_type: BiquadFilterType,
-        frequency_id: Id,
-        q_id: Id,
-        shelf_gain_id: Id,
-        gain_id: Id,
-    ) -> Self {
+    pub fn new(sample_rate: usize, channel_count: usize, filter_type: BiquadFilterType) -> Self {
         let parameters = Parameters {
             frequency: 1_000.0,
             q: 1.0 / 2.0_f64.sqrt(),
@@ -71,10 +59,6 @@ impl BiquadProcessor {
         Self {
             sample_rate,
             filter_type,
-            frequency_id,
-            q_id,
-            shelf_gain_id,
-            gain_id,
             coefficients: calculate_coefficients(filter_type, &parameters, sample_rate),
             last_parameters: parameters,
             delays: (0..channel_count).map(|_| [0.0, 0.0, 0.0, 0.0]).collect(),
@@ -86,16 +70,16 @@ impl DspProcessor for BiquadProcessor {
     fn process_audio(&mut self, context: &mut crate::ProcessContext) {
         let frequency = context
             .parameters
-            .get_parameter_values(self.frequency_id, context.output_buffer.frame_count());
+            .get_parameter_values("frequency", context.output_buffer.frame_count());
         let q = context
             .parameters
-            .get_parameter_values(self.q_id, context.output_buffer.frame_count());
+            .get_parameter_values("q", context.output_buffer.frame_count());
         let shelf_gain = context
             .parameters
-            .get_parameter_values(self.shelf_gain_id, context.output_buffer.frame_count());
+            .get_parameter_values("shelf-gain", context.output_buffer.frame_count());
         let gain = context
             .parameters
-            .get_parameter_values(self.gain_id, context.output_buffer.frame_count());
+            .get_parameter_values("gain", context.output_buffer.frame_count());
 
         let frame_count = context.output_buffer.frame_count();
         let channel_count = context.output_buffer.channel_count();

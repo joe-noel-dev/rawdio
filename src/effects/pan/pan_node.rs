@@ -44,7 +44,7 @@ impl Pan {
 
         let output_count = 2;
 
-        let processor = Box::new(PanProcessor::new(params.get("pan").unwrap().get_id()));
+        let processor = Box::new(PanProcessor::new());
 
         let node = GraphNode::new(
             id,

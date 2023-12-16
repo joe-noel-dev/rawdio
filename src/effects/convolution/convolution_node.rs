@@ -48,8 +48,6 @@ impl Convolution {
         let processor = Box::new(ConvolutionProcessor::new(
             &impulse,
             context.maximum_frame_count(),
-            params.get("wet").unwrap().get_id(),
-            params.get("dry").unwrap().get_id(),
         ));
 
         let node = GraphNode::new(

@@ -1,34 +1,25 @@
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 
 use itertools::izip;
 
 use crate::{
-    commands::Id,
     dsp::mix_into_with_gains,
     effects::utility::EnvelopeFollower,
     graph::{DspParameters, DspProcessor},
+    parameter::ParameterId,
     AudioBuffer, Level, OwnedAudioBuffer, ProcessContext, SampleLocation,
 };
 
 use super::compressor_parameters::get_range;
 
-type CompressorParameter = &'static str;
-
 pub struct CompressorProcessor {
-    ids: HashMap<&'static str, Id>,
     envelopes: Vec<EnvelopeFollower>,
     gain_reduction_buffer: OwnedAudioBuffer,
 }
 
 impl CompressorProcessor {
-    pub fn new(
-        channel_count: usize,
-        sample_rate: usize,
-        maximum_frame_count: usize,
-        ids: HashMap<&'static str, Id>,
-    ) -> Self {
+    pub fn new(channel_count: usize, sample_rate: usize, maximum_frame_count: usize) -> Self {
         Self {
-            ids,
             envelopes: (0..channel_count)
                 .map(|_| {
                     EnvelopeFollower::new(
@@ -48,16 +39,11 @@ impl CompressorProcessor {
 
     fn get_parameter_values<'a>(
         &self,
-        parameter: CompressorParameter,
+        parameter: ParameterId,
         frame_count: usize,
         parameters: &'a DspParameters,
     ) -> &'a [f32] {
-        let id = self
-            .ids
-            .get(&parameter)
-            .unwrap_or_else(|| panic!("Parameter ID not found: {parameter:#?}"));
-
-        parameters.get_parameter_values(*id, frame_count)
+        parameters.get_parameter_values(parameter, frame_count)
     }
 
     fn process_envelope(&mut self, context: &mut ProcessContext) {
@@ -228,7 +214,6 @@ mod tests {
 
     struct Fixture {
         compressor: CompressorProcessor,
-        ids: HashMap<CompressorParameter, Id>,
         parameters: DspParameters,
         maximum_frame_count: usize,
     }
@@ -249,16 +234,10 @@ mod tests {
                 "dry",
             ];
 
-            let mut ids = HashMap::new();
-            params.iter().for_each(|param| {
-                ids.insert(*param, Id::generate());
-            });
-
             let realtime_params = params.iter().map(|parameter| {
-                let id = ids[parameter];
                 let range = get_range(parameter);
                 let value = Arc::new(AtomicF64::new(range.default()));
-                RealtimeAudioParameter::new(id, value, maximum_frame_count)
+                RealtimeAudioParameter::new(parameter, value, maximum_frame_count)
             });
 
             let realtime_params = DspParameters::new(realtime_params);
@@ -268,9 +247,7 @@ mod tests {
                     channel_count,
                     sample_rate,
                     maximum_frame_count,
-                    ids.clone(),
                 ),
-                ids,
                 parameters: realtime_params,
                 maximum_frame_count,
             }
@@ -278,10 +255,10 @@ mod tests {
     }
 
     impl Fixture {
-        fn set_value(&mut self, parameter: CompressorParameter, value: f64) {
-            let id = self.ids.get(&parameter).expect("Parameter not found");
-            let realtime_parameter = self.parameters.get_parameter_mut(*id);
-            realtime_parameter.set_value(value);
+        fn set_value(&mut self, parameter: ParameterId, value: f64) {
+            self.parameters
+                .get_parameter_mut(parameter)
+                .set_value(value);
         }
 
         fn process(
