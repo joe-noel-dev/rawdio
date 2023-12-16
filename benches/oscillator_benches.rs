@@ -1,8 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioProcess, Context, EngineOptions, Oscillator,
-    OwnedAudioBuffer,
-};
+use rawdio::{prelude::*, Oscillator};
 
 struct Fixture {
     audio_process: Box<dyn AudioProcess + Send>,

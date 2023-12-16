@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rawdio::{AudioBuffer, OwnedAudioBuffer, SampleLocation};
+use rawdio::prelude::*;
 
 fn read_interleaved(destination: &mut dyn AudioBuffer, interleaved_buffer: &[f32]) {
     destination.fill_from_interleaved(

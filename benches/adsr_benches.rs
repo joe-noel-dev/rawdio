@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rawdio::{
-    connect_nodes, create_engine_with_options, Adsr, EngineOptions, Level, OwnedAudioBuffer,
-    Timestamp,
-};
+use rawdio::{prelude::*, Adsr};
 
 fn adsr_benchmarks(c: &mut Criterion) {
     c.benchmark_group("ADSR");

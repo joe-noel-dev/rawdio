@@ -2,10 +2,7 @@ use std::{thread, time::Duration};
 
 use examples::{read_file_into_buffer, AudioCallback};
 
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioBuffer, Biquad, BiquadFilterType,
-    EngineOptions, Sampler, Timestamp,
-};
+use rawdio::{prelude::*, Biquad, BiquadFilterType, Sampler};
 
 use structopt::StructOpt;
 

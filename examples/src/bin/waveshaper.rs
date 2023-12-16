@@ -1,8 +1,5 @@
 use examples::AudioCallback;
-use rawdio::{
-    connect_nodes, create_engine_with_options, EngineOptions, Level, Oscillator, Timestamp,
-    Waveshaper,
-};
+use rawdio::{prelude::*, Oscillator, Waveshaper};
 use std::{thread, time};
 use structopt::StructOpt;
 

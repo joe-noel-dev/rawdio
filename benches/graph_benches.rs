@@ -1,8 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioProcess, Context, EngineOptions, Gain,
-    OwnedAudioBuffer, Sampler,
-};
+use rawdio::{prelude::*, Gain, Sampler};
 
 struct Fixture {
     input_buffer: OwnedAudioBuffer,

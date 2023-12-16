@@ -1,9 +1,6 @@
 use approx::assert_relative_eq;
 use itertools::izip;
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions,
-    Level, Mixer, OwnedAudioBuffer, SampleLocation,
-};
+use rawdio::{prelude::*, Mixer};
 
 struct Fixture {
     channel_count: usize,

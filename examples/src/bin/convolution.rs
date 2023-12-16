@@ -1,8 +1,5 @@
 use examples::{read_file_into_buffer, render_audio_process_to_file};
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioBuffer, Convolution, EngineOptions, Gain,
-    Sampler,
-};
+use rawdio::{prelude::*, Convolution, Gain, Sampler};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]

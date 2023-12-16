@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use examples::{read_file_into_buffer, AudioCallback};
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioBuffer, Compressor, EngineOptions, Sampler,
-    Timestamp,
-};
+use rawdio::{prelude::*, Compressor, Sampler};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]

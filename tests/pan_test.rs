@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use itertools::Itertools;
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioBuffer, AudioProcess, Context, EngineOptions,
-    OwnedAudioBuffer, Pan, SampleLocation, Timestamp,
-};
+use rawdio::{prelude::*, Pan};
 
 struct Fixture {
     sample_rate: usize,

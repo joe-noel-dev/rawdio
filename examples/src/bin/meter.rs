@@ -1,10 +1,7 @@
 use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 
 use examples::{read_file_into_buffer, AudioCallback};
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioBuffer, Context, EngineOptions, Envelope, Gain,
-    OwnedAudioBuffer, Sampler, Timestamp,
-};
+use rawdio::{prelude::*, Envelope, Gain, Sampler};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
