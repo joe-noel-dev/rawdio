@@ -77,3 +77,12 @@ pub(crate) use parameter::Parameters;
 
 pub use utility::Level;
 pub use utility::Timestamp;
+
+/// Module to re-export commonly used types
+pub mod prelude {
+    pub use crate::{
+        connect_nodes, create_engine, create_engine_with_options, AudioBuffer, AudioParameter,
+        AudioProcess, BorrowedAudioBuffer, Context, EngineOptions, GraphNode, Level,
+        MutableBorrowedAudioBuffer, OwnedAudioBuffer, SampleLocation, Timestamp,
+    };
+}

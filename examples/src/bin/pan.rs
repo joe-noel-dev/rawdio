@@ -1,8 +1,5 @@
 use examples::AudioCallback;
-use rawdio::{
-    connect_nodes, create_engine_with_options, Context, EngineOptions, Level, Oscillator, Pan,
-    Timestamp,
-};
+use rawdio::{prelude::*, Oscillator, Pan};
 use std::{thread, time};
 
 fn main() {

@@ -1,8 +1,5 @@
 use examples::{write_buffer_into_file, AudioCallback};
-use rawdio::{
-    connect_nodes, create_engine_with_options, Context, EngineOptions, Level, Mixer, Recorder,
-    Timestamp,
-};
+use rawdio::{prelude::*, Mixer, Recorder};
 use std::{cell::RefCell, rc::Rc, thread, time::Duration};
 use structopt::StructOpt;
 

@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use itertools::izip;
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioBuffer, EngineOptions, OwnedAudioBuffer,
-    Recorder, SampleLocation, Timestamp,
-};
+use rawdio::{prelude::*, Recorder};
 
 fn record_sampler(
     sample_rate: usize,

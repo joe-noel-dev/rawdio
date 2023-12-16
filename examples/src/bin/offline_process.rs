@@ -1,8 +1,5 @@
 use examples::render_audio_process_to_file;
-use rawdio::{
-    connect_nodes, create_engine_with_options, Context, EngineOptions, Gain, Oscillator, Pan,
-    Timestamp,
-};
+use rawdio::{prelude::*, Gain, Oscillator, Pan};
 use std::time::Duration;
 use structopt::StructOpt;
 

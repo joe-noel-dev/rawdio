@@ -1,10 +1,7 @@
 use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioProcess, Context, EngineOptions, Envelope,
-    OwnedAudioBuffer,
-};
+use rawdio::{prelude::*, Envelope};
 
 struct Fixture {
     audio_process: Box<dyn AudioProcess + Send>,

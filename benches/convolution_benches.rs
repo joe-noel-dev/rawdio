@@ -1,10 +1,7 @@
 use std::time::Duration;
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use rawdio::{
-    connect_nodes, create_engine_with_options, AudioProcess, Convolution, EngineOptions,
-    OwnedAudioBuffer,
-};
+use rawdio::{prelude::*, Convolution};
 
 #[allow(dead_code)]
 struct Fixture {
