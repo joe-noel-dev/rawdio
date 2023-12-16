@@ -36,17 +36,15 @@ impl Mixer {
 
         let processor = Box::new(MixerProcessor::new(event_receiver));
 
-        let node = GraphNode::new(
-            id,
-            context,
-            input_count,
-            output_count,
-            processor,
-            DspParameters::empty(),
-        );
-
         Self {
-            node,
+            node: GraphNode::new(
+                id,
+                context,
+                input_count,
+                output_count,
+                processor,
+                DspParameters::empty(),
+            ),
             gain_matrix,
             event_transmitter,
         }

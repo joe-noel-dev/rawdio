@@ -46,16 +46,17 @@ impl Pan {
 
         let processor = Box::new(PanProcessor::new());
 
-        let node = GraphNode::new(
-            id,
-            context,
-            input_count,
-            output_count,
-            processor,
-            realtime_params,
-        );
-
-        Self { node, params }
+        Self {
+            node: GraphNode::new(
+                id,
+                context,
+                input_count,
+                output_count,
+                processor,
+                realtime_params,
+            ),
+            params,
+        }
     }
 
     /// Get the pan parameter

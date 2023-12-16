@@ -69,17 +69,15 @@ impl Biquad {
             filter_type,
         ));
 
-        let node = GraphNode::new(
-            id,
-            context,
-            channel_count,
-            channel_count,
-            processor,
-            realtime_params,
-        );
-
         Self {
-            node,
+            node: GraphNode::new(
+                id,
+                context,
+                channel_count,
+                channel_count,
+                processor,
+                realtime_params,
+            ),
             parameters: params,
         }
     }

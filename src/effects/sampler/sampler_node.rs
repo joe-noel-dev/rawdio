@@ -33,17 +33,15 @@ impl Sampler {
         let sample_rate = sample.sample_rate();
         let processor = Box::new(SamplerDspProcess::new(sample_rate, sample, event_receiver));
 
-        let node = GraphNode::new(
-            id,
-            context,
-            input_count,
-            output_count,
-            processor,
-            DspParameters::empty(),
-        );
-
         Self {
-            node,
+            node: GraphNode::new(
+                id,
+                context,
+                input_count,
+                output_count,
+                processor,
+                DspParameters::empty(),
+            ),
             event_transmitter,
         }
     }

@@ -29,17 +29,15 @@ impl Adsr {
             context.maximum_frame_count(),
         ));
 
-        let node = GraphNode::new(
-            id,
-            context,
-            channel_count,
-            channel_count,
-            processor,
-            DspParameters::empty(),
-        );
-
         Self {
-            node,
+            node: GraphNode::new(
+                id,
+                context,
+                channel_count,
+                channel_count,
+                processor,
+                DspParameters::empty(),
+            ),
             event_transmitter,
         }
     }

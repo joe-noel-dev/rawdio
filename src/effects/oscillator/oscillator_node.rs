@@ -126,16 +126,17 @@ impl Oscillator {
 
         let processor = Box::new(OscillatorProcessor::new(wavetable));
 
-        let node = GraphNode::new(
-            id,
-            context,
-            input_count,
-            output_count,
-            processor,
-            realtime_params,
-        );
-
-        Self { node, params }
+        Self {
+            node: GraphNode::new(
+                id,
+                context,
+                input_count,
+                output_count,
+                processor,
+                realtime_params,
+            ),
+            params,
+        }
     }
 
     /// Get the frequency parameter

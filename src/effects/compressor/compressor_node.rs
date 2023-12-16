@@ -56,16 +56,17 @@ impl Compressor {
             context.maximum_frame_count(),
         ));
 
-        let node = GraphNode::new(
-            id,
-            context,
-            channel_count,
-            channel_count,
-            processor,
-            realtime_params,
-        );
-
-        Self { node, params }
+        Self {
+            node: GraphNode::new(
+                id,
+                context,
+                channel_count,
+                channel_count,
+                processor,
+                realtime_params,
+            ),
+            params,
+        }
     }
 
     /// Get the attack parameter

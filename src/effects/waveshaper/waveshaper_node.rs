@@ -120,22 +120,24 @@ impl Waveshaper {
             context.maximum_frame_count(),
         ));
 
-        let node = GraphNode::new(
-            id,
-            context,
-            channel_count,
-            channel_count,
-            processor,
-            realtime_params,
-        );
-
-        Self { node, params }
+        Self {
+            node: GraphNode::new(
+                id,
+                context,
+                channel_count,
+                channel_count,
+                processor,
+                realtime_params,
+            ),
+            params,
+        }
     }
 
     /// Get the overdrive parameter
     pub fn overdrive(&mut self) -> &mut AudioParameter {
         self.get_parameter_mut("overdrive")
     }
+
     /// Get the mix parameter
     pub fn mix(&mut self) -> &mut AudioParameter {
         self.get_parameter_mut("mix")
