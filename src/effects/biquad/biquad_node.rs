@@ -1,11 +1,5 @@
-use crate::{
-    commands::Id,
-    parameter::{ParameterRange, Parameters},
-    utility::create_parameters,
-    AudioParameter, Context, DspNode, GraphNode, Level,
-};
-
 use super::{biquad_processor::BiquadProcessor, filter_type::BiquadFilterType};
+use crate::{commands::Id, graph::DspNode, parameter::*, prelude::*, utility::create_parameters};
 
 /// A biquad filter
 ///

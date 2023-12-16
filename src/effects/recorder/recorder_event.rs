@@ -1,9 +1,8 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-
 use crate::{
     effects::{utility::EventProcessorEvent, Channel},
-    OwnedAudioBuffer, Timestamp,
+    prelude::*,
 };
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub enum RecorderEventType {
     ReturnBuffer(OwnedAudioBuffer),

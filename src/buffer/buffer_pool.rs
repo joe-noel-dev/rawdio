@@ -1,4 +1,4 @@
-use crate::{AudioBuffer, OwnedAudioBuffer};
+use crate::prelude::*;
 
 pub struct BufferPool {
     free_buffers: Vec<OwnedAudioBuffer>,

@@ -1,8 +1,6 @@
+use super::{context::NotifierStatus, CommandQueue};
+use crate::{commands::Command, prelude::*, realtime::Processor};
 use std::sync::{atomic::AtomicI64, Arc};
-
-use crate::{realtime::Processor, AudioProcess, Command, CommandQueue, Context, Timestamp};
-
-use super::context::NotifierStatus;
 
 pub struct Root {
     sample_rate: usize,

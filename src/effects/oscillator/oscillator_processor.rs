@@ -1,6 +1,6 @@
 use itertools::izip;
 
-use crate::{graph::DspProcessor, SampleLocation};
+use crate::{graph::DspProcessor, prelude::*};
 
 pub struct OscillatorProcessor {
     phase: f64,

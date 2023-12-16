@@ -1,4 +1,4 @@
-use crate::{AudioBuffer, SampleLocation};
+use crate::prelude::*;
 
 use super::sample_location::SampleRange;
 

@@ -3,7 +3,7 @@ use std::{
     time::Duration,
 };
 
-use crate::{effects::utility::EventProcessorEvent, Level, Timestamp};
+use crate::{effects::utility::EventProcessorEvent, prelude::*};
 
 #[derive(PartialEq, PartialOrd)]
 pub enum AdsrEventType {

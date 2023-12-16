@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
-use crate::{commands::Id, realtime::graph::Direction};
-
 use super::graph::Graph;
+use crate::{commands::Id, realtime::graph::Direction};
+use std::collections::HashMap;
 
 pub struct TopologicalSort {
     dependency_count: HashMap<Id, usize>,

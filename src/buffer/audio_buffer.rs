@@ -1,8 +1,5 @@
 use super::sample_location::SampleRange;
-use crate::{
-    dsp::{mix_into, mix_into_with_gain, multiply, multiply_by_value},
-    SampleLocation,
-};
+use crate::{dsp::*, prelude::*};
 use std::time::Duration;
 
 /// An `AudioBuffer` represents floating point audio data for a number of channels

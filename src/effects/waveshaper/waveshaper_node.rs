@@ -1,17 +1,5 @@
-use crate::{
-    commands::Id,
-    parameter::{ParameterRange, Parameters},
-    utility::create_parameters,
-    AudioParameter, Context, DspNode, GraphNode, Level,
-};
-
-use super::{
-    parameters::{
-        MIX_PARAMETER_DEFAULT, MIX_PARAMETER_MAX, MIX_PARAMETER_MIN, OVERDRIVE_PARAMETER_DEFAULT,
-        OVERDRIVE_PARAMETER_MAX, OVERDRIVE_PARAMETER_MIN,
-    },
-    waveshaper_processor::WaveshaperProcessor,
-};
+use super::{parameters::*, waveshaper_processor::WaveshaperProcessor};
+use crate::{commands::Id, graph::DspNode, parameter::*, prelude::*, utility::create_parameters};
 
 /// A node that will distort the input signal using a specified function
 ///

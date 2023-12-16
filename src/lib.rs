@@ -39,8 +39,6 @@ mod parameter;
 mod realtime;
 mod utility;
 
-pub(crate) use commands::Command;
-
 pub use buffer::AudioBuffer;
 pub use buffer::BorrowedAudioBuffer;
 pub use buffer::MutableBorrowedAudioBuffer;

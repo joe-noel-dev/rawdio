@@ -1,12 +1,10 @@
 use std::time::Duration;
 
 use crate::{
-    effects::{
-        utility::{EventProcessor, EventProcessorEvent},
-        Channel,
-    },
+    effects::{utility::*, Channel},
     graph::DspProcessor,
-    AudioBuffer, MutableBorrowedAudioBuffer, OwnedAudioBuffer, ProcessContext, Timestamp,
+    prelude::*,
+    ProcessContext,
 };
 
 use super::{
@@ -291,7 +289,7 @@ impl SamplerDspProcess {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{graph::DspParameters, AudioBuffer, SampleLocation};
+    use crate::{graph::DspParameters, AudioBuffer, ProcessContext, SampleLocation};
     use approx::assert_relative_eq;
     use std::ops::Range;
 

@@ -1,12 +1,10 @@
-use std::{cell::RefCell, rc::Rc, time::Duration};
-
-use crate::effects::Channel;
-use crate::engine::NotifierStatus;
-use crate::graph::DspParameters;
-use crate::{commands::Id, Context, GraphNode};
-
 use super::envelope_notification::{EnvelopeNotification, EnvelopeNotificationReceiver};
 use super::envelope_processor::EnvelopeProcessor;
+use crate::commands::Id;
+use crate::engine::NotifierStatus;
+use crate::graph::DspParameters;
+use crate::{effects::Channel, prelude::*};
+use std::{cell::RefCell, rc::Rc, time::Duration};
 
 /// A node that tracks the input signal and outputs the envelope
 ///

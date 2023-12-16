@@ -1,4 +1,4 @@
-use crate::{commands::Id, effects::Channel, graph::DspParameters, Context, GraphNode, Level};
+use crate::{commands::Id, effects::Channel, graph::DspParameters, prelude::*};
 
 use super::{
     mixer_event::EventTransmitter, mixer_matrix::MixerMatrix, mixer_processor::MixerProcessor,
