@@ -1,6 +1,5 @@
 use crate::{
-    commands::Id, parameter::Parameters, utility::create_parameters, AudioParameter, Context,
-    DspNode, GraphNode,
+    commands::Id, graph::DspNode, parameter::Parameters, prelude::*, utility::create_parameters,
 };
 
 use super::{compressor_parameters::get_range, compressor_processor::CompressorProcessor};

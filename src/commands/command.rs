@@ -1,6 +1,5 @@
-use crate::graph::{Connection, Dsp, Endpoint};
-
-use super::{id::Id, parameter_change_request::CancelChangeRequest, ParameterChangeRequest};
+use super::{parameter_change_request::CancelChangeRequest, Id, ParameterChangeRequest};
+use crate::graph::*;
 
 pub enum Command {
     Start,

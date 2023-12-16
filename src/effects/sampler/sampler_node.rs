@@ -1,12 +1,5 @@
-use crate::{
-    commands::Id, effects::Channel, graph::DspParameters, AudioBuffer, Context, GraphNode,
-    OwnedAudioBuffer, Timestamp,
-};
-
-use super::{
-    sampler_event::SamplerEvent,
-    sampler_processor::{EventTransmitter, SamplerDspProcess},
-};
+use super::{sampler_event::*, sampler_processor::*};
+use crate::{commands::Id, effects::Channel, graph::DspParameters, prelude::*};
 
 /// A node that can play or loop a sample
 pub struct Sampler {

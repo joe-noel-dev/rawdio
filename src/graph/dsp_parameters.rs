@@ -1,4 +1,4 @@
-use crate::parameter::{ParameterId, RealtimeAudioParameter};
+use crate::parameter::*;
 use std::collections::HashMap;
 
 pub struct DspParameters {

@@ -1,7 +1,6 @@
-use std::ops::Range;
-
-use crate::{AudioBuffer, SampleLocation};
+use crate::prelude::*;
 use rand::Rng;
+use std::ops::Range;
 
 /// An audio buffer that owns its audio data
 ///

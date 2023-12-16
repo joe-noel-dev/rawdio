@@ -2,15 +2,11 @@ use std::time::Duration;
 
 use itertools::izip;
 
-use crate::{
-    dsp::mix_into_with_gains,
-    effects::utility::EnvelopeFollower,
-    graph::{DspParameters, DspProcessor},
-    parameter::ParameterId,
-    AudioBuffer, Level, OwnedAudioBuffer, ProcessContext, SampleLocation,
-};
-
 use super::compressor_parameters::get_range;
+use crate::{
+    dsp::mix_into_with_gains, effects::utility::EnvelopeFollower, graph::*, parameter::ParameterId,
+    prelude::*, ProcessContext,
+};
 
 pub struct CompressorProcessor {
     envelopes: Vec<EnvelopeFollower>,

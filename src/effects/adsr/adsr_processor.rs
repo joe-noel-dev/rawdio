@@ -7,7 +7,7 @@ use super::{
 use crate::{
     effects::{utility::EventProcessor, Channel},
     graph::DspProcessor,
-    Level, SampleLocation, Timestamp,
+    prelude::*,
 };
 use std::time::Duration;
 

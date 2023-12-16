@@ -1,11 +1,11 @@
+use super::pan_processor::PanProcessor;
 use crate::{
     commands::Id,
+    graph::DspNode,
     parameter::{ParameterRange, Parameters},
+    prelude::*,
     utility::create_parameters,
-    AudioParameter, Context, DspNode, GraphNode,
 };
-
-use super::pan_processor::PanProcessor;
 
 const MIN_PAN: f64 = -1.0;
 const MAX_PAN: f64 = 1.0;

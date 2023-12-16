@@ -1,11 +1,6 @@
+use super::{parameters::*, shape::shape};
+use crate::{graph::DspProcessor, prelude::*};
 use itertools::izip;
-
-use crate::{graph::DspProcessor, AudioBuffer, Level, OwnedAudioBuffer, SampleLocation};
-
-use super::{
-    parameters::{OVERDRIVE_GAIN_DB_MAX, OVERDRIVE_GAIN_DB_MIN},
-    shape::shape,
-};
 
 const OVERSAMPLING_RATIO: usize = 2;
 const INTERNAL_CHANNEL_COUNT: usize = 1;

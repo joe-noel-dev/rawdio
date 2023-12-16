@@ -1,6 +1,5 @@
-use crate::{AudioBuffer, SampleLocation};
-
 use super::sample_location::SampleRange;
+use crate::prelude::*;
 
 /// A mutable buffer that refers to a portion of another buffer
 pub struct MutableBorrowedAudioBuffer<'a> {

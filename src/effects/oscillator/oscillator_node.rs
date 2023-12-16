@@ -1,14 +1,12 @@
-use itertools::izip;
-
+use super::oscillator_processor::OscillatorProcessor;
 use crate::{
     commands::Id,
-    graph::GraphNode,
+    graph::DspNode,
     parameter::{ParameterRange, Parameters},
+    prelude::*,
     utility::create_parameters,
-    AudioParameter, Context, DspNode, Level,
 };
-
-use super::oscillator_processor::OscillatorProcessor;
+use itertools::izip;
 
 /// An oscillator node
 ///

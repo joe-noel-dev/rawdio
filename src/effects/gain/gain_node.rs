@@ -1,9 +1,5 @@
 use crate::{
-    commands::Id,
-    graph::GraphNode,
-    parameter::{AudioParameter, ParameterRange, Parameters},
-    utility::create_parameters,
-    Context, DspNode,
+    commands::Id, graph::GraphNode, parameter::*, prelude::*, utility::create_parameters, DspNode,
 };
 
 use super::gain_processor::GainProcessor;

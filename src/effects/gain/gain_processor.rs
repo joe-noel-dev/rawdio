@@ -1,4 +1,4 @@
-use crate::{graph::DspProcessor, ProcessContext, SampleLocation};
+use crate::{graph::DspProcessor, prelude::*, ProcessContext};
 
 pub struct GainProcessor;
 

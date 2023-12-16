@@ -1,9 +1,4 @@
-use crate::{
-    commands::Id,
-    graph::DspParameters,
-    parameter::{ParameterRange, Parameters},
-    AudioParameter, Context,
-};
+use crate::{commands::Id, graph::DspParameters, parameter::*, AudioParameter, Context};
 
 type ParameterOptions = (&'static str, ParameterRange);
 
