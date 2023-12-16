@@ -33,7 +33,7 @@ More examples can be found [here](./examples)
     ```rust
     let level = Level::from_db(-3.0);
     oscillator
-        .gain
+        .gain()
         .set_value_at_time(level.as_gain(), Timestamp::zero());
     ```
 
