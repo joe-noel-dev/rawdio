@@ -39,7 +39,7 @@ fn create_oscillators(context: &dyn Context) -> [Oscillator; 4] {
         let mut oscillator = Oscillator::sine(context, frequency, channel_count);
 
         oscillator
-            .gain
+            .gain()
             .set_value_at_time(level.as_linear(), Timestamp::zero());
 
         oscillator

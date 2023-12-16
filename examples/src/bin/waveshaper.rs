@@ -38,14 +38,14 @@ fn main() {
 
     let threshold = Level::from_db(-6.0);
     let mut shaper = Waveshaper::soft_saturator(context.as_ref(), channel_count, threshold);
-    shaper.mix.set_value_now(options.mix);
+    shaper.mix().set_value_now(options.mix);
 
-    shaper.overdrive.set_value_at_time(0.0, Timestamp::zero());
+    shaper.overdrive().set_value_at_time(0.0, Timestamp::zero());
     shaper
-        .overdrive
+        .overdrive()
         .linear_ramp_to_value(1.0, Timestamp::zero(), Timestamp::from_seconds(5.0));
 
-    shaper.overdrive.linear_ramp_to_value(
+    shaper.overdrive().linear_ramp_to_value(
         0.0,
         Timestamp::from_seconds(5.0),
         Timestamp::from_seconds(10.0),

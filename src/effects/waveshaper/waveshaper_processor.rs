@@ -1,8 +1,6 @@
 use itertools::izip;
 
-use crate::{
-    commands::Id, graph::DspProcessor, AudioBuffer, Level, OwnedAudioBuffer, SampleLocation,
-};
+use crate::{graph::DspProcessor, AudioBuffer, Level, OwnedAudioBuffer, SampleLocation};
 
 use super::{
     parameters::{OVERDRIVE_GAIN_DB_MAX, OVERDRIVE_GAIN_DB_MIN},
@@ -14,16 +12,12 @@ const INTERNAL_CHANNEL_COUNT: usize = 1;
 
 pub struct WaveshaperProcessor {
     transfer_function: Vec<f32>,
-    overdrive_id: Id,
-    mix_id: Id,
     oversampling_buffer: OwnedAudioBuffer,
 }
 
 impl WaveshaperProcessor {
     pub fn new(
         shaper: &dyn Fn(f32) -> f32,
-        overdrive_id: Id,
-        mix_id: Id,
         sample_rate: usize,
         maximum_frame_count: usize,
     ) -> Self {
@@ -36,8 +30,6 @@ impl WaveshaperProcessor {
 
         Self {
             transfer_function,
-            overdrive_id,
-            mix_id,
             oversampling_buffer: OwnedAudioBuffer::new(
                 maximum_frame_count * OVERSAMPLING_RATIO,
                 INTERNAL_CHANNEL_COUNT,
@@ -104,10 +96,10 @@ impl DspProcessor for WaveshaperProcessor {
     fn process_audio(&mut self, context: &mut crate::ProcessContext) {
         let overdrive = context
             .parameters
-            .get_parameter_values(self.overdrive_id, context.output_buffer.frame_count());
+            .get_parameter_values("overdrive", context.output_buffer.frame_count());
         let mix = context
             .parameters
-            .get_parameter_values(self.mix_id, context.output_buffer.frame_count());
+            .get_parameter_values("mix", context.output_buffer.frame_count());
 
         (0..context.output_buffer.channel_count()).for_each(|channel| {
             let location = SampleLocation::channel(channel);

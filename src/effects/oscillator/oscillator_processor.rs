@@ -1,20 +1,16 @@
 use itertools::izip;
 
-use crate::{commands::Id, graph::DspProcessor, SampleLocation};
+use crate::{graph::DspProcessor, SampleLocation};
 
 pub struct OscillatorProcessor {
     phase: f64,
-    frequency_id: Id,
-    gain_id: Id,
     wavetable: Vec<f64>,
 }
 
 impl OscillatorProcessor {
-    pub fn new(frequency_id: Id, gain_id: Id, wavetable: Vec<f64>) -> Self {
+    pub fn new(wavetable: Vec<f64>) -> Self {
         Self {
             phase: 0.0,
-            frequency_id,
-            gain_id,
             wavetable,
         }
     }
@@ -54,10 +50,10 @@ impl DspProcessor for OscillatorProcessor {
 
         let frequency_values = context
             .parameters
-            .get_parameter_values(self.frequency_id, context.output_buffer.frame_count());
+            .get_parameter_values("frequency", context.output_buffer.frame_count());
         let gain_values = context
             .parameters
-            .get_parameter_values(self.gain_id, context.output_buffer.frame_count());
+            .get_parameter_values("gain", context.output_buffer.frame_count());
 
         let channel_count = context.output_buffer.channel_count();
 

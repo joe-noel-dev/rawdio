@@ -1,6 +1,8 @@
 use crate::{
-    commands::Id, graph::DspParameters, parameter::ParameterRange, AudioParameter, Context,
-    GraphNode, Level,
+    commands::Id,
+    parameter::{ParameterRange, Parameters},
+    utility::create_parameters,
+    AudioParameter, Context, DspNode, GraphNode, Level,
 };
 
 use super::{
@@ -12,21 +14,25 @@ use super::{
 };
 
 /// A node that will distort the input signal using a specified function
+///
+/// # Parameters
+/// - overdrive
+/// - mix
 pub struct Waveshaper {
     /// The node to connect to the audio graph
     pub node: GraphNode,
 
-    /// The amount of 'drive' to apply to the signal
-    ///
-    /// This is a normalised value (0.0 - 1.0) that will apply gain to the
-    /// signal
-    pub overdrive: AudioParameter,
+    params: Parameters,
+}
 
-    /// The proportion of wet/processed signal to send to the output
-    ///
-    /// 1.0 represents a fully processed signal
-    /// 0.0 represents a full dry signal
-    pub mix: AudioParameter,
+impl DspNode for Waveshaper {
+    fn get_parameters(&self) -> &Parameters {
+        &self.params
+    }
+
+    fn get_parameters_mut(&mut self) -> &mut Parameters {
+        &mut self.params
+    }
 }
 
 impl Waveshaper {
@@ -85,26 +91,31 @@ impl Waveshaper {
     pub fn new(context: &dyn Context, channel_count: usize, shaper: &dyn Fn(f32) -> f32) -> Self {
         let id = Id::generate();
 
-        let (overdrive, realtime_overdrive) = AudioParameter::new(
+        let (params, realtime_params) = create_parameters(
             id,
-            ParameterRange::new(
-                OVERDRIVE_PARAMETER_DEFAULT,
-                OVERDRIVE_PARAMETER_MIN,
-                OVERDRIVE_PARAMETER_MAX,
-            ),
             context,
-        );
-
-        let (mix, realtime_mix) = AudioParameter::new(
-            id,
-            ParameterRange::new(MIX_PARAMETER_DEFAULT, MIX_PARAMETER_MIN, MIX_PARAMETER_MAX),
-            context,
+            [
+                (
+                    "overdrive",
+                    ParameterRange::new(
+                        OVERDRIVE_PARAMETER_DEFAULT,
+                        OVERDRIVE_PARAMETER_MIN,
+                        OVERDRIVE_PARAMETER_MAX,
+                    ),
+                ),
+                (
+                    "mix",
+                    ParameterRange::new(
+                        MIX_PARAMETER_DEFAULT,
+                        MIX_PARAMETER_MIN,
+                        MIX_PARAMETER_MAX,
+                    ),
+                ),
+            ],
         );
 
         let processor = Box::new(WaveshaperProcessor::new(
             shaper,
-            overdrive.get_id(),
-            mix.get_id(),
             context.get_sample_rate(),
             context.maximum_frame_count(),
         ));
@@ -115,13 +126,18 @@ impl Waveshaper {
             channel_count,
             channel_count,
             processor,
-            DspParameters::new([realtime_overdrive, realtime_mix]),
+            realtime_params,
         );
 
-        Self {
-            node,
-            overdrive,
-            mix,
-        }
+        Self { node, params }
+    }
+
+    /// Get the overdrive parameter
+    pub fn overdrive(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("overdrive")
+    }
+    /// Get the mix parameter
+    pub fn mix(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("mix")
     }
 }

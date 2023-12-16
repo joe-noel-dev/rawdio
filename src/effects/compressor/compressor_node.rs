@@ -1,51 +1,35 @@
-use std::collections::HashMap;
-
 use crate::{
-    commands::Id, graph::DspParameters, parameter::RealtimeAudioParameter, AudioParameter, Context,
-    GraphNode,
+    commands::Id, parameter::Parameters, utility::create_parameters, AudioParameter, Context,
+    DspNode, GraphNode,
 };
 
-use super::{
-    compressor_parameters::{get_range, CompressorParameter},
-    compressor_processor::CompressorProcessor,
-};
+use super::{compressor_parameters::get_range, compressor_processor::CompressorProcessor};
 
 /// A basic dynamics compressor
+///
+/// # Parameters
+/// - attack
+/// - release
+/// - ratio
+/// - threshold
+/// - knee
+/// - wet
+/// - dry
 pub struct Compressor {
     /// The node to connect into the audio graph
     pub node: GraphNode,
 
-    /// The attack time of the compressor (in ms)
-    ///
-    /// This is how fast or slow the compressor tracks the input signal when the signal
-    /// level is rising
-    pub attack: AudioParameter,
+    params: Parameters,
+}
 
-    /// The release time of the compressor (in ms)
-    ///
-    /// This is how fast or slow the compressor releases the tracked input signal
-    /// when the signal level is falling
-    pub release: AudioParameter,
+impl DspNode for Compressor {
+    fn get_parameters(&self) -> &Parameters {
+        &self.params
+    }
 
-    /// The ratio of the compressor
-    ///
-    /// This controls how aggresively the signal is attentuated when it goes
-    /// over the threshold
-    pub ratio: AudioParameter,
-
-    /// The threshold at which the signal will begin to apply gain reduction
-    pub threshold: AudioParameter,
-
-    /// The knee of the compressor (in dB)
-    ///
-    /// At larger values, the compressor's gain reduction will begin more gradually
-    pub knee: AudioParameter,
-
-    /// The gain to apply to the wet (compressed) signal (linear gain)
-    pub wet_level: AudioParameter,
-
-    /// The gain to apply to the dry (uncompressed) signal
-    pub dry_level: AudioParameter,
+    fn get_parameters_mut(&mut self) -> &mut Parameters {
+        &mut self.params
+    }
 }
 
 impl Compressor {
@@ -53,42 +37,24 @@ impl Compressor {
     pub fn new(context: &dyn Context, channel_count: usize) -> Self {
         let id = Id::generate();
 
-        let parameters = [
-            CompressorParameter::Attack,
-            CompressorParameter::Release,
-            CompressorParameter::Ratio,
-            CompressorParameter::Threshold,
-            CompressorParameter::Knee,
-            CompressorParameter::WetLevel,
-            CompressorParameter::DryLevel,
+        let param_ids = [
+            "attack",
+            "release",
+            "ratio",
+            "threshold",
+            "knee",
+            "wet",
+            "dry",
         ];
 
-        let mut audio_parameters = HashMap::new();
-        let mut realtime_paramters = HashMap::new();
-
-        for param in parameters.iter() {
-            let (audio_param, realtime_param) = AudioParameter::new(id, get_range(*param), context);
-            audio_parameters.insert(*param, audio_param);
-            realtime_paramters.insert(*param, realtime_param);
-        }
-
-        let mut parameter_ids = HashMap::new();
-        for (parameter, audio_param) in audio_parameters.iter() {
-            parameter_ids.insert(*parameter, audio_param.get_id());
-        }
+        let (params, realtime_params) =
+            create_parameters(id, context, param_ids.map(|id| (id, get_range(id))));
 
         let processor = Box::new(CompressorProcessor::new(
             channel_count,
             context.get_sample_rate(),
             context.maximum_frame_count(),
-            parameter_ids,
         ));
-
-        let dsp_parameters = DspParameters::from(
-            realtime_paramters
-                .into_values()
-                .collect::<Vec<RealtimeAudioParameter>>(),
-        );
 
         let node = GraphNode::new(
             id,
@@ -96,32 +62,38 @@ impl Compressor {
             channel_count,
             channel_count,
             processor,
-            dsp_parameters,
+            realtime_params,
         );
 
-        Self {
-            node,
-            attack: audio_parameters
-                .remove(&CompressorParameter::Attack)
-                .unwrap_or_else(|| panic!("Missing parameter")),
-            release: audio_parameters
-                .remove(&CompressorParameter::Release)
-                .unwrap_or_else(|| panic!("Missing parameter")),
-            ratio: audio_parameters
-                .remove(&CompressorParameter::Ratio)
-                .unwrap_or_else(|| panic!("Missing parameter")),
-            threshold: audio_parameters
-                .remove(&CompressorParameter::Threshold)
-                .unwrap_or_else(|| panic!("Missing parameter")),
-            knee: audio_parameters
-                .remove(&CompressorParameter::Knee)
-                .unwrap_or_else(|| panic!("Missing parameter")),
-            wet_level: audio_parameters
-                .remove(&CompressorParameter::WetLevel)
-                .unwrap_or_else(|| panic!("Missing parameter")),
-            dry_level: audio_parameters
-                .remove(&CompressorParameter::DryLevel)
-                .unwrap_or_else(|| panic!("Missing parameter")),
-        }
+        Self { node, params }
+    }
+
+    /// Get the attack parameter
+    pub fn attack(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("attack")
+    }
+    /// Get the release parameter
+    pub fn release(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("release")
+    }
+    /// Get the ratio parameter
+    pub fn ratio(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("ratio")
+    }
+    /// Get the threshold parameter
+    pub fn threshold(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("threshold")
+    }
+    /// Get the knee parameter
+    pub fn knee(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("knee")
+    }
+    /// Get the wet parameter
+    pub fn wet(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("wet")
+    }
+    /// Get the dry parameter
+    pub fn dry(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("dry")
     }
 }

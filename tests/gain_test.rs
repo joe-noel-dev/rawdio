@@ -117,7 +117,10 @@ fn create_normalised_envelope(output_buffer: &[f32], sample_rate: usize) -> Vec<
 fn test_gain_envelope() {
     let mut fixture = Fixture::default();
 
-    fixture.gain.gain.set_value_at_time(0.0, Timestamp::zero());
+    fixture
+        .gain
+        .gain()
+        .set_value_at_time(0.0, Timestamp::zero());
 
     for (gain, start_time, end_time) in [
         (1.0, Timestamp::zero(), Timestamp::from_seconds(1.0)),
@@ -129,7 +132,7 @@ fn test_gain_envelope() {
     ] {
         fixture
             .gain
-            .gain
+            .gain()
             .linear_ramp_to_value(gain, start_time, end_time);
     }
 
@@ -153,7 +156,10 @@ fn test_peak() {
 
     let gain = 0.5;
 
-    fixture.gain.gain.set_value_at_time(gain, Timestamp::zero());
+    fixture
+        .gain
+        .gain()
+        .set_value_at_time(gain, Timestamp::zero());
 
     let output_buffer = fixture.process_seconds(2.0);
     let output_samples = output_buffer.get_channel_data(SampleLocation::origin());

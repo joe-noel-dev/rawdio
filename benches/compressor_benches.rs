@@ -48,12 +48,12 @@ fn compressor_benchmarks(c: &mut Criterion) {
     c.bench_function("process compressor", |b| {
         let mut fixture = Fixture::new();
 
-        fixture.compressor.attack.set_value_now(1.0);
-        fixture.compressor.release.set_value_now(10.0);
-        fixture.compressor.dry_level.set_value_now(0.5);
-        fixture.compressor.wet_level.set_value_now(0.5);
-        fixture.compressor.threshold.set_value_now(-12.0);
-        fixture.compressor.knee.set_value_now(6.0);
+        fixture.compressor.attack().set_value_now(1.0);
+        fixture.compressor.release().set_value_now(10.0);
+        fixture.compressor.dry().set_value_now(0.5);
+        fixture.compressor.wet().set_value_now(0.5);
+        fixture.compressor.threshold().set_value_now(-12.0);
+        fixture.compressor.knee().set_value_now(6.0);
 
         b.iter(|| fixture.process());
     });

@@ -83,7 +83,7 @@ fn get_energy_of_channel(audio_buffer: &dyn AudioBuffer, channel_index: usize) -
 fn process_with_pan(pan: f64) -> Vec<f64> {
     let mut fixture = Fixture::default();
 
-    fixture.pan.pan.set_value_at_time(pan, Timestamp::zero());
+    fixture.pan.pan().set_value_at_time(pan, Timestamp::zero());
 
     let audio = fixture.process(Duration::from_secs_f64(1.0));
 

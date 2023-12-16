@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    commands::Id, dsp::mix_into_with_gains, graph::DspProcessor, AudioBuffer, BorrowedAudioBuffer,
+    dsp::mix_into_with_gains, graph::DspProcessor, AudioBuffer, BorrowedAudioBuffer,
     MutableBorrowedAudioBuffer, SampleLocation,
 };
 use itertools::izip;
@@ -18,17 +18,10 @@ pub struct ConvolutionProcessor {
     complex_output: ComplexAudioBuffer,
     output_scale: f32,
     maximum_frame_count: usize,
-    wet_id: Id,
-    dry_id: Id,
 }
 
 impl ConvolutionProcessor {
-    pub fn new(
-        impulse: &dyn AudioBuffer,
-        maximum_frame_count: usize,
-        wet_id: Id,
-        dry_id: Id,
-    ) -> Self {
+    pub fn new(impulse: &dyn AudioBuffer, maximum_frame_count: usize) -> Self {
         let convolution_length =
             (impulse.frame_count() + maximum_frame_count - 1).next_power_of_two();
         let output_channel_count = impulse.channel_count();
@@ -45,8 +38,6 @@ impl ConvolutionProcessor {
             complex_output: create_complex_audio_buffer(output_channel_count, convolution_length),
             output_scale: 1.0 / convolution_length as f32,
             maximum_frame_count,
-            wet_id,
-            dry_id,
         }
     }
 
@@ -209,11 +200,11 @@ impl DspProcessor for ConvolutionProcessor {
     fn process_audio(&mut self, context: &mut crate::ProcessContext) {
         let wet = context
             .parameters
-            .get_parameter_values(self.wet_id, context.output_buffer.frame_count());
+            .get_parameter_values("wet", context.output_buffer.frame_count());
 
         let dry = context
             .parameters
-            .get_parameter_values(self.dry_id, context.output_buffer.frame_count());
+            .get_parameter_values("dry", context.output_buffer.frame_count());
 
         self.process(context.input_buffer, context.output_buffer, wet, dry);
     }
@@ -270,12 +261,7 @@ mod tests {
             let impulse = OwnedAudioBuffer::from_slice(impulse, channel_count, sample_rate);
 
             Self {
-                processor: ConvolutionProcessor::new(
-                    &impulse,
-                    maximum_frame_count,
-                    Id::generate(),
-                    Id::generate(),
-                ),
+                processor: ConvolutionProcessor::new(&impulse, maximum_frame_count),
                 sample_rate,
             }
         }

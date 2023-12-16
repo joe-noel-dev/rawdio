@@ -33,15 +33,15 @@ fn play_file(file_to_play: &str) {
     let channel_count = 2;
     let mut biquad = Biquad::new(context.as_ref(), channel_count, BiquadFilterType::LowPass);
 
-    biquad.frequency.set_value_now(20.0);
+    biquad.frequency().set_value_now(20.0);
 
-    biquad.frequency.exponential_ramp_to_value(
+    biquad.frequency().exponential_ramp_to_value(
         20_000.0,
         Timestamp::zero(),
         Timestamp::from_seconds(10.0),
     );
 
-    biquad.frequency.exponential_ramp_to_value(
+    biquad.frequency().exponential_ramp_to_value(
         20.0,
         Timestamp::from_seconds(10.0),
         Timestamp::from_seconds(20.0),

@@ -38,7 +38,7 @@ fn schedule_events(
         };
 
         oscillator
-            .frequency
+            .frequency()
             .set_value_at_time(frequency, beat_position);
 
         adsr.note_on_at_time(beat_position);

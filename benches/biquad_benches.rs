@@ -24,7 +24,7 @@ impl Fixture {
 
         let mut biquad = Biquad::new(context.as_ref(), channel_count, filter_type);
 
-        biquad.frequency.set_value_now(cutoff_frequency);
+        biquad.frequency().set_value_now(cutoff_frequency);
 
         connect_nodes!("input" => biquad => "output");
 
@@ -45,7 +45,7 @@ impl Fixture {
         end_time: Timestamp,
     ) {
         self.biquad
-            .frequency
+            .frequency()
             .linear_ramp_to_value(value, start_time, end_time);
     }
 

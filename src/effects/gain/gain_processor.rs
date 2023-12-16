@@ -1,12 +1,10 @@
-use crate::{commands::Id, graph::DspProcessor, ProcessContext, SampleLocation};
+use crate::{graph::DspProcessor, ProcessContext, SampleLocation};
 
-pub struct GainProcessor {
-    gain_id: Id,
-}
+pub struct GainProcessor;
 
 impl GainProcessor {
-    pub fn new(gain_id: Id) -> Self {
-        Self { gain_id }
+    pub fn new() -> Self {
+        Self
     }
 }
 
@@ -14,7 +12,7 @@ impl DspProcessor for GainProcessor {
     fn process_audio(&mut self, context: &mut ProcessContext) {
         let gain = context
             .parameters
-            .get_parameter_values(self.gain_id, context.output_buffer.frame_count());
+            .get_parameter_values("gain", context.output_buffer.frame_count());
 
         let channel_count = std::cmp::min(
             context.output_buffer.channel_count(),

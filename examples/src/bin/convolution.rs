@@ -42,11 +42,12 @@ fn process_file(options: &Options) {
     let mut sample_player = Sampler::new(context.as_ref(), input);
     let mut convolution = Convolution::new(context.as_ref(), input_channels, impulse);
 
-    convolution.dry.set_value_now(options.dry);
-    convolution.wet.set_value_now(options.wet);
+    convolution.dry().set_value_now(options.dry);
+
+    convolution.wet().set_value_now(options.wet);
 
     let mut output = Gain::new(context.as_ref(), input_channels);
-    output.gain.set_value_now(1.0);
+    output.gain().set_value_now(1.0);
 
     connect_nodes!(sample_player => convolution => output => "output");
 

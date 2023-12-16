@@ -33,13 +33,13 @@ fn play_file(file_to_play: &str) {
 
     let mut compressor = Compressor::new(context.as_ref(), channel_count);
 
-    compressor.threshold.set_value_now(-18.0);
-    compressor.attack.set_value_now(1.0);
-    compressor.release.set_value_now(10.0);
-    compressor.wet_level.set_value_now(0.75);
-    compressor.dry_level.set_value_now(0.25);
-    compressor.knee.set_value_now(6.0);
-    compressor.ratio.set_value_now(4.0);
+    compressor.threshold().set_value_now(-18.0);
+    compressor.attack().set_value_now(1.0);
+    compressor.release().set_value_now(10.0);
+    compressor.wet().set_value_now(0.75);
+    compressor.dry().set_value_now(0.25);
+    compressor.knee().set_value_now(6.0);
+    compressor.ratio().set_value_now(4.0);
 
     sampler.start_now();
     sampler.enable_loop(

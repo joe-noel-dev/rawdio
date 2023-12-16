@@ -1,7 +1,8 @@
-use crate::{commands::Id, Timestamp};
+use crate::Timestamp;
 
 use super::{
     parameter_change::ValueChangeMethod, parameter_value::ParameterValue, ParameterChange,
+    ParameterId,
 };
 
 use std::sync::atomic::Ordering;
@@ -38,7 +39,7 @@ impl ParameterBuffer {
 }
 
 pub struct RealtimeAudioParameter {
-    parameter_id: Id,
+    id: ParameterId,
     value: ParameterValue,
     parameter_changes: Vec<ParameterChange>,
     parameter_buffer: ParameterBuffer,
@@ -48,11 +49,11 @@ pub struct RealtimeAudioParameter {
 }
 
 impl RealtimeAudioParameter {
-    pub fn new(parameter_id: Id, value: ParameterValue, maximum_frame_count: usize) -> Self {
+    pub fn new(id: ParameterId, value: ParameterValue, maximum_frame_count: usize) -> Self {
         let initial_value = value.load(Ordering::Acquire);
 
         Self {
-            parameter_id,
+            id,
             value,
             parameter_changes: Vec::with_capacity(MAXIMUM_PENDING_PARAMETER_CHANGES),
             parameter_buffer: ParameterBuffer::with_capacity(maximum_frame_count),
@@ -66,8 +67,8 @@ impl RealtimeAudioParameter {
         }
     }
 
-    pub fn get_id(&self) -> Id {
-        self.parameter_id
+    pub fn get_id(&self) -> ParameterId {
+        self.id
     }
 
     pub fn get_value(&self) -> f64 {
@@ -220,11 +221,10 @@ mod tests {
 
     #[test]
     fn immediate_parameter_changes() {
-        let id = Id::generate();
         let value = ParameterValue::new(AtomicF64::new(0.0));
         let maximum_frame_count = 512;
 
-        let mut param = RealtimeAudioParameter::new(id, value, maximum_frame_count);
+        let mut param = RealtimeAudioParameter::new("param", value, maximum_frame_count);
 
         param.add_parameter_change(ParameterChange {
             value: 1.0,
@@ -269,11 +269,10 @@ mod tests {
 
     #[test]
     fn ramped_parameter_changes() {
-        let id = Id::generate();
         let value = ParameterValue::new(AtomicF64::new(0.0));
         let maximum_frame_count = 512;
 
-        let mut param = RealtimeAudioParameter::new(id, value, maximum_frame_count);
+        let mut param = RealtimeAudioParameter::new("param", value, maximum_frame_count);
 
         [
             (1.0, Timestamp::zero(), Timestamp::from_seconds(1.0)),
@@ -320,11 +319,10 @@ mod tests {
 
     #[test]
     fn exponential_ramps() {
-        let id = Id::generate();
         let initial_value = 2.0;
         let value = ParameterValue::new(AtomicF64::new(initial_value));
         let maximum_frame_count = 512;
-        let mut param = RealtimeAudioParameter::new(id, value, maximum_frame_count);
+        let mut param = RealtimeAudioParameter::new("param", value, maximum_frame_count);
 
         let ramp_duration = Timestamp::from_seconds(1.0);
 

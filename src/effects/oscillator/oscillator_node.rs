@@ -2,9 +2,10 @@ use itertools::izip;
 
 use crate::{
     commands::Id,
-    graph::{DspParameters, GraphNode},
-    parameter::{AudioParameter, ParameterRange},
-    Context, Level,
+    graph::GraphNode,
+    parameter::{ParameterRange, Parameters},
+    utility::create_parameters,
+    AudioParameter, Context, DspNode, Level,
 };
 
 use super::oscillator_processor::OscillatorProcessor;
@@ -12,17 +13,16 @@ use super::oscillator_processor::OscillatorProcessor;
 /// An oscillator node
 ///
 /// Oscillator nodes don't have inputs, they only produce output
+///
+/// # Parameters
+///
+/// - frequency
+/// - gain
 pub struct Oscillator {
     /// The node to connect to the audio graph
     pub node: GraphNode,
 
-    /// The frequency of the oscillator
-    ///
-    /// This should probably be between 20 Hz and 20 kHz
-    pub frequency: AudioParameter,
-
-    /// The (linear) gain of the oscillator
-    pub gain: AudioParameter,
+    params: Parameters,
 }
 
 const MIN_GAIN: f64 = f64::NEG_INFINITY;
@@ -41,6 +41,16 @@ fn make_sine_wavetable(length: usize, harmonic: usize) -> Vec<f64> {
     }
 
     values
+}
+
+impl DspNode for Oscillator {
+    fn get_parameters(&self) -> &Parameters {
+        &self.params
+    }
+
+    fn get_parameters_mut(&mut self) -> &mut Parameters {
+        &mut self.params
+    }
 }
 
 impl Oscillator {
@@ -97,25 +107,24 @@ impl Oscillator {
 
         let id = Id::generate();
 
-        let (frequency, realtime_frequency) = AudioParameter::new(
+        let (params, realtime_params) = create_parameters(
             id,
-            ParameterRange::new(frequency, MIN_FREQUENCY, MAX_FREQUENCY),
             context,
-        );
-
-        let (gain, realtime_gain) = AudioParameter::new(
-            id,
-            ParameterRange::new(DEFAULT_GAIN, MIN_GAIN, MAX_GAIN),
-            context,
+            [
+                (
+                    "frequency",
+                    ParameterRange::new(frequency, MIN_FREQUENCY, MAX_FREQUENCY),
+                ),
+                (
+                    "gain",
+                    ParameterRange::new(DEFAULT_GAIN, MIN_GAIN, MAX_GAIN),
+                ),
+            ],
         );
 
         let input_count = 0;
 
-        let processor = Box::new(OscillatorProcessor::new(
-            frequency.get_id(),
-            gain.get_id(),
-            wavetable,
-        ));
+        let processor = Box::new(OscillatorProcessor::new(wavetable));
 
         let node = GraphNode::new(
             id,
@@ -123,13 +132,19 @@ impl Oscillator {
             input_count,
             output_count,
             processor,
-            DspParameters::new([realtime_frequency, realtime_gain]),
+            realtime_params,
         );
 
-        Self {
-            node,
-            frequency,
-            gain,
-        }
+        Self { node, params }
+    }
+
+    /// Get the frequency parameter
+    pub fn frequency(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("frequency")
+    }
+
+    /// Get the gain parameter
+    pub fn gain(&mut self) -> &mut AudioParameter {
+        self.get_parameter_mut("gain")
     }
 }
