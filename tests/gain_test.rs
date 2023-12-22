@@ -81,7 +81,7 @@ fn create_envelope(
     let mut envelope_output = 0.0;
 
     for sample in buffer {
-        let envelope_input = (*sample).abs();
+        let envelope_input = sample.abs();
 
         envelope_output = if envelope_output < envelope_input {
             envelope_input + attack_gain * (envelope_output - envelope_input)

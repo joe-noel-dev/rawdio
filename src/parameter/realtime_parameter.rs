@@ -76,11 +76,11 @@ impl RealtimeAudioParameter {
     }
 
     fn is_static(&self) -> bool {
-        if (self.coefficient - 1.0).abs() > 1e-6 {
+        if !relative_eq!(self.coefficient, 1.0) {
             return false;
         }
 
-        if self.increment.abs() > 1e-6 {
+        if !relative_eq!(self.increment, 0.0) {
             return false;
         }
 

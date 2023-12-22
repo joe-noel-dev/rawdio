@@ -29,6 +29,9 @@
 //! // If you wish to use with your sound card, you could use something like cpal (see the examples)
 //! ```
 
+#[macro_use]
+extern crate approx;
+
 mod buffer;
 mod commands;
 mod dsp;

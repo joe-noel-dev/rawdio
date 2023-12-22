@@ -250,12 +250,12 @@ pub trait AudioBuffer {
     fn apply_gain(&mut self, gain: &[f32]) {
         debug_assert_eq!(gain.len(), self.frame_count());
 
-        if gain.iter().all(|gain| gain.abs() < 1e-9) {
+        if gain.iter().all(|gain| relative_eq!(*gain, 0.0)) {
             self.clear();
             return;
         }
 
-        if gain.iter().all(|gain| (gain - 1.0).abs() < 1e-9) {
+        if gain.iter().all(|gain| relative_eq!(*gain, 1.0)) {
             return;
         }
 
@@ -271,12 +271,12 @@ pub trait AudioBuffer {
             let channel_data = self.get_channel_data_mut(SampleLocation::new(channel, range.frame));
             let channel_data = &mut channel_data[..range.frame_count];
 
-            if gain.abs() < 1e-9 {
+            if relative_eq!(gain, 0.0) {
                 channel_data.fill(0.0);
                 return;
             }
 
-            if (gain - 1.0).abs() < 1e-9 {
+            if relative_eq!(gain, 1.0) {
                 return;
             }
 

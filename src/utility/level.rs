@@ -68,12 +68,12 @@ impl Level {
 
     /// Check if the value represents zero gain
     pub fn is_zero(&self) -> bool {
-        self.linear.abs() < 1e-9
+        relative_eq!(self.linear, 0.0)
     }
 
     /// Check if the value represents unity gain
     pub fn is_unity(&self) -> bool {
-        (self.linear - 1.0).abs() < 1e-9
+        relative_eq!(self.linear, 1.0)
     }
 }
 

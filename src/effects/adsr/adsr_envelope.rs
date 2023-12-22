@@ -258,7 +258,7 @@ mod tests {
 
         assert!(values
             .iter()
-            .all(|value| (value - SUSTAIN_LEVEL).abs() < 1e-3));
+            .all(|value| relative_eq!(*value, SUSTAIN_LEVEL)));
     }
 
     #[test]

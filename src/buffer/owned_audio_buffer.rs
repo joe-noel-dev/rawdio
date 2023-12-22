@@ -226,7 +226,7 @@ mod tests {
     fn is_empty(buffer: &dyn AudioBuffer) -> bool {
         for channel in 0..buffer.channel_count() {
             let data = buffer.get_channel_data(SampleLocation::channel(channel));
-            if !data.iter().all(|value| value.abs() < 1e-6) {
+            if !data.iter().all(|value| relative_eq!(*value, 0.0)) {
                 return false;
             }
         }
