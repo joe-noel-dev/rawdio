@@ -75,11 +75,6 @@ impl RealtimeAudioParameter {
         self.value.load(Ordering::Acquire)
     }
 
-    fn remove_expired_changes(&mut self, time: &Timestamp) {
-        self.parameter_changes
-            .retain(|param_change| param_change.end_time >= *time);
-    }
-
     fn is_static(&self) -> bool {
         if (self.coefficient - 1.0).abs() > 1e-6 {
             return false;
@@ -98,8 +93,6 @@ impl RealtimeAudioParameter {
 
     pub fn process(&mut self, time: &Timestamp, frame_count: usize, sample_rate: usize) {
         self.parameter_buffer.reset();
-
-        self.remove_expired_changes(time);
 
         let mut value = self.get_value();
 
@@ -349,5 +342,38 @@ mod tests {
         assert_relative_eq!(get_value_at_time(0.0), 2.0, epsilon = 1e-3);
         assert_relative_eq!(get_value_at_time(0.5), 2.0 * 1.414, epsilon = 1e-3);
         assert_relative_eq!(get_value_at_time(1.0), 4.0, epsilon = 1e-3);
+    }
+
+    #[test]
+    fn zero_time_change_is_immediate() {
+        let value = ParameterValue::new(AtomicF64::new(0.0));
+        let maximum_frame_count = 512;
+
+        let mut param = RealtimeAudioParameter::new("param", value, maximum_frame_count);
+
+        param.add_parameter_change(ParameterChange {
+            value: 1.0,
+            end_time: Timestamp::zero(),
+            method: ValueChangeMethod::Immediate,
+        });
+
+        let sample_rate = 48_000;
+
+        let values = process_parameter_values(
+            &mut param,
+            Timestamp::from_seconds(2.0),
+            Timestamp::from_seconds(4.5),
+            sample_rate,
+        );
+
+        let get_value_at_time = |time: f64| {
+            let offset = Timestamp::from_seconds(time).as_samples(sample_rate).ceil() as usize;
+            assert!(offset < values.len());
+            values[offset]
+        };
+
+        assert_relative_eq!(get_value_at_time(0.0), 1.0);
+        assert_relative_eq!(get_value_at_time(1.0), 1.0);
+        assert_relative_eq!(get_value_at_time(2.0), 1.0);
     }
 }
