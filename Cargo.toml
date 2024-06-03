@@ -10,7 +10,7 @@ categories = ["multimedia::audio"]
 
 [dependencies]
 approx = "0.5.1"
-atomic_float = "0.1.0"
+atomic_float = "1.0.0"
 crossbeam = "0.8.2"
 fixed = "1.11.0"
 itertools = "0.12.0" 
