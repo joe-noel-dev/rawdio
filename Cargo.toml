@@ -13,7 +13,7 @@ approx = "0.5.1"
 atomic_float = "1.0.0"
 crossbeam = "0.8.2"
 fixed = "1.11.0"
-itertools = "0.12.0" 
+itertools = "0.13.0" 
 rand = "0.8.5"
 rustfft = {version = "6.1.0", features = ["avx", "sse", "neon"] }
 
