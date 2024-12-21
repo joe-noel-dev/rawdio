@@ -14,10 +14,6 @@ pub struct Waveshaper {
 }
 
 impl DspNode for Waveshaper {
-    fn get_parameters(&self) -> &Parameters {
-        &self.params
-    }
-
     fn get_parameters_mut(&mut self) -> &mut Parameters {
         &mut self.params
     }

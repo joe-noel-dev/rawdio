@@ -23,10 +23,6 @@ const MAX_GAIN: f64 = f64::INFINITY;
 const DEFAULT_GAIN: f64 = 1.0;
 
 impl DspNode for Gain {
-    fn get_parameters(&self) -> &Parameters {
-        &self.params
-    }
-
     fn get_parameters_mut(&mut self) -> &mut Parameters {
         &mut self.params
     }

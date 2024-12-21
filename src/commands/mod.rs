@@ -1,6 +1,5 @@
 mod command;
 mod id;
-mod notifier;
 mod parameter_change_request;
 
 pub use command::Command;

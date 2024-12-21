@@ -212,21 +212,15 @@ pub struct EdgeIterator<'a, NodeData, EdgeData> {
     direction: Direction,
 }
 
-impl<'a, NodeData, EdgeData> Iterator for EdgeIterator<'a, NodeData, EdgeData> {
+impl<NodeData, EdgeData> Iterator for EdgeIterator<'_, NodeData, EdgeData> {
     type Item = Id;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let node = match self.nodes.get(&self.node_id) {
-            Some(node) => node,
-            None => return None,
-        };
+        let node = self.nodes.get(&self.node_id)?;
 
         let next_edge_id = match self.edge_id {
             Some(edge_id) => {
-                let edge = match self.edges.get(&edge_id) {
-                    Some(edge) => edge,
-                    None => return None,
-                };
+                let edge = self.edges.get(&edge_id)?;
 
                 match self.direction {
                     Direction::Outgoing => edge.next_out,
@@ -288,7 +282,7 @@ impl<'a, NodeData, EdgeData> NodeIterator<'a, NodeData, EdgeData> {
     }
 }
 
-impl<'a, NodeData, EdgeData> Iterator for NodeIterator<'a, NodeData, EdgeData> {
+impl<NodeData, EdgeData> Iterator for NodeIterator<'_, NodeData, EdgeData> {
     type Item = Id;
 
     fn next(&mut self) -> Option<Self::Item> {
