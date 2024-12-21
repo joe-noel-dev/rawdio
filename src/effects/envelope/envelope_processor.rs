@@ -44,9 +44,9 @@ impl DspProcessor for EnvelopeProcessor {
         let mut position = 0;
         let channel_count = context.input_buffer.channel_count();
 
-        while position < channel_count {
+        while position < context.input_buffer.frame_count() {
             let frame_count = std::cmp::min(
-                context.input_buffer.frame_count(),
+                context.input_buffer.frame_count() - position,
                 self.notification.samples_until_next_notification(),
             );
 
@@ -71,14 +71,61 @@ impl DspProcessor for EnvelopeProcessor {
                 }
             }
 
-            if self
-                .notification
-                .advance(context.input_buffer.frame_count())
-            {
+            if self.notification.advance(frame_count) {
                 self.send_notifications(channel_count);
             }
 
             position += frame_count;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crossbeam::channel;
+
+    use super::*;
+    use crate::{graph::DspParameters, ProcessContext};
+
+    #[test]
+    fn test_envelope_processor() {
+        let sample_rate = 48_000;
+        let channel_count = 1;
+        let attack_time = Duration::from_millis(0);
+        let release_time = Duration::from_millis(100);
+        let notification_frequency = 2.0;
+        let (tx, rx) = channel::unbounded();
+
+        let mut processor = EnvelopeProcessor::new(
+            sample_rate,
+            channel_count,
+            attack_time,
+            release_time,
+            notification_frequency,
+            tx,
+        );
+
+        let frame_count = 45;
+        let input = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+        let mut output = OwnedAudioBuffer::new(frame_count, channel_count, sample_rate);
+
+        let mut total_frames = 48_000;
+        let mut offset = 0;
+        while total_frames > 0 {
+            let frames = std::cmp::min(frame_count, total_frames);
+
+            processor.process_audio(&mut ProcessContext {
+                input_buffer: &input,
+                output_buffer: &mut output,
+                start_time: &Timestamp::from_samples(offset as f64, sample_rate),
+                parameters: &DspParameters::empty(),
+            });
+
+            total_frames -= frames;
+            offset += frames;
+        }
+
+        let event_count = rx.len();
+        assert_eq!(event_count, 2);
     }
 }
