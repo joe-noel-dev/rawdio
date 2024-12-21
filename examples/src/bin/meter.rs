@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, thread, time::Duration};
+use std::{cell::RefCell, io::Write, rc::Rc, thread, time::Duration};
 
 use examples::{read_file_into_buffer, AudioCallback};
 use rawdio::{prelude::*, Envelope, Gain, Sampler};
@@ -41,7 +41,16 @@ fn play_file(file_to_play: &str) {
         context.process_notifications();
 
         for event in envelope.borrow_mut().take_notifications() {
-            println!("{}: {}", event.channel_index(), event.peak_level());
+            if event.channel_index() != 0 {
+                continue;
+            }
+
+            let peak_level = event.peak_level();
+            let max_blocks = 50;
+            let blocks = (peak_level.abs() * max_blocks as f32).round() as usize;
+            print!("\r{}", "█".repeat(blocks));
+            print!("{}|", "_".repeat(max_blocks - blocks));
+            std::io::stdout().flush().unwrap();
         }
     }
 
@@ -72,7 +81,7 @@ fn create_gain(context: &mut dyn Context, channel_count: usize, sample_duration:
 fn create_envelope(context: &mut dyn Context, channel_count: usize) -> Rc<RefCell<Envelope>> {
     let attack_time = Duration::ZERO;
     let release_time = Duration::from_millis(300);
-    let notification_frequency = 2.0;
+    let notification_frequency = 20.0;
 
     Envelope::new(
         context,
