@@ -42,10 +42,6 @@ fn make_sine_wavetable(length: usize, harmonic: usize) -> Vec<f64> {
 }
 
 impl DspNode for Oscillator {
-    fn get_parameters(&self) -> &Parameters {
-        &self.params
-    }
-
     fn get_parameters_mut(&mut self) -> &mut Parameters {
         &mut self.params
     }

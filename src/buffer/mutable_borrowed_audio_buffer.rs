@@ -53,7 +53,7 @@ impl<'a> MutableBorrowedAudioBuffer<'a> {
     }
 }
 
-impl<'a> AudioBuffer for MutableBorrowedAudioBuffer<'a> {
+impl AudioBuffer for MutableBorrowedAudioBuffer<'_> {
     fn channel_count(&self) -> usize {
         self.range.channel_count
     }

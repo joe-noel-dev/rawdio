@@ -15,10 +15,6 @@ pub struct Convolution {
 }
 
 impl DspNode for Convolution {
-    fn get_parameters(&self) -> &crate::parameter::Parameters {
-        &self.params
-    }
-
     fn get_parameters_mut(&mut self) -> &mut crate::parameter::Parameters {
         &mut self.params
     }

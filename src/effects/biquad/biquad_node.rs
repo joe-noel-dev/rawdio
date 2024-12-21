@@ -18,10 +18,6 @@ pub struct Biquad {
 }
 
 impl DspNode for Biquad {
-    fn get_parameters(&self) -> &crate::parameter::Parameters {
-        &self.parameters
-    }
-
     fn get_parameters_mut(&mut self) -> &mut crate::parameter::Parameters {
         &mut self.parameters
     }
