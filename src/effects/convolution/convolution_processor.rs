@@ -209,7 +209,7 @@ impl DspProcessor for ConvolutionProcessor {
 #[cfg(test)]
 mod tests {
 
-    use rand::Rng;
+    use rand::RngExt;
     use std::iter::zip;
 
     use approx::assert_relative_eq;
@@ -241,8 +241,8 @@ mod tests {
     }
 
     fn random_signal(length: usize) -> Vec<f32> {
-        let mut rng = rand::thread_rng();
-        (0..length).map(|_| rng.gen_range(-1.0..=1.0)).collect()
+        let mut rng = rand::rng();
+        (0..length).map(|_| rng.random_range(-1.0..=1.0)).collect()
     }
 
     struct Fixture {
