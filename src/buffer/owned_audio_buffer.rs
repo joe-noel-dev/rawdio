@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use rand::Rng;
+use rand::RngExt;
 use std::ops::Range;
 
 /// An audio buffer that owns its audio data
@@ -93,10 +93,10 @@ impl OwnedAudioBuffer {
     pub fn white_noise(frame_count: usize, channel_count: usize, sample_rate: usize) -> Self {
         let mut buffer = Self::new(frame_count, channel_count, sample_rate);
 
-        let mut random_generator = rand::thread_rng();
+        let mut random_generator = rand::rng();
 
         for frame in buffer.frame_iter() {
-            let sample_value = random_generator.gen_range(-1.0..=1.0);
+            let sample_value = random_generator.random_range(-1.0..=1.0);
             buffer.set_sample(frame, sample_value);
         }
 
@@ -216,11 +216,11 @@ impl AudioBuffer for OwnedAudioBuffer {
 mod tests {
 
     use super::*;
-    use rand::Rng;
+    use rand::RngExt;
 
     fn random_sample() -> f32 {
-        let mut generator = rand::thread_rng();
-        generator.gen_range(-1.0_f32..=1.0_f32)
+        let mut generator = rand::rng();
+        generator.random_range(-1.0_f32..=1.0_f32)
     }
 
     fn is_empty(buffer: &dyn AudioBuffer) -> bool {
