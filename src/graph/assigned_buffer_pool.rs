@@ -33,9 +33,9 @@ where
     }
 
     pub fn remove_next(&mut self) -> Option<(Identifier, OwnedAudioBuffer)> {
-        let id = match self.assigned_buffers.keys().next() {
-            Some(id) => *id,
-            None => return None,
+        let id = {
+            let id = self.assigned_buffers.keys().next()?;
+            *id
         };
 
         let buffer = self.remove(&id).expect("Buffer not found");

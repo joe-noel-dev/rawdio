@@ -28,7 +28,7 @@ fn schedule_events(
             break;
         }
 
-        let frequency = if beat % 4 == 0 {
+        let frequency = if beat.is_multiple_of(4) {
             high_frequency
         } else {
             low_frequency
