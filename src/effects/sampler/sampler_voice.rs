@@ -4,18 +4,13 @@ use super::sampler_fade::Fade;
 
 use std::cmp::min;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Default)]
 enum Phase {
+    #[default]
     Stopped,
     FadingIn(usize),
     Playing,
     FadingOut(usize),
-}
-
-impl Default for Phase {
-    fn default() -> Self {
-        Self::Stopped
-    }
 }
 
 #[derive(Default)]

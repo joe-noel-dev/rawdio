@@ -113,7 +113,11 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
             .any(|id| id == to_node_id)
     }
 
-    pub fn node_iter(&self, node_id: Id, direction: Direction) -> NodeIterator<NodeData, EdgeData> {
+    pub fn node_iter(
+        &self,
+        node_id: Id,
+        direction: Direction,
+    ) -> NodeIterator<'_, NodeData, EdgeData> {
         NodeIterator::new(node_id, direction, &self.nodes, &self.edges)
     }
 
@@ -121,7 +125,7 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
         &self,
         node_id: Id,
         direction: Direction,
-    ) -> EdgeIterator<NodeData, EdgeData> {
+    ) -> EdgeIterator<'_, NodeData, EdgeData> {
         EdgeIterator::new(node_id, None, direction, &self.nodes, &self.edges)
     }
 
@@ -133,7 +137,7 @@ impl<NodeData, EdgeData> Graph<NodeData, EdgeData> {
         self.node_iter(node_id, direction).count()
     }
 
-    pub fn all_node_ids(&self) -> Keys<Id, Node<NodeData>> {
+    pub fn all_node_ids(&self) -> Keys<'_, Id, Node<NodeData>> {
         self.nodes.keys()
     }
 
@@ -148,7 +152,7 @@ fn replace_edge_connections<N, E>(
     find_edge_id: Id,
     replace_edge_id: Option<Id>,
 ) {
-    for (_, edge) in graph.edges.iter_mut() {
+    for edge in graph.edges.values_mut() {
         match direction {
             Direction::Outgoing => {
                 if let Some(next_out) = edge.next_out {
@@ -174,7 +178,7 @@ fn replace_node_connections<N, E>(
     find_edge_id: Id,
     replace_edge_id: Option<Id>,
 ) {
-    for (_, node) in graph.nodes.iter_mut() {
+    for node in graph.nodes.values_mut() {
         match direction {
             Direction::Outgoing => {
                 if let Some(outgoing) = node.outgoing {
